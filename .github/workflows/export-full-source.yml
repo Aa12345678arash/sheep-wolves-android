@@ -1,0 +1,27 @@
+name: Export full Android source for safe patching
+
+on:
+  push:
+    branches:
+      - 'inspection/extract-source-2026-11-01'
+    paths:
+      - '.github/workflows/export-full-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout inspection branch
+        uses: actions/checkout@v4
+      - name: Extract complete Android project
+        run: unzip -o sheep_wolves_android_project.zip
+      - name: Upload complete source tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheep-wolves-full-source
+          path: sheep_wolves_android/
+          if-no-files-found: error
+          retention-days: 3
