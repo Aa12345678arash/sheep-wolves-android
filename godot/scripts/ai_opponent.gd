@@ -40,7 +40,7 @@ static func choose_sheep_move(state, difficulty: int) -> Dictionary:
 	for move in moves:
 		var score := _sheep_position_score(state, int(move.from), int(move.to))
 		if difficulty >= 2:
-			score += _sheep_safety_score(state, int(move.to)) * 1.5
+			score += _sheep_safety_score(state, int(move.to), int(move.from)) * 1.5
 		if score > best_score:
 			best_score = score
 			best = move
@@ -86,17 +86,36 @@ static func _future_mobility(state, node: int) -> float:
 static func _sheep_position_score(state, from: int, to: int) -> float:
 	var from_row := int(from / 5)
 	var to_row := int(to / 5)
-	var score := float(to_row - from_row) * 0.4 + _centrality(to) * 0.2
-	score += _sheep_safety_score(state, to)
+	# Sheep begin on row E and advance toward row A, where the wolves approach.
+	var score := float(from_row - to_row) * 0.4 + _centrality(to) * 0.2
+	score += _sheep_safety_score(state, to, from)
 	return score
 
-static func _sheep_safety_score(state, node: int) -> float:
+static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> float:
+	# Evaluate the proposed destination as if the sheep had already moved there.
+	# A wolf threatens this point when it can jump over it and land on a free node.
 	var danger := 0.0
+	var adjacency := BoardGraph.adjacency()
+	var node_row := int(node / 5)
+	var node_col := node % 5
 	for wolf_node in range(BoardGraph.NODE_COUNT):
-		if state.wolves[wolf_node]:
-			for capture in state.capture_options(wolf_node):
-				if int(capture.middle) == node:
-					danger += 3.0
+		if not state.wolves[wolf_node]:
+			continue
+		var wolf_row := int(wolf_node / 5)
+		var wolf_col := wolf_node % 5
+		var dr := node_row - wolf_row
+		var dc := node_col - wolf_col
+		if node not in adjacency[wolf_node]:
+			continue
+		for landing in adjacency[node]:
+			if landing == wolf_node:
+				continue
+			var landing_row := int(landing / 5)
+			var landing_col := landing % 5
+			if landing_row - node_row != dr or landing_col - node_col != dc:
+				continue
+			if landing == vacated_from or not state.is_occupied(landing):
+				danger += 3.0
 	return -danger
 
 static func _future_capture_potential(state, node: int) -> float:
