@@ -1,0 +1,42 @@
+name: Build WOLF-DUSK Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - WOLF-DUSK-004-GODOT
+    paths:
+      - 'godot/**'
+      - '.github/workflows/build-wolf-dusk-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-debug:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout isolated development branch
+        uses: actions/checkout@v4
+      - name: Verify Android export preset
+        run: |
+          test -f godot/export_presets.cfg
+          grep -q 'name="Android"' godot/export_presets.cfg
+      - name: Import and validate Godot project
+        run: |
+          godot --headless --editor --path godot --quit
+          godot --headless --path godot --quit-after 2
+      - name: Export Android debug APK
+        run: |
+          mkdir -p godot/build/android
+          godot --headless --path godot --export-debug "Android" godot/build/android/wolf-dusk-debug.apk
+          test -s godot/build/android/wolf-dusk-debug.apk
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wolf-dusk-android-debug-004
+          path: godot/build/android/wolf-dusk-debug.apk
+          if-no-files-found: error
+          retention-days: 14
