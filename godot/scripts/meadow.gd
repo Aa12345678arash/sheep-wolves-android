@@ -105,6 +105,7 @@ func _build_environment() -> void:
 	board_material.roughness = 0.9
 	board.material_override = board_material
 	add_child(board)
+	_build_board_frame()
 
 	# Decorative low-poly trees and stones stay outside the playable 5x5 board.
 	var tree_spots := [
@@ -119,6 +120,101 @@ func _build_environment() -> void:
 	]
 	for spot in rock_spots:
 		_add_meadow_rock(spot)
+	_build_meadow_details()
+
+func _build_board_frame() -> void:
+	# A low timber frame gives the playable field a clear, tactile boundary.
+	var beam_mesh := BoxMesh.new()
+	beam_mesh.size = Vector3(11.4, 0.16, 0.20)
+	var beam_material := _material(Color(0.25, 0.15, 0.085))
+	for side in [-1.0, 1.0]:
+		var near_beam := MeshInstance3D.new()
+		near_beam.mesh = beam_mesh
+		near_beam.material_override = beam_material
+		near_beam.position = Vector3(0.0, 0.24, side * 5.42)
+		add_child(near_beam)
+		var side_beam := MeshInstance3D.new()
+		side_beam.mesh = beam_mesh
+		side_beam.material_override = beam_material
+		side_beam.position = Vector3(side * 5.42, 0.24, 0.0)
+		side_beam.rotation.y = PI * 0.5
+		add_child(side_beam)
+	var post_mesh := CylinderMesh.new()
+	post_mesh.top_radius = 0.16
+	post_mesh.bottom_radius = 0.19
+	post_mesh.height = 0.42
+	for x_side in [-1.0, 1.0]:
+		for z_side in [-1.0, 1.0]:
+			var post := MeshInstance3D.new()
+			post.mesh = post_mesh
+			post.material_override = _material(Color(0.42, 0.27, 0.13))
+			post.position = Vector3(x_side * 5.42, 0.28, z_side * 5.42)
+			add_child(post)
+
+func _build_meadow_details() -> void:
+	# Instanced grass and tiny flowers add life without creating hundreds of nodes.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5021405
+	var grass_mesh := BoxMesh.new()
+	grass_mesh.size = Vector3(0.045, 0.34, 0.035)
+	var grass_material := StandardMaterial3D.new()
+	grass_material.vertex_color_use_as_albedo = true
+	grass_material.roughness = 1.0
+	var grass_batch := MultiMesh.new()
+	grass_batch.transform_format = MultiMesh.TRANSFORM_3D
+	grass_batch.use_colors = true
+	grass_batch.mesh = grass_mesh
+	grass_batch.instance_count = 240
+	for i in range(grass_batch.instance_count):
+		var x := rng.randf_range(-8.7, 8.7)
+		var z := rng.randf_range(-8.7, 8.7)
+		var attempts := 0
+		while absf(x) < 5.85 and absf(z) < 5.85 and attempts < 12:
+			x = rng.randf_range(-8.7, 8.7)
+			z = rng.randf_range(-8.7, 8.7)
+			attempts += 1
+		var yaw := rng.randf_range(0.0, TAU)
+		var lean := rng.randf_range(-0.20, 0.20)
+		var basis := Basis(Vector3.UP, yaw) * Basis(Vector3.FORWARD, lean)
+		basis = basis.scaled(Vector3(rng.randf_range(0.75, 1.35), rng.randf_range(0.65, 1.25), 1.0))
+		grass_batch.set_instance_transform(i, Transform3D(basis, Vector3(x, 0.06, z)))
+		var green := rng.randf_range(0.78, 1.12)
+		grass_batch.set_instance_color(i, Color(0.19 * green, 0.43 * green, 0.16 * green, 1.0))
+	var grass_instance := MultiMeshInstance3D.new()
+	grass_instance.multimesh = grass_batch
+	grass_instance.material_override = grass_material
+	add_child(grass_instance)
+
+	var flower_mesh := SphereMesh.new()
+	flower_mesh.radius = 0.055
+	flower_mesh.height = 0.07
+	var flower_material := StandardMaterial3D.new()
+	flower_material.vertex_color_use_as_albedo = true
+	flower_material.roughness = 0.75
+	var flower_batch := MultiMesh.new()
+	flower_batch.transform_format = MultiMesh.TRANSFORM_3D
+	flower_batch.use_colors = true
+	flower_batch.mesh = flower_mesh
+	flower_batch.instance_count = 42
+	var flower_colors := [
+		Color(0.96, 0.83, 0.45), Color(0.91, 0.91, 0.82),
+		Color(0.78, 0.55, 0.67), Color(0.91, 0.68, 0.39)
+	]
+	for i in range(flower_batch.instance_count):
+		var x := rng.randf_range(-8.4, 8.4)
+		var z := rng.randf_range(-8.4, 8.4)
+		var attempts := 0
+		while absf(x) < 5.95 and absf(z) < 5.95 and attempts < 12:
+			x = rng.randf_range(-8.4, 8.4)
+			z = rng.randf_range(-8.4, 8.4)
+			attempts += 1
+		var size := rng.randf_range(0.75, 1.35)
+		flower_batch.set_instance_transform(i, Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * size), Vector3(x, 0.075, z)))
+		flower_batch.set_instance_color(i, flower_colors[rng.randi_range(0, flower_colors.size() - 1)])
+	var flower_instance := MultiMeshInstance3D.new()
+	flower_instance.multimesh = flower_batch
+	flower_instance.material_override = flower_material
+	add_child(flower_instance)
 
 func _add_meadow_tree(at: Vector3) -> void:
 	var trunk := MeshInstance3D.new()
