@@ -242,6 +242,13 @@ func _initialize() -> void:
 	var backward_score: float = AI._sheep_position_score(ai_direction_state, 6, 12)
 	assert(forward_score > backward_score)
 
+	# Safety is applied exactly once, with a stronger weight at hard difficulty.
+	var safe_base: float = AI._sheep_position_score(ai_direction_state, 12, 6)
+	var safe_medium: float = AI._sheep_move_score(ai_direction_state, 12, 6, 1)
+	var safe_hard: float = AI._sheep_move_score(ai_direction_state, 12, 6, 2)
+	assert(is_equal_approx(safe_base, safe_medium))
+	assert(is_equal_approx(safe_base, safe_hard))
+
 	# The AI must recognize a destination that becomes capturable after the move,
 	# including a landing point vacated by the moving sheep itself.
 	var ai_safety_state = GameState.new()
