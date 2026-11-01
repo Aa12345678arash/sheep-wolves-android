@@ -87,6 +87,11 @@ func _initialize() -> void:
 	assert(chain_state.move_wolf(0, 12) == "captured_chain_available")
 	assert(chain_state.chain_wolf == 12)
 	assert(chain_state.move_wolf(1, 3) == "wrong_chain_wolf")
+	# An unrelated destination cannot consume the pending chain opportunity.
+	assert(chain_state.move_wolf(12, 4) == "chain_capture_required")
+	assert(chain_state.wolves[12] and not chain_state.wolves[4])
+	assert(chain_state.sheep_total() == 11)
+	assert(chain_state.turn == GameState.Turn.WOLVES)
 	assert(chain_state.move_wolf(12, 24) == "captured")
 	assert(chain_state.sheep_total() == 10)
 	assert(chain_state.turn == GameState.Turn.SHEEP)
