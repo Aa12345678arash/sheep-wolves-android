@@ -38,6 +38,8 @@ var ai_turn_generation: int = 0
 var move_audio: AudioStreamPlayer
 var capture_audio: AudioStreamPlayer
 var victory_audio: AudioStreamPlayer
+var music_audio: AudioStreamPlayer
+var music_button: Button
 var announced_winner: String = ""
 
 func _ready() -> void:
@@ -107,6 +109,47 @@ func _build_audio() -> void:
 	victory_audio.stream = _make_sfx([523.25, 659.25, 783.99], 0.82, 0.22, 1.8)
 	add_child(victory_audio)
 
+	# Original synthesized meadow theme; no third-party recording or license dependency.
+	music_audio = AudioStreamPlayer.new()
+	music_audio.name = "OriginalMeadowTheme"
+	music_audio.volume_db = -19.0
+	music_audio.stream = _make_meadow_music()
+	add_child(music_audio)
+	music_audio.play()
+
+func _make_meadow_music() -> AudioStreamWAV:
+	var sample_rate := 22050
+	var sample_count := sample_rate * 16
+	var pcm := PackedByteArray()
+	pcm.resize(sample_count * 2)
+	var chords := [
+		[130.81, 164.81, 196.00], [110.00, 130.81, 164.81],
+		[87.31, 110.00, 130.81], [98.00, 123.47, 146.83],
+		[130.81, 164.81, 196.00], [110.00, 130.81, 164.81],
+		[87.31, 110.00, 130.81], [98.00, 123.47, 146.83]
+	]
+	for sample_index in range(sample_count):
+		var time := float(sample_index) / float(sample_rate)
+		var beat_time := fmod(time, 2.0)
+		var chord_index := mini(int(time / 2.0), chords.size() - 1)
+		var envelope := minf(1.0, beat_time / 0.22) * minf(1.0, (2.0 - beat_time) / 0.30)
+		var sample := 0.0
+		for frequency in chords[chord_index]:
+			var hz := float(frequency)
+			sample += sin(TAU * hz * time) * 0.62
+			sample += sin(TAU * hz * 2.0 * time) * 0.10
+		sample = sample / 3.0 * envelope * 0.13
+		pcm.encode_s16(sample_index * 2, int(round(clampf(sample, -1.0, 1.0) * 32767.0)))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.data = pcm
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
+	stream.loop_end = sample_count
+	return stream
+
 func _make_sfx(frequencies: Array, duration: float, amplitude: float, decay: float) -> AudioStreamWAV:
 	var sample_rate := 22050
 	var sample_count := int(sample_rate * duration)
@@ -126,6 +169,16 @@ func _make_sfx(frequencies: Array, duration: float, amplitude: float, decay: flo
 	stream.stereo = false
 	stream.data = pcm
 	return stream
+
+func _toggle_meadow_music(enabled: bool) -> void:
+	if music_audio == null:
+		return
+	if enabled:
+		music_audio.play()
+		music_button.text = "موسیقی دشت: روشن"
+	else:
+		music_audio.stop()
+		music_button.text = "موسیقی دشت: خاموش"
 
 func _play_move_sound() -> void:
 	if move_audio != null:
@@ -440,6 +493,13 @@ func _build_hud() -> void:
 	reset_button.custom_minimum_size = Vector2(330, 46)
 	reset_button.pressed.connect(_reset_game)
 	column.add_child(reset_button)
+	music_button = Button.new()
+	music_button.text = "موسیقی دشت: روشن"
+	music_button.toggle_mode = true
+	music_button.button_pressed = true
+	music_button.custom_minimum_size = Vector2(330, 42)
+	music_button.toggled.connect(_toggle_meadow_music)
+	column.add_child(music_button)
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
 	credit.position = Vector2(18, 245)
