@@ -123,5 +123,5 @@ func _initialize() -> void:
 	assert(sheep_win_state.winner == "sheep")
 	assert(sheep_win_state.turn == GameState.Turn.FINISHED)
 
-	print("WOLF-DUSK-006 checks passed: graph, setup, legal/illegal moves, capture chain and both win conditions.")
+	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain and both win conditions.")
 	quit()
