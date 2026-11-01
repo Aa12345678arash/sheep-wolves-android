@@ -131,7 +131,9 @@ func _add_meadow_tree(at: Vector3) -> void:
 	add_child(trunk)
 	for layer in range(3):
 		var crown := MeshInstance3D.new()
-		var crown_mesh := ConeMesh.new()
+		var crown_mesh := CylinderMesh.new()
+		crown_mesh.top_radius = 0.0
+		crown_mesh.bottom_radius = 1.0
 		crown_mesh.radius = 1.0 - float(layer) * 0.16
 		crown_mesh.height = 1.55
 		crown.mesh = crown_mesh
@@ -180,14 +182,18 @@ func _build_board() -> void:
 		rail.mesh = rail_mesh
 		rail.material_override = rail_material
 		rail.position = midpoint + Vector3(0.0, -0.045, 0.0)
-		rail.basis = Basis(Vector3.UP, direction)
+		var rail_x := direction.cross(Vector3.FORWARD).normalized()
+		if rail_x.length_squared() < 0.001:
+			rail_x = Vector3.RIGHT
+		var rail_z := rail_x.cross(direction).normalized()
+		rail.basis = Basis(rail_x, direction, rail_z)
 		rail.scale = Vector3(1.0, delta.length(), 1.0)
 		add_child(rail)
 		var path := MeshInstance3D.new()
 		path.mesh = path_mesh
 		path.material_override = path_material
 		path.position = midpoint + Vector3(0.0, 0.025, 0.0)
-		path.basis = Basis(Vector3.UP, direction)
+		path.basis = Basis(rail_x, direction, rail_z)
 		path.scale = Vector3(1.0, delta.length(), 1.0)
 		add_child(path)
 
@@ -635,7 +641,9 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	parent.add_child(snout)
 	for side in [-1.0, 1.0]:
 		var ear := MeshInstance3D.new()
-		var ear_mesh := ConeMesh.new()
+		var ear_mesh := CylinderMesh.new()
+		ear_mesh.top_radius = 0.0
+		ear_mesh.bottom_radius = 0.075
 		ear_mesh.radius = 0.075
 		ear_mesh.height = 0.23
 		ear.mesh = ear_mesh
