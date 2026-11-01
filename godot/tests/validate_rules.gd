@@ -2,6 +2,7 @@ extends SceneTree
 
 const BoardGraph = preload("res://scripts/board_graph.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const AI = preload("res://scripts/ai_opponent.gd")
 
 func _initialize() -> void:
 	assert(BoardGraph.NODE_COUNT == 25)
@@ -123,5 +124,31 @@ func _initialize() -> void:
 	assert(sheep_win_state.winner == "sheep")
 	assert(sheep_win_state.turn == GameState.Turn.FINISHED)
 
-	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain and both win conditions.")
+	# AI must always return actions accepted by the same authoritative rules.
+	var ai_state = GameState.new()
+	for difficulty in range(3):
+		var placement: int = AI.choose_wolf_placement(ai_state, difficulty)
+		assert(placement >= 0 and placement < BoardGraph.NODE_COUNT)
+		assert(ai_state.place_wolf(placement))
+	assert(ai_state.turn == GameState.Turn.SHEEP)
+	for difficulty in range(3):
+		var sheep_action: Dictionary = AI.choose_sheep_move(ai_state, difficulty)
+		assert(not sheep_action.is_empty())
+		assert(ai_state.move_sheep(int(sheep_action.from), int(sheep_action.to)))
+		# Restore the sheep turn to exercise all difficulty levels independently.
+		ai_state.turn = GameState.Turn.SHEEP
+	# Wolves now have a legal turn; every difficulty must propose a legal move.
+	ai_state.turn = GameState.Turn.WOLVES
+	for difficulty in range(3):
+		var wolf_action: Dictionary = AI.choose_wolf_move(ai_state, difficulty)
+		assert(not wolf_action.is_empty())
+		var legal_wolf_move := false
+		for destination in ai_state.wolf_moves(int(wolf_action.from)):
+			if destination == int(wolf_action.to):
+				legal_wolf_move = true
+		for capture in ai_state.capture_options(int(wolf_action.from)):
+			if int(capture.to) == int(wolf_action.to):
+				legal_wolf_move = true
+		assert(legal_wolf_move)
+	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain, win conditions and three AI levels.")
 	quit()
