@@ -512,6 +512,7 @@ func _refresh_board() -> void:
 		var marker := MeshInstance3D.new()
 		var marker_mesh := CylinderMesh.new()
 		var is_selected := index == selected_node
+		var is_capture := index in _capture_targets()
 		var is_legal := index in _legal_targets()
 		marker_mesh.top_radius = 0.34 if (is_selected or is_legal) else 0.19
 		marker_mesh.bottom_radius = marker_mesh.top_radius
@@ -524,6 +525,11 @@ func _refresh_board() -> void:
 			marker_material.albedo_color = Color(1.0, 0.72, 0.08)
 			marker_material.emission_enabled = true
 			marker_material.emission = Color(0.9, 0.48, 0.02)
+		elif is_capture:
+			# Amber distinguishes a legal wolf capture from an ordinary green move.
+			marker_material.albedo_color = Color(1.0, 0.48, 0.12)
+			marker_material.emission_enabled = true
+			marker_material.emission = Color(0.75, 0.19, 0.015)
 		elif is_legal:
 			marker_material.albedo_color = Color(0.18, 0.95, 0.38)
 			marker_material.emission_enabled = true
@@ -705,7 +711,7 @@ func _update_hud() -> void:
 	elif game.turn == GameState.Turn.WOLVES:
 		_set_turn_view(-1)
 		status_label.text = "نوبت گرگ‌ها"
-		detail_label.text = "گرگ را انتخاب کنید؛ مقصد سبز حرکت یا شکار قانونی را نشان می‌دهد."
+		detail_label.text = "گرگ را انتخاب کنید؛ مقصد سبز = حرکت، مقصد نارنجی = شکار."
 	elif game.winner == "wolves":
 		status_label.text = "پایان بازی | پیروزی گرگ‌ها"
 		detail_label.text = "تعداد گوسفندان به ۸ یا کمتر رسیده است."
@@ -739,6 +745,16 @@ func _legal_targets() -> Array[int]:
 			for capture in game.capture_options(selected_node):
 				if capture["to"] not in targets:
 					targets.append(capture["to"])
+	return targets
+
+func _capture_targets() -> Array[int]:
+	var targets: Array[int] = []
+	if game.turn != GameState.Turn.WOLVES or selected_node < 0:
+		return targets
+	if game.chain_wolf != -1 and selected_node != game.chain_wolf:
+		return targets
+	for capture in game.capture_options(selected_node):
+		targets.append(int(capture["to"]))
 	return targets
 
 func _decline_chain_capture() -> void:
