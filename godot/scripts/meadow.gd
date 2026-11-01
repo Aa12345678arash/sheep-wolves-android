@@ -40,6 +40,25 @@ func _process(delta: float) -> void:
 			_update_chain_countdown()
 
 func _build_environment() -> void:
+	# Soft stylized sky and ambient light make the meadow read as an outdoor scene.
+	var world := WorldEnvironment.new()
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_SKY
+	var sky := Sky.new()
+	var sky_material := ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color(0.20, 0.43, 0.68)
+	sky_material.sky_horizon_color = Color(0.78, 0.84, 0.79)
+	sky_material.ground_bottom_color = Color(0.16, 0.25, 0.16)
+	sky_material.ground_horizon_color = Color(0.45, 0.53, 0.39)
+	sky.sky_material = sky_material
+	environment.sky = sky
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.72, 0.79, 0.72)
+	environment.ambient_light_energy = 0.55
+	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	world.environment = environment
+	add_child(world)
+
 	var ground := MeshInstance3D.new()
 	var mesh := PlaneMesh.new()
 	mesh.size = Vector2(18.0, 18.0)
@@ -60,6 +79,51 @@ func _build_environment() -> void:
 	board_material.roughness = 0.9
 	board.material_override = board_material
 	add_child(board)
+
+	# Decorative low-poly trees and stones stay outside the playable 5x5 board.
+	var tree_spots := [
+		Vector2(-7.0, -6.8), Vector2(-5.6, 7.0), Vector2(7.1, -6.4),
+		Vector2(7.0, 6.8), Vector2(-7.4, 1.0), Vector2(7.5, -1.2)
+	]
+	for spot in tree_spots:
+		_add_meadow_tree(Vector3(spot.x, 0.0, spot.y))
+	var rock_spots := [
+		Vector3(-6.5, 0.0, -3.8), Vector3(6.7, 0.0, 3.9),
+		Vector3(-4.8, 0.0, 6.7), Vector3(5.0, 0.0, -6.8)
+	]
+	for spot in rock_spots:
+		_add_meadow_rock(spot)
+
+func _add_meadow_tree(at: Vector3) -> void:
+	var trunk := MeshInstance3D.new()
+	var trunk_mesh := CylinderMesh.new()
+	trunk_mesh.top_radius = 0.16
+	trunk_mesh.bottom_radius = 0.23
+	trunk_mesh.height = 1.45
+	trunk.mesh = trunk_mesh
+	trunk.material_override = _material(Color(0.31, 0.19, 0.11))
+	trunk.position = at + Vector3(0.0, 0.72, 0.0)
+	add_child(trunk)
+	for layer in range(3):
+		var crown := MeshInstance3D.new()
+		var crown_mesh := ConeMesh.new()
+		crown_mesh.radius = 1.0 - float(layer) * 0.16
+		crown_mesh.height = 1.55
+		crown.mesh = crown_mesh
+		crown.material_override = _material([Color(0.13, 0.34, 0.17), Color(0.18, 0.42, 0.20), Color(0.24, 0.49, 0.23)][layer])
+		crown.position = at + Vector3(0.0, 1.55 + float(layer) * 0.62, 0.0)
+		add_child(crown)
+
+func _add_meadow_rock(at: Vector3) -> void:
+	var rock := MeshInstance3D.new()
+	var rock_mesh := SphereMesh.new()
+	rock_mesh.radius = 0.48
+	rock_mesh.height = 0.62
+	rock.mesh = rock_mesh
+	rock.material_override = _material(Color(0.43, 0.45, 0.39))
+	rock.position = at + Vector3(0.0, 0.20, 0.0)
+	rock.scale = Vector3(1.3, 0.75, 0.9)
+	add_child(rock)
 
 func _node_position(index: int) -> Vector3:
 	var row: int = int(index / GRID_SIZE)
