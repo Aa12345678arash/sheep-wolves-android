@@ -207,7 +207,12 @@ func _refresh_board() -> void:
 		marker_mesh.height = marker_mesh.radius * 2.0
 		marker.mesh = marker_mesh
 		var marker_material := StandardMaterial3D.new()
-		marker_material.albedo_color = Color(1.0, 0.82, 0.22) if index == selected_node else Color(0.91, 0.78, 0.48)
+		if index == selected_node:
+			marker_material.albedo_color = Color(1.0, 0.82, 0.22)
+		elif index in _legal_targets():
+			marker_material.albedo_color = Color(0.25, 0.92, 0.42)
+		else:
+			marker_material.albedo_color = Color(0.91, 0.78, 0.48)
 		marker.material_override = marker_material
 		marker.position.y = 0.03
 		visual.add_child(marker)
@@ -294,3 +299,21 @@ func _update_hud() -> void:
 	elif game.winner == "sheep":
 		status_label.text = "گوسفندها برنده شدند!"
 		detail_label.text = "هر سه گرگ مسدود شدند."
+
+func _legal_targets() -> Array[int]:
+	var targets: Array[int] = []
+	if selected_node < 0:
+		return targets
+	if game.turn == GameState.Turn.SHEEP:
+		return game.sheep_moves(selected_node)
+	if game.turn == GameState.Turn.WOLVES:
+		if game.chain_wolf != -1:
+			for capture in game.capture_options(selected_node):
+				targets.append(capture["to"])
+		else:
+			for destination in game.wolf_moves(selected_node):
+				targets.append(destination)
+			for capture in game.capture_options(selected_node):
+				if capture["to"] not in targets:
+					targets.append(capture["to"])
+	return targets
