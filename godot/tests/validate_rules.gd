@@ -61,6 +61,36 @@ func _initialize() -> void:
 	assert(capture_state.sheep_total() == 24)
 	assert(capture_state.turn == GameState.Turn.SHEEP)
 
+	# Capture geometry must work along horizontal, vertical and diagonal edges.
+	var capture_geometries := [[0, 1, 2], [5, 10, 15], [0, 6, 12]]
+	for geometry in capture_geometries:
+		var geometry_state = GameState.new()
+		for i in range(25):
+			geometry_state.sheep[i] = 0
+			geometry_state.wolves[i] = false
+		geometry_state.wolves[int(geometry[0])] = true
+		geometry_state.sheep[int(geometry[1])] = 1
+		geometry_state.turn = GameState.Turn.WOLVES
+		var geometry_found := false
+		for option in geometry_state.capture_options(int(geometry[0])):
+			if int(option.middle) == int(geometry[1]) and int(option.to) == int(geometry[2]):
+				geometry_found = true
+		assert(geometry_found)
+		assert(geometry_state.move_wolf(int(geometry[0]), int(geometry[2])) in ["captured", "captured_chain_available"])
+
+	# A connected but non-collinear landing point is not a valid capture.
+	var non_collinear_state = GameState.new()
+	for i in range(25):
+		non_collinear_state.sheep[i] = 0
+		non_collinear_state.wolves[i] = false
+	non_collinear_state.wolves[0] = true
+	non_collinear_state.sheep[6] = 1
+	non_collinear_state.turn = GameState.Turn.WOLVES
+	assert(non_collinear_state.capture_options(0).is_empty())
+	assert(non_collinear_state.move_wolf(0, 11) == "invalid")
+	assert(non_collinear_state.wolves[0] and not non_collinear_state.wolves[11])
+	assert(non_collinear_state.sheep[6] == 1)
+
 	var invalid_state = GameState.new()
 	assert(invalid_state.place_wolf(0))
 	assert(invalid_state.place_wolf(1))
