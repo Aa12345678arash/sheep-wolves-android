@@ -176,5 +176,27 @@ func _initialize() -> void:
 			if int(capture.to) == int(wolf_action.to):
 				legal_wolf_move = true
 		assert(legal_wolf_move)
-	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain, win conditions and three AI levels.")
+
+	# Sheep AI should advance from the E side toward the A side.
+	var ai_direction_state = GameState.new()
+	for i in range(25):
+		ai_direction_state.sheep[i] = 0
+		ai_direction_state.wolves[i] = false
+	var forward_score: float = AI._sheep_position_score(ai_direction_state, 12, 6)
+	var backward_score: float = AI._sheep_position_score(ai_direction_state, 6, 12)
+	assert(forward_score > backward_score)
+
+	# The AI must recognize a destination that becomes capturable after the move,
+	# including a landing point vacated by the moving sheep itself.
+	var ai_safety_state = GameState.new()
+	for i in range(25):
+		ai_safety_state.sheep[i] = 0
+		ai_safety_state.wolves[i] = false
+	ai_safety_state.wolves[0] = true
+	ai_safety_state.wolves[1] = true
+	ai_safety_state.wolves[2] = true
+	ai_safety_state.sheep[12] = 1
+	assert(AI._sheep_safety_score(ai_safety_state, 6, 12) < 0.0)
+
+	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain, win conditions and AI safety/direction.")
 	quit()
