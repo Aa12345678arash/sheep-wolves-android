@@ -48,13 +48,18 @@ static func choose_sheep_move(state, difficulty: int) -> Dictionary:
 
 static func choose_wolf_move(state, difficulty: int) -> Dictionary:
 	var moves: Array[Dictionary] = []
-	for from in range(BoardGraph.NODE_COUNT):
+	# During an optional chain capture, only the wolf that made the first
+	# capture may move, and only another capture is legal.
+	var first_wolf := state.chain_wolf if state.chain_wolf != -1 else 0
+	var last_wolf := state.chain_wolf + 1 if state.chain_wolf != -1 else BoardGraph.NODE_COUNT
+	for from in range(first_wolf, last_wolf):
 		if not state.wolves[from]:
 			continue
 		for capture in state.capture_options(from):
 			moves.append({"from": from, "to": capture.to, "capture": true})
-		for to in state.wolf_moves(from):
-			moves.append({"from": from, "to": to, "capture": false})
+		if state.chain_wolf == -1:
+			for to in state.wolf_moves(from):
+				moves.append({"from": from, "to": to, "capture": false})
 	if moves.is_empty():
 		return {}
 	if difficulty == 0:
