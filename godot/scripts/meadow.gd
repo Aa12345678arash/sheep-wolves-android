@@ -7,6 +7,8 @@ const GameState = preload("res://scripts/game_state.gd")
 
 var game = GameState.new()
 var camera: Camera3D
+var camera_target_position: Vector3 = Vector3(10.5, 12.5, 15.5)
+var camera_view_turn: int = -1
 var status_label: Label
 var detail_label: Label
 var message_label: Label
@@ -27,6 +29,9 @@ func _ready() -> void:
 	_update_hud()
 
 func _process(delta: float) -> void:
+	if camera != null:
+		camera.position = camera.position.lerp(camera_target_position, minf(delta * 2.8, 1.0))
+		camera.look_at(Vector3.ZERO, Vector3.UP)
 	if chain_time_left > 0.0:
 		chain_time_left = maxf(0.0, chain_time_left - delta)
 		if chain_time_left <= 0.0:
@@ -496,12 +501,15 @@ func _update_chain_countdown() -> void:
 
 func _update_hud() -> void:
 	if game.turn == GameState.Turn.PLACE_WOLVES:
+		_set_turn_view(-1)
 		status_label.text = "گرگ و میش | چیدمان گرگ‌ها"
 		detail_label.text = "گرگ‌ها: %d از ۳ | سه نقطهٔ خالی را انتخاب کنید." % game.wolf_total()
 	elif game.turn == GameState.Turn.SHEEP:
+		_set_turn_view(1)
 		status_label.text = "نوبت گوسفندها"
 		detail_label.text = "گوسفندان باقی‌مانده: %d | یک گوسفند را انتخاب کنید، سپس مقصد سبز را بزنید." % game.sheep_total()
 	elif game.turn == GameState.Turn.WOLVES:
+		_set_turn_view(-1)
 		status_label.text = "نوبت گرگ‌ها"
 		detail_label.text = "گرگ را انتخاب کنید؛ مقصد سبز حرکت یا شکار قانونی را نشان می‌دهد."
 	elif game.winner == "wolves":
@@ -513,6 +521,13 @@ func _update_hud() -> void:
 	message_label.text = feedback_message
 	if chain_time_left > 0.0:
 		_update_chain_countdown()
+
+func _set_turn_view(side: int) -> void:
+	# Sheep and wolves see the same symmetric board from opposite ends.
+	if camera_view_turn == side:
+		return
+	camera_view_turn = side
+	camera_target_position = Vector3(10.5, 12.5, 15.5) if side == -1 else Vector3(-10.5, 12.5, -15.5)
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
