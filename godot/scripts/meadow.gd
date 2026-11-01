@@ -29,6 +29,7 @@ var match_mode: String = "local"
 var human_side: String = "sheep"
 var ai_difficulty: int = 1
 var ai_busy: bool = false
+var ai_turn_generation: int = 0
 
 func _ready() -> void:
 	_build_environment()
@@ -360,10 +361,15 @@ func _is_ai_turn() -> bool:
 func _schedule_ai_turn() -> void:
 	if _is_ai_turn() and not ai_busy:
 		ai_busy = true
-		call_deferred("_run_ai_turn")
+		ai_turn_generation += 1
+		call_deferred("_run_ai_turn", ai_turn_generation)
 
-func _run_ai_turn() -> void:
+func _run_ai_turn(generation: int) -> void:
 	await get_tree().create_timer(0.65).timeout
+	# A reset can happen while the AI delay is running. Ignore stale callbacks
+	# so an old turn cannot make an extra move in the newly reset match.
+	if generation != ai_turn_generation:
+		return
 	if not is_inside_tree() or not _is_ai_turn():
 		ai_busy = false
 		return
@@ -485,6 +491,7 @@ func _select_node(index: int) -> void:
 
 func _reset_game() -> void:
 	game.reset()
+	ai_turn_generation += 1
 	ai_busy = false
 	selected_node = -1
 	chain_time_left = 0.0
