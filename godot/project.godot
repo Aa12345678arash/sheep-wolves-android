@@ -1,0 +1,13 @@
+; Godot 4 project scaffold for WOLF-DUSK-004
+config_version=5
+
+[application]
+config/name="گرگ و میش"
+config/description="راز دشت سبز - نسخه سه‌بعدی"
+run/main_scene="res://scenes/main.tscn"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.31, 0.48, 0.34, 1)
