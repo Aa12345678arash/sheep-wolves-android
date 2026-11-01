@@ -752,7 +752,7 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 
 func _add_wolf_piece(parent: Node3D) -> void:
 	var pivot := Node3D.new()
-	pivot.add_child(pivot)
+	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
 	var fur := _material(Color(0.19, 0.23, 0.29))
 	var muzzle := _material(Color(0.57, 0.57, 0.52))
