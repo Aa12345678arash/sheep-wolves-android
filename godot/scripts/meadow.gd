@@ -539,6 +539,9 @@ func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, 
 		_select_node(index)
 
 func _select_node(index: int) -> void:
+	var animated_from := -1
+	var animated_to := -1
+	var animated_kind := ""
 	if ai_busy or _is_ai_turn():
 		return
 	if game.turn == GameState.Turn.FINISHED:
@@ -581,6 +584,9 @@ func _select_node(index: int) -> void:
 
 	if game.turn == GameState.Turn.SHEEP:
 		if game.move_sheep(selected_node, index):
+			animated_from = selected_node
+			animated_to = index
+			animated_kind = "sheep"
 			selected_node = -1
 			feedback_message = "گوسفند جابه‌جا شد؛ اکنون نوبت گرگ‌هاست."
 		else:
@@ -592,6 +598,10 @@ func _select_node(index: int) -> void:
 				captured_node = int(capture_option["middle"])
 				break
 		var result: String = game.move_wolf(selected_node, index)
+		if result in ["moved", "captured", "captured_chain_available", "won"]:
+			animated_from = selected_node
+			animated_to = index
+			animated_kind = "wolf"
 		if result == "captured_chain_available":
 			if captured_node >= 0:
 				_play_capture_effect(captured_node)
@@ -618,8 +628,32 @@ func _select_node(index: int) -> void:
 		else:
 			feedback_message = "حرکت نامعتبر است؛ فقط روی مقصد سبزِ مجاز بزنید. نوبت تغییر نکرد."
 	_refresh_board()
+	if animated_from >= 0 and animated_to >= 0:
+		_animate_piece_arrival(animated_from, animated_to, animated_kind)
 	_update_hud()
 	_schedule_ai_turn()
+
+func _animate_piece_arrival(from_index: int, to_index: int, piece_kind: String) -> void:
+	if from_index < 0 or to_index < 0 or to_index >= node_visuals.size():
+		return
+	var destination_visual := node_visuals[to_index]
+	var candidates: Array[Node3D] = []
+	for child in destination_visual.get_children():
+		if child is Node3D and child.is_in_group("animated_game_piece"):
+			candidates.append(child)
+	if candidates.is_empty():
+		return
+	var piece: Node3D = candidates[candidates.size() - 1] if piece_kind == "sheep" else candidates[0]
+	var target_position := piece.position
+	var source_world := node_visuals[from_index].global_position
+	var source_local := destination_visual.global_transform.affine_inverse() * source_world
+	piece.position = Vector3(source_local.x, maxf(source_local.y + 0.28, 0.38), source_local.z)
+	piece.scale = Vector3.ONE * 0.88
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(piece, "position", target_position, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(piece, "scale", Vector3.ONE, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
 
 func _reset_game() -> void:
 	game.reset()
@@ -752,6 +786,7 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 	var visible_count: int = mini(count, 5)
 	for i in range(visible_count):
 		var pivot := Node3D.new()
+		pivot.add_to_group("animated_game_piece")
 		var column := i % 3
 		var row := int(i / 3)
 		pivot.position = Vector3((column - 1) * 0.25, 0.29, (row - 0.5) * 0.25)
@@ -828,6 +863,7 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 
 func _add_wolf_piece(parent: Node3D) -> void:
 	var pivot := Node3D.new()
+	pivot.add_to_group("animated_game_piece")
 	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
 	var fur := _material(Color(0.19, 0.23, 0.29))
