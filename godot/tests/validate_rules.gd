@@ -64,5 +64,58 @@ func _initialize() -> void:
 	assert(invalid_state.turn == GameState.Turn.WOLVES)
 	assert(not invalid_state.place_wolf(3))
 
-	print("WOLF-DUSK-005 checks passed: graph, setup, legal/illegal movement and wolf capture.")
+	# Optional second capture must be made by the same wolf and only once.
+	var chain_state = GameState.new()
+	for i in range(25):
+		chain_state.sheep[i] = 0
+		chain_state.wolves[i] = false
+	chain_state.wolves[0] = true
+	chain_state.wolves[1] = true
+	chain_state.wolves[2] = true
+	chain_state.sheep[6] = 1
+	chain_state.sheep[18] = 1
+	chain_state.sheep[20] = 5
+	chain_state.sheep[21] = 5
+	chain_state.turn = GameState.Turn.WOLVES
+	assert(chain_state.move_wolf(0, 12) == "captured_chain_available")
+	assert(chain_state.chain_wolf == 12)
+	assert(chain_state.move_wolf(1, 3) == "wrong_chain_wolf")
+	assert(chain_state.move_wolf(12, 24) == "captured")
+	assert(chain_state.sheep_total() == 10)
+	assert(chain_state.turn == GameState.Turn.SHEEP)
+	assert(chain_state.chain_wolf == -1)
+
+	# Reaching eight sheep wins immediately.
+	var wolf_win_state = GameState.new()
+	for i in range(25):
+		wolf_win_state.sheep[i] = 0
+		wolf_win_state.wolves[i] = false
+	wolf_win_state.wolves[0] = true
+	wolf_win_state.wolves[1] = true
+	wolf_win_state.wolves[2] = true
+	wolf_win_state.sheep[6] = 1
+	wolf_win_state.sheep[20] = 5
+	wolf_win_state.sheep[21] = 3
+	wolf_win_state.turn = GameState.Turn.WOLVES
+	assert(wolf_win_state.move_wolf(0, 12) == "won")
+	assert(wolf_win_state.sheep_total() == 8)
+	assert(wolf_win_state.winner == "wolves")
+	assert(wolf_win_state.turn == GameState.Turn.FINISHED)
+
+	# If every non-wolf point is occupied, no wolf can move or capture.
+	var sheep_win_state = GameState.new()
+	for i in range(25):
+		sheep_win_state.sheep[i] = 0
+		sheep_win_state.wolves[i] = false
+	sheep_win_state.wolves[0] = true
+	sheep_win_state.wolves[1] = true
+	sheep_win_state.wolves[2] = true
+	for i in range(3, 25):
+		sheep_win_state.sheep[i] = 1
+	sheep_win_state.turn = GameState.Turn.WOLVES
+	sheep_win_state.finish_wolf_turn()
+	assert(sheep_win_state.winner == "sheep")
+	assert(sheep_win_state.turn == GameState.Turn.FINISHED)
+
+	print("WOLF-DUSK-006 checks passed: graph, setup, legal/illegal moves, capture chain and both win conditions.")
 	quit()
