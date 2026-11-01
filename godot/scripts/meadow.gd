@@ -28,6 +28,8 @@ var sheep_idle_pivots: Array[Node3D] = []
 var wolf_idle_pivots: Array[Node3D] = []
 var wolf_tail_pivots: Array[Node3D] = []
 var sheep_anim_clock: float = 0.0
+var camera_shake_time: float = 0.0
+var camera_shake_strength: float = 0.0
 var match_mode: String = "local"
 var human_side: String = "sheep"
 var ai_difficulty: int = 1
@@ -65,6 +67,13 @@ func _process(delta: float) -> void:
 			tail_pivot.rotation.z = 0.96 + sin(sheep_anim_clock * 2.3 + float(i)) * 0.12
 	if camera != null and camera.is_inside_tree():
 		camera.position = camera.position.lerp(camera_target_position, minf(delta * 2.8, 1.0))
+		if camera_shake_time > 0.0:
+			camera_shake_time = maxf(0.0, camera_shake_time - delta)
+			var shake_phase := sheep_anim_clock * 58.0
+			var shake_fade := camera_shake_time / 0.24
+			camera.position += Vector3(sin(shake_phase) * camera_shake_strength, cos(shake_phase * 1.31) * camera_shake_strength * 0.45, sin(shake_phase * 0.77) * camera_shake_strength * 0.55) * shake_fade
+		else:
+			camera_shake_strength = 0.0
 		camera.look_at(Vector3.ZERO, Vector3.UP)
 	if chain_time_left > 0.0:
 		chain_time_left = maxf(0.0, chain_time_left - delta)
@@ -624,7 +633,13 @@ func _reset_game() -> void:
 	_update_hud()
 	_schedule_ai_turn()
 
+func _trigger_camera_shake() -> void:
+	camera_shake_time = 0.24
+	camera_shake_strength = 0.075
+
+
 func _play_capture_effect(node_index: int) -> void:
+	_trigger_camera_shake()
 	if node_index < 0 or node_index >= node_visuals.size():
 		return
 	var effect_root := Node3D.new()
