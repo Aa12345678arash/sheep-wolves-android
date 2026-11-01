@@ -492,6 +492,7 @@ func _reset_game() -> void:
 	feedback_message = "بازی تازه آغاز شد؛ سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید."
 	_refresh_board()
 	_update_hud()
+	_schedule_ai_turn()
 
 func _refresh_board() -> void:
 	sheep_idle_pivots.clear()
