@@ -9,6 +9,7 @@ var game = GameState.new()
 var camera: Camera3D
 var status_label: Label
 var detail_label: Label
+var pass_button: Button
 var selected_node: int = -1
 var chain_time_left: float = 0.0
 var node_areas: Array[Area3D] = []
@@ -28,6 +29,7 @@ func _process(delta: float) -> void:
 		chain_time_left -= delta
 		if chain_time_left <= 0.0:
 			game.finish_wolf_turn()
+			pass_button.visible = false
 			selected_node = -1
 			_refresh_board()
 			_update_hud()
@@ -127,6 +129,11 @@ func _build_hud() -> void:
 	detail_label = Label.new()
 	detail_label.add_theme_font_size_override("font_size", 15)
 	column.add_child(detail_label)
+	pass_button = Button.new()
+	pass_button.text = "رد کردن شکار دوم"
+	pass_button.visible = false
+	pass_button.pressed.connect(_decline_chain_capture)
+	column.add_child(pass_button)
 	var reset_button := Button.new()
 	reset_button.text = "شروع دوباره"
 	reset_button.pressed.connect(_reset_game)
@@ -179,13 +186,16 @@ func _select_node(index: int) -> void:
 		if result == "captured_chain_available":
 			selected_node = game.chain_wolf
 			chain_time_left = 3.0
+			pass_button.visible = true
 		elif result in ["moved", "captured", "won"]:
 			selected_node = -1
 			chain_time_left = 0.0
+			pass_button.visible = false
 		elif result == "invalid" and game.chain_wolf != -1:
 			game.finish_wolf_turn()
 			selected_node = -1
 			chain_time_left = 0.0
+			pass_button.visible = false
 	_refresh_board()
 	_update_hud()
 
@@ -193,6 +203,7 @@ func _reset_game() -> void:
 	game.reset()
 	selected_node = -1
 	chain_time_left = 0.0
+	pass_button.visible = false
 	_refresh_board()
 	_update_hud()
 
@@ -317,3 +328,12 @@ func _legal_targets() -> Array[int]:
 				if capture["to"] not in targets:
 					targets.append(capture["to"])
 	return targets
+
+func _decline_chain_capture() -> void:
+	if game.chain_wolf != -1 and chain_time_left > 0.0:
+		game.finish_wolf_turn()
+	chain_time_left = 0.0
+	selected_node = -1
+	pass_button.visible = false
+	_refresh_board()
+	_update_hud()
