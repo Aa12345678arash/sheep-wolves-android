@@ -136,6 +136,9 @@ func _initialize() -> void:
 	chain_ai_state.turn = GameState.Turn.WOLVES
 	chain_ai_state.chain_wolf = 12
 	chain_ai_state.chain_capture_count = 1
+	# Hard AI's post-move evaluator must see the legal second jump from 12 over 18 to 24.
+	assert(AI._count_capture_options_after(chain_ai_state, 6, 12, -1) >= 1)
+	assert(AI._wolf_mobility_after(chain_ai_state, 6, 12) >= 0)
 	var chain_ai_action: Dictionary = AI.choose_wolf_move(chain_ai_state, 2)
 	assert(not chain_ai_action.is_empty())
 	assert(int(chain_ai_action.from) == 12)
