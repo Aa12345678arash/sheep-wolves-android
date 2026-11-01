@@ -695,6 +695,24 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 			eye.material_override = hoof
 			eye.position = Vector3(0.235, 0.07, side * 0.065)
 			pivot.add_child(eye)
+			var ear := MeshInstance3D.new()
+			var ear_mesh := SphereMesh.new()
+			ear_mesh.radius = 0.052
+			ear_mesh.height = 0.085
+			ear.mesh = ear_mesh
+			ear.material_override = face
+			ear.position = Vector3(0.105, 0.075, side * 0.115)
+			ear.scale = Vector3(1.0, 0.65, 1.25)
+			ear.rotation.x = side * 0.18
+			pivot.add_child(ear)
+		var nose := MeshInstance3D.new()
+		var nose_mesh := SphereMesh.new()
+		nose_mesh.radius = 0.028
+		nose_mesh.height = 0.045
+		nose.mesh = nose_mesh
+		nose.material_override = hoof
+		nose.position = Vector3(0.265, -0.005, 0.0)
+		pivot.add_child(nose)
 		for leg_index in range(4):
 			var leg := MeshInstance3D.new()
 			var leg_mesh := CylinderMesh.new()
@@ -716,6 +734,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	var fur := _material(Color(0.19, 0.23, 0.29))
 	var muzzle := _material(Color(0.57, 0.57, 0.52))
 	var dark := _material(Color(0.075, 0.08, 0.09))
+	var eye_amber := _material(Color(0.98, 0.68, 0.18))
 	var body := MeshInstance3D.new()
 	var body_mesh := SphereMesh.new()
 	body_mesh.radius = 0.29
@@ -763,9 +782,25 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		eye_mesh.radius = 0.027
 		eye_mesh.height = 0.054
 		eye.mesh = eye_mesh
-		eye.material_override = dark
+		eye.material_override = eye_amber
 		eye.position = Vector3(0.34, 0.63, side * 0.135)
 		parent.add_child(eye)
+		var pupil := MeshInstance3D.new()
+		var pupil_mesh := SphereMesh.new()
+		pupil_mesh.radius = 0.012
+		pupil_mesh.height = 0.024
+		pupil.mesh = pupil_mesh
+		pupil.material_override = dark
+		pupil.position = Vector3(0.36, 0.635, side * 0.15)
+		parent.add_child(pupil)
+	var nose := MeshInstance3D.new()
+	var nose_mesh := SphereMesh.new()
+	nose_mesh.radius = 0.047
+	nose_mesh.height = 0.065
+	nose.mesh = nose_mesh
+	nose.material_override = dark
+	nose.position = Vector3(0.475, 0.54, -0.02)
+	parent.add_child(nose)
 	for leg_index in range(4):
 		var leg := MeshInstance3D.new()
 		var leg_mesh := CylinderMesh.new()
