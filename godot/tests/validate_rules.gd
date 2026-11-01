@@ -86,6 +86,14 @@ func _initialize() -> void:
 	chain_state.turn = GameState.Turn.WOLVES
 	assert(chain_state.move_wolf(0, 12) == "captured_chain_available")
 	assert(chain_state.chain_wolf == 12)
+	# The AI must continue the chain with the same wolf, not choose another wolf.
+	var chain_ai_action: Dictionary = AI.choose_wolf_move(chain_state, 2)
+	assert(not chain_ai_action.is_empty())
+	assert(int(chain_ai_action.from) == 12)
+	assert(int(chain_ai_action.to) == 24)
+	assert(bool(chain_ai_action.capture))
+	assert(chain_state.move_wolf(int(chain_ai_action.from), int(chain_ai_action.to)) == "captured")
+	assert(chain_state.turn == GameState.Turn.SHEEP)
 	assert(chain_state.move_wolf(1, 3) == "wrong_chain_wolf")
 	# An unrelated destination cannot consume the pending chain opportunity.
 	assert(chain_state.move_wolf(12, 4) == "chain_capture_required")
