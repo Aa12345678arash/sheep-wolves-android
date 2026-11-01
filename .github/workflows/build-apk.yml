@@ -3,9 +3,12 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 'inspection/extract-source-2026-11-01'
     paths:
       - 'sheep_wolves_android_project.zip'
       - '.github/workflows/build-apk.yml'
+      - 'patches/v0.5.1/fix-sheep-selection.patch'
 
 permissions:
   contents: read
@@ -14,11 +17,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout inspection branch
         uses: actions/checkout@v4
 
       - name: Extract project ZIP
         run: unzip -o sheep_wolves_android_project.zip
+
+      - name: Apply approved WOLF-DUSK-003 fix
+        run: patch -p1 < patches/v0.5.1/fix-sheep-selection.patch
+
+      - name: Verify patched JavaScript syntax
+        run: |
+          sed -n '/<script>/,/<\/script>/p' sheep_wolves_android/app/src/main/assets/index.html | sed '1d;$d' > /tmp/game.js
+          node --check /tmp/game.js
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -38,6 +49,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: sheep-wolves-debug-apk
+          name: sheep-wolves-debug-apk-0.5.1
           path: sheep_wolves_android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
