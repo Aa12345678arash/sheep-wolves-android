@@ -262,20 +262,31 @@ func _refresh_board() -> void:
 		var visual := node_visuals[index]
 		for child in visual.get_children():
 			child.queue_free()
+		# Broad, low-profile destination pads remain visible around the feet of pieces.
+		# Selected and legal nodes use emissive colors so the next action is unmistakable.
 		var marker := MeshInstance3D.new()
-		var marker_mesh := SphereMesh.new()
-		marker_mesh.radius = 0.19 if index == selected_node else 0.14
-		marker_mesh.height = marker_mesh.radius * 2.0
+		var marker_mesh := CylinderMesh.new()
+		var is_selected := index == selected_node
+		var is_legal := index in _legal_targets()
+		marker_mesh.top_radius = 0.34 if (is_selected or is_legal) else 0.19
+		marker_mesh.bottom_radius = marker_mesh.top_radius
+		marker_mesh.height = 0.035
+		marker_mesh.radial_segments = 32
 		marker.mesh = marker_mesh
 		var marker_material := StandardMaterial3D.new()
-		if index == selected_node:
-			marker_material.albedo_color = Color(1.0, 0.82, 0.22)
-		elif index in _legal_targets():
-			marker_material.albedo_color = Color(0.25, 0.92, 0.42)
+		marker_material.roughness = 0.55
+		if is_selected:
+			marker_material.albedo_color = Color(1.0, 0.72, 0.08)
+			marker_material.emission_enabled = true
+			marker_material.emission = Color(0.9, 0.48, 0.02)
+		elif is_legal:
+			marker_material.albedo_color = Color(0.18, 0.95, 0.38)
+			marker_material.emission_enabled = true
+			marker_material.emission = Color(0.04, 0.55, 0.12)
 		else:
 			marker_material.albedo_color = Color(0.91, 0.78, 0.48)
 		marker.material_override = marker_material
-		marker.position.y = 0.03
+		marker.position.y = 0.045
 		visual.add_child(marker)
 		var node_name := Label3D.new()
 		node_name.text = BoardGraph.node_label(index)
