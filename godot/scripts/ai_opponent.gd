@@ -156,8 +156,8 @@ static func _count_capture_options_after(state, wolf_from: int, wolf_to: int, ca
 	for middle in adjacency[wolf_to]:
 		if middle == captured_middle or state.sheep[middle] <= 0:
 			continue
-		var dr := int(middle / 5) - wolf_row
-		var dc := (middle % 5) - wolf_col
+		var dr: int = int(middle / 5) - wolf_row
+		var dc: int = int(middle % 5) - wolf_col
 		for landing in adjacency[middle]:
 			if landing == wolf_to:
 				continue
