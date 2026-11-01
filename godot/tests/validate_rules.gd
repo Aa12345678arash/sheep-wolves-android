@@ -92,6 +92,27 @@ func _initialize() -> void:
 	assert(chain_state.turn == GameState.Turn.SHEEP)
 	assert(chain_state.chain_wolf == -1)
 
+	# Declining the optional second capture must end the wolf turn cleanly.
+	var declined_chain_state = GameState.new()
+	for i in range(25):
+		declined_chain_state.sheep[i] = 0
+		declined_chain_state.wolves[i] = false
+	declined_chain_state.wolves[0] = true
+	declined_chain_state.wolves[1] = true
+	declined_chain_state.wolves[2] = true
+	declined_chain_state.sheep[6] = 1
+	declined_chain_state.sheep[18] = 1
+	declined_chain_state.sheep[20] = 5
+	declined_chain_state.sheep[21] = 5
+	declined_chain_state.turn = GameState.Turn.WOLVES
+	assert(declined_chain_state.move_wolf(0, 12) == "captured_chain_available")
+	assert(not declined_chain_state.capture_options(12).is_empty())
+	declined_chain_state.finish_wolf_turn()
+	assert(declined_chain_state.turn == GameState.Turn.SHEEP)
+	assert(declined_chain_state.chain_wolf == -1)
+	assert(declined_chain_state.chain_capture_count == 0)
+	assert(declined_chain_state.sheep_total() == 11)
+
 	# Reaching eight sheep wins immediately.
 	var wolf_win_state = GameState.new()
 	for i in range(25):
