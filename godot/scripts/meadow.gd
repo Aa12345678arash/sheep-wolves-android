@@ -670,10 +670,10 @@ func _play_capture_effect(node_index: int) -> void:
 	tween.set_parallel(true)
 	tween.tween_property(ring, "scale", Vector3(2.7, 2.7, 2.7), 0.48).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(flash, "scale", Vector3(2.2, 2.2, 2.2), 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(flash, "transparency", 1.0, 0.38)
+	tween.tween_property(flash_material, "albedo_color:a", 0.0, 0.38)
 	tween.tween_property(caption, "position:y", 0.95, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(caption, "modulate:a", 0.0, 0.62)
-	tween.chain().tween_callback(effect_root.queue_free).set_delay(0.04)
+	tween.chain().tween_callback(effect_root.queue_free)
 
 
 func _refresh_board() -> void:
