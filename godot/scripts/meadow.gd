@@ -56,8 +56,8 @@ func _build_board_markers() -> void:
 		path.mesh = path_mesh
 		path.material_override = path_material
 		path.position = (start + finish) * 0.5
-		path.scale = Vector3(1.0, delta.length(), 1.0)
 		path.basis = Basis(Vector3.UP, delta.normalized())
+		path.scale = Vector3(1.0, delta.length(), 1.0)
 		add_child(path)
 
 	var marker_mesh := SphereMesh.new()
