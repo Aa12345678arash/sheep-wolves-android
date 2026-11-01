@@ -1,26 +1,34 @@
-# گرگ و میش — WOLF-DUSK-004
+# گرگ و میش — WOLF-DUSK-005
 
-Godot 4 isolated development branch. The tested Android 0.5.1 baseline and `main` remain unchanged.
+شاخهٔ مستقل Godot 4 برای بازسازی سه‌بعدی بازی. نسخهٔ آزمایش‌شدهٔ ۰.۵.۱ و شاخهٔ `main` دست‌نخورده‌اند.
 
-## Current milestone
-- Establish an independent Godot 4 project.
-- Add a first 3D meadow scene and a 5×5 node-position layout.
-- Keep the authoritative 56-connection graph and all turn/capture rules as explicit integration gates; do not approximate them.
-- No claim of playable parity or Android APK until rule tests and device tests pass.
+## پیشرفت این مرحله
+- گراف اصلی از آرشیو واقعی `index(3).html` نسخهٔ قبلی بازی بازیابی شد؛ نیازی به بارگذاری مجدد فایل از سوی کاربر نیست.
+- ۲۵ گره با شناسه‌های A1 تا E5 و دقیقاً ۵۶ اتصال ثبت شده است: ۴۰ افقی/عمودی و ۱۶ قطری.
+- گراف معتبر در `scripts/board_graph.gd` نگهداری می‌شود.
+- صحنهٔ سه‌بعدی اکنون مسیرهای واقعی همین گراف را به‌جای نقاط جدا از هم ترسیم می‌کند.
+- موتور قوانین مستقل از نمایش در `scripts/game_state.gd` اضافه شده است.
+- تست‌های پایه در `tests/validate_rules.gd` برای شمار گره/یال، تقارن گراف، چیدمان، حرکت گوسفند و هندسهٔ شکار نوشته شده‌اند.
 
-## Fixed gameplay requirements
-- 5×5 board, 25 nodes, 56 connections.
-- 25 sheep, five at each of the five starting nodes; every sheep is an individual unit.
-- Three wolves placed freely by the wolf player; sheep move first.
-- Wolves win at eight or fewer sheep; sheep win when all three wolves are blocked.
-- Same-wolf chained captures; the optional second capture must follow the agreed three-second rule.
+## قوانین ثابت
+- ۲۵ گوسفند؛ پنج گوسفند در هر یک از نقاط E1 تا E5.
+- سه گرگ روی نقاط خالی و به انتخاب بازیکن گرگ چیده می‌شوند؛ سپس گوسفندها آغازگرند.
+- هر نوبت حرکت عادی فقط به نقطهٔ خالیِ مجاور و متصل انجام می‌شود.
+- شکار گرگ: عبور از روی گوسفند مجاور و فرود در نقطهٔ خالیِ بعدی در امتداد همان خط.
+- شکار زنجیره‌ای فقط با همان گرگ است؛ ادامه اختیاری و پنجرهٔ تصمیم ۳ ثانیه‌ای است.
+- برد گرگ با ۸ گوسفند یا کمتر؛ برد گوسفندان با مسدود شدن هر سه گرگ.
+- جایگاه آغازین تخلیه‌شده مانند هر نقطهٔ خالی دیگری قابل استفاده است.
 
-## Next implementation steps
-1. Extract and document the exact 56 edges and legal-move rules from the 0.5.1 source.
-2. Port rules into a renderer-independent game-state model and add automated tests.
-3. Replace placeholder node markers with designed 3D board pieces and characters.
-4. Add animations, camera, licensed music/SFX, and app icon.
-5. Build and test Android APK before calling any release complete.
+جزئیات و منبع بازیابی: `docs/game_rules_and_graph.md`.
 
-## Attribution
+## وضعیت اعتبارسنجی
+کد و تست‌ها به مخزن افزوده شده‌اند؛ در این محیط اجرای موتور Godot یا ساخت APK انجام نشده است. بنابراین هنوز نسخهٔ قابل نصب یا تست‌شدهٔ اندروید اعلام نمی‌شود.
+
+## مراحل بعد
+1. اجرای تست‌های GDScript در Godot و رفع خطاهای نسخه/نحو.
+2. اتصال ورودی لمسی و نمایش وضعیت/مهره‌ها به موتور قوانین.
+3. پیاده‌سازی تایمر ۳ ثانیه‌ای انتخاب شکار دوم.
+4. مدل‌های سه‌بعدی گرگ و گوسفند، انیمیشن و دوربین سینمایی.
+5. صدا و موسیقی با مجوز معتبر، آیکون، سپس APK و آزمون گوشی.
+
 سازنده و معرفی‌کننده: آرش سلیمی
