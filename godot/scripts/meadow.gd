@@ -398,7 +398,7 @@ func _build_hud() -> void:
 	add_child(layer)
 	var panel := PanelContainer.new()
 	panel.position = Vector2(18, 18)
-	panel.custom_minimum_size = Vector2(350, 195)
+	panel.custom_minimum_size = Vector2(350, 235)
 	layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
@@ -423,18 +423,26 @@ func _build_hud() -> void:
 	message_label.custom_minimum_size = Vector2(330, 38)
 	message_label.add_theme_font_size_override("font_size", 14)
 	column.add_child(message_label)
+	var touch_hint := Label.new()
+	touch_hint.text = "روش بازی: مهره را لمس کنید، سپس مقصد سبز یا نارنجی را بزنید."
+	touch_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	touch_hint.custom_minimum_size = Vector2(330, 34)
+	touch_hint.add_theme_font_size_override("font_size", 13)
+	column.add_child(touch_hint)
 	pass_button = Button.new()
 	pass_button.text = "رد کردن شکار دوم و پایان نوبت گرگ"
+	pass_button.custom_minimum_size = Vector2(330, 46)
 	pass_button.visible = false
 	pass_button.pressed.connect(_decline_chain_capture)
 	column.add_child(pass_button)
 	var reset_button := Button.new()
 	reset_button.text = "شروع دوبارهٔ بازی"
+	reset_button.custom_minimum_size = Vector2(330, 46)
 	reset_button.pressed.connect(_reset_game)
 	column.add_child(reset_button)
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
-	credit.position = Vector2(18, 205)
+	credit.position = Vector2(18, 245)
 	layer.add_child(credit)
 
 func _show_setup_menu() -> void:
@@ -446,7 +454,7 @@ func _show_setup_menu() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(430, 440)
+	panel.custom_minimum_size = Vector2(430, 480)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	panel.position = Vector2(-215, -220)
 	setup_layer.add_child(panel)
@@ -464,10 +472,12 @@ func _show_setup_menu() -> void:
 	var sheep_name := LineEdit.new()
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
+	sheep_name.custom_minimum_size = Vector2(0, 44)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
+	wolf_name.custom_minimum_size = Vector2(0, 44)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
@@ -481,9 +491,13 @@ func _show_setup_menu() -> void:
 	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
+	mode_picker.custom_minimum_size = Vector2(0, 44)
+	side_picker.custom_minimum_size = Vector2(0, 44)
+	difficulty_picker.custom_minimum_size = Vector2(0, 44)
 	column.add_child(difficulty_picker)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
+	start_button.custom_minimum_size = Vector2(0, 52)
 	start_button.pressed.connect(func():
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
