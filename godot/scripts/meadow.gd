@@ -18,6 +18,10 @@ var chain_time_left: float = 0.0
 var node_areas: Array[Area3D] = []
 var node_visuals: Array[Node3D] = []
 var feedback_message: String = "برای شروع، سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید."
+var setup_layer: CanvasLayer
+var player_one_name: String = "بازیکن گوسفندها"
+var player_two_name: String = "بازیکن گرگ‌ها"
+var player_names_label: Label
 
 func _ready() -> void:
 	_build_environment()
@@ -25,6 +29,7 @@ func _ready() -> void:
 	_build_camera()
 	_build_light()
 	_build_hud()
+	_show_setup_menu()
 	_refresh_board()
 	_update_hud()
 
@@ -210,6 +215,9 @@ func _build_hud() -> void:
 	layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
+	player_names_label = Label.new()
+	player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
+	column.add_child(player_names_label)
 	status_label = Label.new()
 	status_label.add_theme_font_size_override("font_size", 21)
 	column.add_child(status_label)
@@ -236,6 +244,67 @@ func _build_hud() -> void:
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
 	credit.position = Vector2(18, 205)
 	layer.add_child(credit)
+
+func _show_setup_menu() -> void:
+	setup_layer = CanvasLayer.new()
+	setup_layer.layer = 5
+	add_child(setup_layer)
+	var shade := ColorRect.new()
+	shade.color = Color(0.02, 0.05, 0.04, 0.78)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	setup_layer.add_child(shade)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(390, 330)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-195, -165)
+	setup_layer.add_child(panel)
+	var column := VBoxContainer.new()
+	panel.add_child(column)
+	var heading := Label.new()
+	heading.text = "گرگ و میش | راز دشت سبز"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 23)
+	column.add_child(heading)
+	var subtitle := Label.new()
+	subtitle.text = "نام بازیکنان را وارد کنید و مسابقه را آغاز کنید"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(subtitle)
+	var sheep_name := LineEdit.new()
+	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
+	sheep_name.text = player_one_name
+	column.add_child(sheep_name)
+	var wolf_name := LineEdit.new()
+	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
+	wolf_name.text = player_two_name
+	column.add_child(wolf_name)
+	var local_button := Button.new()
+	local_button.text = "شروع بازی دونفره روی همین دستگاه"
+	local_button.pressed.connect(func():
+		player_one_name = sheep_name.text.strip_edges()
+		player_two_name = wolf_name.text.strip_edges()
+		if player_one_name.is_empty():
+			player_one_name = "بازیکن گوسفندها"
+		if player_two_name.is_empty():
+			player_two_name = "بازیکن گرگ‌ها"
+		player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
+		setup_layer.queue_free()
+		feedback_message = "مسابقهٔ دونفره آغاز شد؛ گوسفندها شروع می‌کنند."
+		_update_hud()
+	)
+	column.add_child(local_button)
+	var private_online := Button.new()
+	private_online.text = "بازی آنلاین با کد اتاق — به‌زودی"
+	private_online.disabled = true
+	column.add_child(private_online)
+	var random_online := Button.new()
+	random_online.text = "حریف تصادفی آنلاین — به‌زودی"
+	random_online.disabled = true
+	column.add_child(random_online)
+	var note := Label.new()
+	note.text = "اتصال آنلاین پس از آماده‌سازی سرور فعال می‌شود."
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	column.add_child(note)
 
 func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, _normal: Vector3, _shape_idx: int, index: int) -> void:
 	var pressed := false
