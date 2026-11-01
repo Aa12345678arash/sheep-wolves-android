@@ -215,9 +215,9 @@ func _build_board() -> void:
 func _build_camera() -> void:
 	camera = Camera3D.new()
 	camera.position = Vector3(10.5, 12.5, 15.5)
-	camera.look_at(Vector3.ZERO, Vector3.UP)
 	camera.current = true
 	add_child(camera)
+	camera.look_at(Vector3.ZERO, Vector3.UP)
 
 func _build_light() -> void:
 	var light := DirectionalLight3D.new()
