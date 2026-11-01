@@ -8,6 +8,7 @@ var sheep: Array[int] = []
 var wolves: Array[bool] = []
 var turn: Turn = Turn.PLACE_WOLVES
 var chain_wolf: int = -1
+var chain_capture_count: int = 0
 var winner: String = ""
 
 func _init() -> void:
@@ -21,6 +22,7 @@ func reset() -> void:
 		wolves.append(false)
 	turn = Turn.PLACE_WOLVES
 	chain_wolf = -1
+	chain_capture_count = 0
 	winner = ""
 
 func sheep_total() -> int:
@@ -108,12 +110,13 @@ func move_wolf(from: int, to: int) -> String:
 			wolves[from] = false
 			wolves[to] = true
 			sheep[capture.middle] -= 1
+			chain_capture_count += 1
 			chain_wolf = to
 			if sheep_total() <= 8:
 				winner = "wolves"
 				turn = Turn.FINISHED
 				return "won"
-			if not capture_options(to).is_empty():
+			if chain_capture_count == 1 and not capture_options(to).is_empty():
 				return "captured_chain_available"
 			finish_wolf_turn()
 			return "captured"
@@ -129,6 +132,7 @@ func move_wolf(from: int, to: int) -> String:
 # Called when the player declines the optional follow-up capture or its 3-second window expires.
 func finish_wolf_turn() -> void:
 	chain_wolf = -1
+	chain_capture_count = 0
 	turn = Turn.SHEEP
 	_check_winner()
 
