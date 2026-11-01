@@ -74,13 +74,12 @@ jobs:
           godot --headless --path godot --quit-after 2
       - name: Export Android debug APK
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/godot/build/android"
-          godot --headless --verbose --path "$GITHUB_WORKSPACE/godot" --export-debug "Android" "$GITHUB_WORKSPACE/godot/build/android/wolf-dusk-debug.apk"
-          test -s "$GITHUB_WORKSPACE/godot/build/android/wolf-dusk-debug.apk"
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-debug.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-debug.apk"
       - name: Upload installable debug APK
         uses: actions/upload-artifact@v4
         with:
           name: wolf-dusk-android-debug-004
-          path: godot/build/android/wolf-dusk-debug.apk
+          path: wolf-dusk-debug.apk
           if-no-files-found: error
           retention-days: 14
