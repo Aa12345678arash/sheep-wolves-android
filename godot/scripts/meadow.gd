@@ -40,6 +40,7 @@ var capture_audio: AudioStreamPlayer
 var victory_audio: AudioStreamPlayer
 var music_audio: AudioStreamPlayer
 var music_button: Button
+var setup_music_button: Button
 var announced_winner: String = ""
 
 func _ready() -> void:
@@ -175,10 +176,16 @@ func _toggle_meadow_music(enabled: bool) -> void:
 		return
 	if enabled:
 		music_audio.play()
-		music_button.text = "موسیقی دشت: روشن"
+		if is_instance_valid(music_button):
+			music_button.text = "موسیقی دشت: روشن"
+		if is_instance_valid(setup_music_button):
+			setup_music_button.text = "موسیقی دشت: روشن"
 	else:
 		music_audio.stop()
-		music_button.text = "موسیقی دشت: خاموش"
+		if is_instance_valid(music_button):
+			music_button.text = "موسیقی دشت: خاموش"
+		if is_instance_valid(setup_music_button):
+			setup_music_button.text = "موسیقی دشت: خاموش"
 
 func _play_move_sound() -> void:
 	if move_audio != null:
@@ -555,6 +562,13 @@ func _show_setup_menu() -> void:
 	side_picker.custom_minimum_size = Vector2(0, 44)
 	difficulty_picker.custom_minimum_size = Vector2(0, 44)
 	column.add_child(difficulty_picker)
+	setup_music_button = Button.new()
+	setup_music_button.text = "موسیقی دشت: روشن"
+	setup_music_button.toggle_mode = true
+	setup_music_button.button_pressed = true
+	setup_music_button.custom_minimum_size = Vector2(0, 42)
+	setup_music_button.toggled.connect(_toggle_meadow_music)
+	column.add_child(setup_music_button)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
 	start_button.custom_minimum_size = Vector2(0, 52)
