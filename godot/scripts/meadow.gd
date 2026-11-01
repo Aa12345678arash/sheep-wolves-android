@@ -102,13 +102,6 @@ func _build_board() -> void:
 		var visual := Node3D.new()
 		area.add_child(visual)
 		node_visuals.append(visual)
-		var node_name := Label3D.new()
-		node_name.text = BoardGraph.node_label(index)
-		node_name.font_size = 22
-		node_name.outline_size = 5
-		node_name.modulate = Color(0.12, 0.10, 0.07)
-		node_name.position = Vector3(0.0, -0.08, 0.48)
-		visual.add_child(node_name)
 
 func _build_camera() -> void:
 	camera = Camera3D.new()
@@ -269,6 +262,13 @@ func _refresh_board() -> void:
 		marker.material_override = marker_material
 		marker.position.y = 0.03
 		visual.add_child(marker)
+		var node_name := Label3D.new()
+		node_name.text = BoardGraph.node_label(index)
+		node_name.font_size = 22
+		node_name.outline_size = 5
+		node_name.modulate = Color(0.12, 0.10, 0.07)
+		node_name.position = Vector3(0.0, -0.08, 0.48)
+		visual.add_child(node_name)
 		if game.sheep[index] > 0:
 			_add_sheep_piece(visual, game.sheep[index])
 		if game.wolves[index]:
