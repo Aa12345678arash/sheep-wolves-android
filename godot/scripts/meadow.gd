@@ -2,6 +2,7 @@ extends Node3D
 
 const GRID_SIZE := 5
 const SPACING := 2.2
+const BoardGraph = preload("res://scripts/board_graph.gd")
 
 func _ready() -> void:
 	_build_environment()
@@ -31,25 +32,45 @@ func _build_environment() -> void:
 	board.material_override = board_material
 	add_child(board)
 
+func _node_position(index: int) -> Vector3:
+	var row: int = int(index / GRID_SIZE)
+	var col: int = index % GRID_SIZE
+	return Vector3((col - 2) * SPACING, 0.18, (row - 2) * SPACING)
+
 func _build_board_markers() -> void:
-	# Position placeholders only. The canonical 56-edge graph is intentionally
-	# not guessed; it will be imported from the verified 0.5.1 rules source.
+	# Render the recovered 0.5.1 graph; never infer or approximate connections.
+	var path_mesh := CylinderMesh.new()
+	path_mesh.top_radius = 0.055
+	path_mesh.bottom_radius = 0.055
+	path_mesh.height = 1.0
+	path_mesh.radial_segments = 8
+	var path_material := StandardMaterial3D.new()
+	path_material.albedo_color = Color(0.78, 0.66, 0.43)
+	path_material.roughness = 0.95
+
+	for edge in BoardGraph.EDGES:
+		var start: Vector3 = _node_position(edge[0])
+		var finish: Vector3 = _node_position(edge[1])
+		var delta: Vector3 = finish - start
+		var path := MeshInstance3D.new()
+		path.mesh = path_mesh
+		path.material_override = path_material
+		path.position = (start + finish) * 0.5
+		path.scale = Vector3(1.0, delta.length(), 1.0)
+		path.basis = Basis(Vector3.UP, delta.normalized())
+		add_child(path)
+
 	var marker_mesh := SphereMesh.new()
 	marker_mesh.radius = 0.16
 	marker_mesh.height = 0.32
 	var marker_material := StandardMaterial3D.new()
 	marker_material.albedo_color = Color(0.91, 0.78, 0.48)
-	for row in range(GRID_SIZE):
-		for col in range(GRID_SIZE):
-			var marker := MeshInstance3D.new()
-			marker.mesh = marker_mesh
-			marker.material_override = marker_material
-			marker.position = Vector3(
-				(col - 2) * SPACING,
-				0.18,
-				(row - 2) * SPACING
-			)
-			add_child(marker)
+	for index in range(BoardGraph.NODE_COUNT):
+		var marker := MeshInstance3D.new()
+		marker.mesh = marker_mesh
+		marker.material_override = marker_material
+		marker.position = _node_position(index)
+		add_child(marker)
 
 func _build_camera() -> void:
 	var camera := Camera3D.new()
