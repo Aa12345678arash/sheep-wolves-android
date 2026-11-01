@@ -177,14 +177,18 @@ func _toggle_meadow_music(enabled: bool) -> void:
 	if enabled:
 		music_audio.play()
 		if is_instance_valid(music_button):
+			music_button.button_pressed = true
 			music_button.text = "موسیقی دشت: روشن"
 		if is_instance_valid(setup_music_button):
+			setup_music_button.button_pressed = true
 			setup_music_button.text = "موسیقی دشت: روشن"
 	else:
 		music_audio.stop()
 		if is_instance_valid(music_button):
+			music_button.button_pressed = false
 			music_button.text = "موسیقی دشت: خاموش"
 		if is_instance_valid(setup_music_button):
+			setup_music_button.button_pressed = false
 			setup_music_button.text = "موسیقی دشت: خاموش"
 
 func _play_move_sound() -> void:
