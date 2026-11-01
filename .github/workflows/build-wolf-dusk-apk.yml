@@ -50,6 +50,12 @@ jobs:
           export/android/java_sdk_path = "$JAVA_HOME_DIR"
           export/android/android_sdk_path = "$ANDROID_SDK_DIR"
           EOF
+          echo "JAVA_HOME=$JAVA_HOME_DIR"
+          echo "ANDROID_SDK=$ANDROID_SDK_DIR"
+          ls -la "$ANDROID_SDK_DIR"
+          test -d "$ANDROID_SDK_DIR/platform-tools"
+          test -d "$ANDROID_SDK_DIR/platforms"
+          test -d "$ANDROID_SDK_DIR/build-tools"
           keytool -genkeypair -v -keystore /tmp/wolf-dusk-debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
           echo "JAVA_HOME=$JAVA_HOME_DIR"
           echo "ANDROID_SDK=$ANDROID_SDK_DIR"
