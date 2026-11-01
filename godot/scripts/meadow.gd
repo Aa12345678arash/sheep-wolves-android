@@ -489,6 +489,9 @@ func _schedule_ai_turn() -> void:
 
 func _run_ai_turn(generation: int) -> void:
 	await get_tree().create_timer(0.65).timeout
+	var ai_anim_from := -1
+	var ai_anim_to := -1
+	var ai_anim_kind := ""
 	# A reset can happen while the AI delay is running. Ignore stale callbacks
 	# so an old turn cannot make an extra move in the newly reset match.
 	if generation != ai_turn_generation:
@@ -504,16 +507,39 @@ func _run_ai_turn(generation: int) -> void:
 	elif game.turn == GameState.Turn.SHEEP:
 		var sheep_move: Dictionary = AI.choose_sheep_move(game, ai_difficulty)
 		if not sheep_move.is_empty():
-			game.move_sheep(int(sheep_move.from), int(sheep_move.to))
+			ai_anim_from = int(sheep_move.from)
+			ai_anim_to = int(sheep_move.to)
+			ai_anim_kind = "sheep"
+			game.move_sheep(ai_anim_from, ai_anim_to)
 			feedback_message = "رایانه یکی از گوسفندها را جابه‌جا کرد."
 	elif game.turn == GameState.Turn.WOLVES:
 		var wolf_move: Dictionary = AI.choose_wolf_move(game, ai_difficulty)
 		if not wolf_move.is_empty():
-			var result: String = game.move_wolf(int(wolf_move.from), int(wolf_move.to))
+			var wolf_from := int(wolf_move.from)
+			var wolf_to := int(wolf_move.to)
+			var ai_capture_node := -1
+			for capture_option in game.capture_options(wolf_from):
+				if int(capture_option["to"]) == wolf_to:
+					ai_capture_node = int(capture_option["middle"])
+					break
+			var result: String = game.move_wolf(wolf_from, wolf_to)
+			if result in ["moved", "captured", "captured_chain_available", "won"]:
+				ai_anim_from = wolf_from
+				ai_anim_to = wolf_to
+				ai_anim_kind = "wolf"
+			if result in ["captured", "captured_chain_available", "won"] and ai_capture_node >= 0:
+				_play_capture_effect(ai_capture_node)
 			if result == "captured_chain_available":
 				var followups := game.capture_options(game.chain_wolf)
 				if not followups.is_empty():
-					game.move_wolf(game.chain_wolf, int(followups[0].to))
+					var chain_from := game.chain_wolf
+					var chain_to := int(followups[0].to)
+					var chain_capture_node := int(followups[0].middle)
+					game.move_wolf(chain_from, chain_to)
+					ai_anim_from = chain_from
+					ai_anim_to = chain_to
+					ai_anim_kind = "wolf"
+					_play_capture_effect(chain_capture_node)
 				else:
 					game.finish_wolf_turn()
 				feedback_message = "رایانه حرکت شکار را انجام داد."
@@ -526,6 +552,8 @@ func _run_ai_turn(generation: int) -> void:
 	chain_time_left = 0.0
 	pass_button.visible = false
 	_refresh_board()
+	if ai_anim_from >= 0 and ai_anim_to >= 0:
+		_animate_piece_arrival(ai_anim_from, ai_anim_to, ai_anim_kind)
 	_update_hud()
 	_schedule_ai_turn()
 
@@ -677,8 +705,8 @@ func _play_capture_effect(node_index: int) -> void:
 	if node_index < 0 or node_index >= node_visuals.size():
 		return
 	var effect_root := Node3D.new()
-	effect_root.position = Vector3(0.0, 0.16, 0.0)
-	node_visuals[node_index].add_child(effect_root)
+	add_child(effect_root)
+	effect_root.global_position = node_visuals[node_index].global_position + Vector3(0.0, 0.16, 0.0)
 	var ring := MeshInstance3D.new()
 	var ring_mesh := TorusMesh.new()
 	ring_mesh.inner_radius = 0.20
