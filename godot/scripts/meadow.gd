@@ -447,6 +447,7 @@ func _build_camera() -> void:
 	camera = Camera3D.new()
 	camera.position = Vector3(10.5, 12.5, 15.5)
 	camera.current = true
+	camera.fov = 58.0
 	add_child(camera)
 	camera.look_at(Vector3.ZERO, Vector3.UP)
 
@@ -461,8 +462,8 @@ func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(18, 18)
-	panel.custom_minimum_size = Vector2(350, 235)
+	panel.position = Vector2(15, 15)
+	panel.custom_minimum_size = Vector2(690, 300)
 	layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
@@ -470,50 +471,51 @@ func _build_hud() -> void:
 	player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
 	column.add_child(player_names_label)
 	status_label = Label.new()
-	status_label.add_theme_font_size_override("font_size", 21)
+	status_label.add_theme_font_size_override("font_size", 28)
 	column.add_child(status_label)
 	capture_count_label = Label.new()
 	capture_count_label.text = "🐺 گوسفند شکارشده: ۰  |  باقی‌مانده: ۲۵"
-	capture_count_label.add_theme_font_size_override("font_size", 17)
+	capture_count_label.add_theme_font_size_override("font_size", 22)
 	capture_count_label.add_theme_color_override("font_color", Color(0.98, 0.72, 0.36))
 	column.add_child(capture_count_label)
 	detail_label = Label.new()
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.custom_minimum_size = Vector2(330, 42)
-	detail_label.add_theme_font_size_override("font_size", 15)
+	detail_label.custom_minimum_size = Vector2(660, 48)
+	detail_label.add_theme_font_size_override("font_size", 20)
 	column.add_child(detail_label)
 	message_label = Label.new()
 	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message_label.custom_minimum_size = Vector2(330, 38)
-	message_label.add_theme_font_size_override("font_size", 14)
+	message_label.custom_minimum_size = Vector2(660, 44)
+	message_label.add_theme_font_size_override("font_size", 19)
 	column.add_child(message_label)
 	var touch_hint := Label.new()
 	touch_hint.text = "روش بازی: مهره را لمس کنید، سپس مقصد سبز یا نارنجی را بزنید."
 	touch_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	touch_hint.custom_minimum_size = Vector2(330, 34)
-	touch_hint.add_theme_font_size_override("font_size", 13)
+	touch_hint.custom_minimum_size = Vector2(660, 42)
+	touch_hint.add_theme_font_size_override("font_size", 18)
 	column.add_child(touch_hint)
 	pass_button = Button.new()
 	pass_button.text = "رد کردن شکار دوم و پایان نوبت گرگ"
-	pass_button.custom_minimum_size = Vector2(330, 46)
+	pass_button.custom_minimum_size = Vector2(660, 58)
 	pass_button.visible = false
 	pass_button.pressed.connect(_decline_chain_capture)
 	column.add_child(pass_button)
 	var reset_button := Button.new()
 	reset_button.text = "شروع دوبارهٔ بازی"
-	reset_button.custom_minimum_size = Vector2(330, 46)
+	reset_button.custom_minimum_size = Vector2(660, 58)
 	reset_button.pressed.connect(_reset_game)
 	column.add_child(reset_button)
 	music_button = Button.new()
 	music_button.text = "موسیقی دشت: روشن"
 	music_button.toggle_mode = true
 	music_button.button_pressed = true
-	music_button.custom_minimum_size = Vector2(330, 42)
+	music_button.custom_minimum_size = Vector2(660, 56)
 	music_button.toggled.connect(_toggle_meadow_music)
 	column.add_child(music_button)
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
-	credit.position = Vector2(18, 245)
+	credit.position = Vector2(18, 310)
+	credit.add_theme_font_size_override("font_size", 18)
 	layer.add_child(credit)
 
 func _show_setup_menu() -> void:
@@ -525,16 +527,16 @@ func _show_setup_menu() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(430, 480)
+	panel.custom_minimum_size = Vector2(650, 680)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-215, -220)
+	panel.position = Vector2(-325, -340)
 	setup_layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
 	var heading := Label.new()
 	heading.text = "گرگ و میش | راز دشت سبز"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 23)
+	heading.add_theme_font_size_override("font_size", 30)
 	column.add_child(heading)
 	var subtitle := Label.new()
 	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
@@ -543,12 +545,12 @@ func _show_setup_menu() -> void:
 	var sheep_name := LineEdit.new()
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
-	sheep_name.custom_minimum_size = Vector2(0, 44)
+	sheep_name.custom_minimum_size = Vector2(0, 56)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
-	wolf_name.custom_minimum_size = Vector2(0, 44)
+	wolf_name.custom_minimum_size = Vector2(0, 56)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
@@ -562,20 +564,20 @@ func _show_setup_menu() -> void:
 	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
-	mode_picker.custom_minimum_size = Vector2(0, 44)
-	side_picker.custom_minimum_size = Vector2(0, 44)
-	difficulty_picker.custom_minimum_size = Vector2(0, 44)
+	mode_picker.custom_minimum_size = Vector2(0, 56)
+	side_picker.custom_minimum_size = Vector2(0, 56)
+	difficulty_picker.custom_minimum_size = Vector2(0, 56)
 	column.add_child(difficulty_picker)
 	setup_music_button = Button.new()
 	setup_music_button.text = "موسیقی دشت: روشن"
 	setup_music_button.toggle_mode = true
 	setup_music_button.button_pressed = true
-	setup_music_button.custom_minimum_size = Vector2(0, 42)
+	setup_music_button.custom_minimum_size = Vector2(0, 54)
 	setup_music_button.toggled.connect(_toggle_meadow_music)
 	column.add_child(setup_music_button)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
-	start_button.custom_minimum_size = Vector2(0, 52)
+	start_button.custom_minimum_size = Vector2(0, 64)
 	start_button.pressed.connect(func():
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
