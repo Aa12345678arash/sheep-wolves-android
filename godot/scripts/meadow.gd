@@ -9,11 +9,13 @@ var game = GameState.new()
 var camera: Camera3D
 var status_label: Label
 var detail_label: Label
+var message_label: Label
 var pass_button: Button
 var selected_node: int = -1
 var chain_time_left: float = 0.0
 var node_areas: Array[Area3D] = []
 var node_visuals: Array[Node3D] = []
+var feedback_message: String = "برای شروع، سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید."
 
 func _ready() -> void:
 	_build_environment()
@@ -26,15 +28,16 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if chain_time_left > 0.0:
-		chain_time_left -= delta
+		chain_time_left = maxf(0.0, chain_time_left - delta)
 		if chain_time_left <= 0.0:
 			game.finish_wolf_turn()
 			pass_button.visible = false
 			selected_node = -1
+			feedback_message = "مهلت شکار دوم تمام شد؛ نوبت گوسفندهاست."
 			_refresh_board()
 			_update_hud()
 		else:
-			detail_label.text = "فرصت شکار دوم: %.1f ثانیه" % chain_time_left
+			_update_chain_countdown()
 
 func _build_environment() -> void:
 	var ground := MeshInstance3D.new()
@@ -119,7 +122,7 @@ func _build_hud() -> void:
 	add_child(layer)
 	var panel := PanelContainer.new()
 	panel.position = Vector2(18, 18)
-	panel.custom_minimum_size = Vector2(320, 116)
+	panel.custom_minimum_size = Vector2(350, 170)
 	layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
@@ -127,20 +130,27 @@ func _build_hud() -> void:
 	status_label.add_theme_font_size_override("font_size", 21)
 	column.add_child(status_label)
 	detail_label = Label.new()
+	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail_label.custom_minimum_size = Vector2(330, 42)
 	detail_label.add_theme_font_size_override("font_size", 15)
 	column.add_child(detail_label)
+	message_label = Label.new()
+	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message_label.custom_minimum_size = Vector2(330, 38)
+	message_label.add_theme_font_size_override("font_size", 14)
+	column.add_child(message_label)
 	pass_button = Button.new()
-	pass_button.text = "رد کردن شکار دوم"
+	pass_button.text = "رد کردن شکار دوم و پایان نوبت گرگ"
 	pass_button.visible = false
 	pass_button.pressed.connect(_decline_chain_capture)
 	column.add_child(pass_button)
 	var reset_button := Button.new()
-	reset_button.text = "شروع دوباره"
+	reset_button.text = "شروع دوبارهٔ بازی"
 	reset_button.pressed.connect(_reset_game)
 	column.add_child(reset_button)
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
-	credit.position = Vector2(18, 178)
+	credit.position = Vector2(18, 205)
 	layer.add_child(credit)
 
 func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, _normal: Vector3, _shape_idx: int, index: int) -> void:
@@ -154,26 +164,39 @@ func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, 
 
 func _select_node(index: int) -> void:
 	if game.turn == GameState.Turn.FINISHED:
+		feedback_message = "بازی تمام شده است؛ برای بازی تازه «شروع دوبارهٔ بازی» را بزنید."
+		_update_hud()
 		return
+
 	if game.turn == GameState.Turn.PLACE_WOLVES:
 		if game.place_wolf(index):
 			selected_node = -1
-			_refresh_board()
-			_update_hud()
+			feedback_message = "گرگ %d از ۳ در جای خود قرار گرفت." % game.wolf_total()
+		else:
+			feedback_message = "این نقطه خالی نیست؛ برای گرگ یک نقطهٔ خالی انتخاب کنید."
+		_refresh_board()
+		_update_hud()
 		return
 
 	if selected_node == -1:
 		if game.turn == GameState.Turn.SHEEP and game.sheep[index] > 0:
 			selected_node = index
+			feedback_message = "گوسفندها انتخاب شدند؛ اکنون یکی از مقصدهای سبز را بزنید."
 		elif game.turn == GameState.Turn.WOLVES and game.wolves[index]:
 			if game.chain_wolf == -1 or game.chain_wolf == index:
 				selected_node = index
+				feedback_message = "گرگ انتخاب شد؛ مقصد سبز را برای حرکت یا شکار بزنید."
+			else:
+				feedback_message = "در شکار زنجیره‌ای فقط همان گرگِ شکارکننده اجازهٔ حرکت دارد."
+		else:
+			feedback_message = "ابتدا یک مهرهٔ متعلق به بازیکنِ نوبت را انتخاب کنید."
 		_refresh_board()
 		_update_hud()
 		return
 
 	if index == selected_node:
 		selected_node = -1
+		feedback_message = "انتخاب لغو شد؛ مهرهٔ دیگری را انتخاب کنید."
 		_refresh_board()
 		_update_hud()
 		return
@@ -181,21 +204,32 @@ func _select_node(index: int) -> void:
 	if game.turn == GameState.Turn.SHEEP:
 		if game.move_sheep(selected_node, index):
 			selected_node = -1
+			feedback_message = "گوسفند جابه‌جا شد؛ اکنون نوبت گرگ‌هاست."
+		else:
+			feedback_message = "حرکت نامعتبر است؛ فقط به نقطهٔ خالیِ متصل حرکت کنید."
 	else:
 		var result: String = game.move_wolf(selected_node, index)
 		if result == "captured_chain_available":
 			selected_node = game.chain_wolf
 			chain_time_left = 3.0
 			pass_button.visible = true
+			feedback_message = "شکار انجام شد؛ می‌توانید با همان گرگ شکار دوم کنید یا نوبت را پایان دهید."
 		elif result in ["moved", "captured", "won"]:
 			selected_node = -1
 			chain_time_left = 0.0
 			pass_button.visible = false
-		elif result == "invalid" and game.chain_wolf != -1:
-			game.finish_wolf_turn()
-			selected_node = -1
-			chain_time_left = 0.0
-			pass_button.visible = false
+			if result == "won":
+				feedback_message = "شرط پیروزی گرگ‌ها برقرار شد."
+			elif result == "captured":
+				feedback_message = "شکار انجام شد؛ نوبت گوسفندهاست."
+			else:
+				feedback_message = "گرگ حرکت کرد؛ نوبت گوسفندهاست."
+		elif result == "chain_capture_required":
+			feedback_message = "هنوز امکان شکار دوم وجود دارد؛ باید یکی از مقصدهای سبز را انتخاب کنید یا شکار دوم را رد کنید."
+		elif result == "wrong_chain_wolf":
+			feedback_message = "شکار دوم فقط با همان گرگ مجاز است."
+		else:
+			feedback_message = "حرکت نامعتبر است؛ فقط روی مقصد سبزِ مجاز بزنید. نوبت تغییر نکرد."
 	_refresh_board()
 	_update_hud()
 
@@ -204,6 +238,7 @@ func _reset_game() -> void:
 	selected_node = -1
 	chain_time_left = 0.0
 	pass_button.visible = false
+	feedback_message = "بازی تازه آغاز شد؛ سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید."
 	_refresh_board()
 	_update_hud()
 
@@ -294,22 +329,28 @@ func _material(color: Color) -> StandardMaterial3D:
 	result.roughness = 0.9
 	return result
 
+func _update_chain_countdown() -> void:
+	detail_label.text = "شکار دوم با همان گرگ اختیاری است؛ زمان باقی‌مانده: %.1f ثانیه" % chain_time_left
+
 func _update_hud() -> void:
 	if game.turn == GameState.Turn.PLACE_WOLVES:
-		status_label.text = "گرگ و میش — جای‌گذاری گرگ‌ها"
-		detail_label.text = "سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید (%d از ۳)" % game.wolf_total()
+		status_label.text = "گرگ و میش | چیدمان گرگ‌ها"
+		detail_label.text = "گرگ‌ها: %d از ۳ | سه نقطهٔ خالی را انتخاب کنید." % game.wolf_total()
 	elif game.turn == GameState.Turn.SHEEP:
 		status_label.text = "نوبت گوسفندها"
-		detail_label.text = "گوسفندان باقی‌مانده: %d — یک گوسفند را انتخاب و جابه‌جا کنید" % game.sheep_total()
+		detail_label.text = "گوسفندان باقی‌مانده: %d | یک گوسفند را انتخاب کنید، سپس مقصد سبز را بزنید." % game.sheep_total()
 	elif game.turn == GameState.Turn.WOLVES:
 		status_label.text = "نوبت گرگ‌ها"
-		detail_label.text = "گرگ را انتخاب کنید؛ برای شکار روی مقصد بزنید"
+		detail_label.text = "گرگ را انتخاب کنید؛ مقصد سبز حرکت یا شکار قانونی را نشان می‌دهد."
 	elif game.winner == "wolves":
-		status_label.text = "گرگ‌ها برنده شدند!"
-		detail_label.text = "تعداد گوسفندان به ۸ یا کمتر رسید."
+		status_label.text = "پایان بازی | پیروزی گرگ‌ها"
+		detail_label.text = "تعداد گوسفندان به ۸ یا کمتر رسیده است."
 	elif game.winner == "sheep":
-		status_label.text = "گوسفندها برنده شدند!"
-		detail_label.text = "هر سه گرگ مسدود شدند."
+		status_label.text = "پایان بازی | پیروزی گوسفندها"
+		detail_label.text = "هر سه گرگ بدون حرکت قانونی مانده‌اند."
+	message_label.text = feedback_message
+	if chain_time_left > 0.0:
+		_update_chain_countdown()
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
@@ -332,6 +373,7 @@ func _legal_targets() -> Array[int]:
 func _decline_chain_capture() -> void:
 	if game.chain_wolf != -1 and chain_time_left > 0.0:
 		game.finish_wolf_turn()
+		feedback_message = "شکار دوم رد شد؛ نوبت گوسفندهاست."
 	chain_time_left = 0.0
 	selected_node = -1
 	pass_button.visible = false
