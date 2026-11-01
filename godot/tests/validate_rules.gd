@@ -32,6 +32,8 @@ func _initialize() -> void:
 	assert(state.place_wolf(1))
 	assert(state.place_wolf(2))
 	assert(state.turn == GameState.Turn.SHEEP)
+	assert(not state.move_sheep(20, 0))
+	assert(state.sheep_total() == 25)
 	assert(state.move_sheep(20, 15))
 	assert(state.sheep_total() == 25)
 	assert(state.turn == GameState.Turn.WOLVES)
@@ -52,5 +54,15 @@ func _initialize() -> void:
 	assert(capture_state.sheep_total() == 24)
 	assert(capture_state.turn == GameState.Turn.SHEEP)
 
-	print("WOLF-DUSK-005 checks passed: graph, setup, sheep movement and wolf capture.")
+	var invalid_state = GameState.new()
+	assert(invalid_state.place_wolf(0))
+	assert(invalid_state.place_wolf(1))
+	assert(invalid_state.place_wolf(2))
+	invalid_state.turn = GameState.Turn.WOLVES
+	assert(invalid_state.move_wolf(0, 24) == "invalid")
+	assert(invalid_state.wolves[0] and not invalid_state.wolves[24])
+	assert(invalid_state.turn == GameState.Turn.WOLVES)
+	assert(not invalid_state.place_wolf(3))
+
+	print("WOLF-DUSK-005 checks passed: graph, setup, legal/illegal movement and wolf capture.")
 	quit()
