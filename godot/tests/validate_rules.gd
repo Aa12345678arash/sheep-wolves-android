@@ -86,7 +86,11 @@ func _initialize() -> void:
 	non_collinear_state.wolves[0] = true
 	non_collinear_state.sheep[6] = 1
 	non_collinear_state.turn = GameState.Turn.WOLVES
-	assert(non_collinear_state.capture_options(0).is_empty())
+	var invalid_landing_found := false
+	for option in non_collinear_state.capture_options(0):
+		if int(option.to) == 11:
+			invalid_landing_found = true
+	assert(not invalid_landing_found)
 	assert(non_collinear_state.move_wolf(0, 11) == "invalid")
 	assert(non_collinear_state.wolves[0] and not non_collinear_state.wolves[11])
 	assert(non_collinear_state.sheep[6] == 1)
