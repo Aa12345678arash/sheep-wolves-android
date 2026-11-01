@@ -11,6 +11,7 @@ var camera: Camera3D
 var camera_target_position: Vector3 = Vector3(10.5, 12.5, 15.5)
 var camera_view_turn: int = -1
 var status_label: Label
+var capture_count_label: Label
 var detail_label: Label
 var message_label: Label
 var pass_button: Button
@@ -328,7 +329,7 @@ func _build_hud() -> void:
 	add_child(layer)
 	var panel := PanelContainer.new()
 	panel.position = Vector2(18, 18)
-	panel.custom_minimum_size = Vector2(350, 170)
+	panel.custom_minimum_size = Vector2(350, 195)
 	layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
@@ -338,6 +339,11 @@ func _build_hud() -> void:
 	status_label = Label.new()
 	status_label.add_theme_font_size_override("font_size", 21)
 	column.add_child(status_label)
+	capture_count_label = Label.new()
+	capture_count_label.text = "🐺 گوسفند شکارشده: ۰  |  باقی‌مانده: ۲۵"
+	capture_count_label.add_theme_font_size_override("font_size", 17)
+	capture_count_label.add_theme_color_override("font_color", Color(0.98, 0.72, 0.36))
+	column.add_child(capture_count_label)
 	detail_label = Label.new()
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_label.custom_minimum_size = Vector2(330, 42)
@@ -849,6 +855,9 @@ func _update_hud() -> void:
 	elif game.winner == "sheep":
 		status_label.text = "پایان بازی | پیروزی گوسفندها"
 		detail_label.text = "هر سه گرگ بدون حرکت قانونی مانده‌اند."
+	var remaining_sheep: int = game.sheep_total()
+	var captured_sheep: int = maxi(0, 25 - remaining_sheep)
+	capture_count_label.text = "🐺 گوسفند شکارشده: %d  |  باقی‌مانده: %d" % [captured_sheep, remaining_sheep]
 	message_label.text = feedback_message
 	if chain_time_left > 0.0:
 		_update_chain_countdown()
