@@ -1,0 +1,40 @@
+--- a/app/src/main/assets/index.html
++++ b/app/src/main/assets/index.html
+@@ -4,7 +4,7 @@
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+ <meta name="theme-color" content="#194d2b">
+-<title>گرگ و میش | بازی فکری</title>
++<title>گرگ و میش | بازی فکری | نسخه ۰.۵.۱</title>
+ <style>
+ :root{color-scheme:dark;--gold:#f6d77a;--cream:#fff7dc;--deep:#123b24}
+ *{box-sizing:border-box}
+@@ -130,7 +130,19 @@
+ }
+ function clickAt(i){if(winner)return;
+  if(turn==='wolves-place'){if(occ(i))return;wolves[i]=true;if(wolfTotal()===3){turn='sheep';setMessage('گوسفندها شروع می‌کنند؛ یکی از گوسفندهای جایگاه آغازین را انتخاب کنید.')}else setMessage('گرگ '+wolfTotal()+' از ۳ را انتخاب کردید؛ دو گرگ دیگر را هم در جایگاه خالی قرار دهید.');draw(animT);update();return}
+- if(selected===null){if(turn==='sheep'&&sheep[i]>0)selected=i;else if(turn==='wolves'&&wolves[i]&&(chainWolf===null||chainWolf===i))selected=i;draw(animT);return}
++ // In the sheep turn, tapping another sheep stack changes the selection.
++ // Stacks with no legal destination are never left selected.
++ if(turn==='sheep'&&sheep[i]>0){
++   if(selected===i){selected=null;setMessage('انتخاب گوسفند لغو شد؛ یک گوسفند دیگر را انتخاب کنید.')}
++   else if(moves(i).length>0){selected=i;setMessage('گوسفند انتخاب شد؛ یکی از مقصدهای روشن‌شده را لمس کنید.')}
++   else{selected=null;setMessage('این گوسفند در حال حاضر حرکت قانونی ندارد؛ گوسفند دیگری را انتخاب کنید.')}
++   draw(animT);update();return
++ }
++ if(selected===null){
++   if(turn==='wolves'&&wolves[i]&&(chainWolf===null||chainWolf===i))selected=i;
++   else if(turn==='sheep'&&sheep[i]>0){if(moves(i).length>0)selected=i;else setMessage('این گوسفند حرکت قانونی ندارد؛ گوسفند دیگری را انتخاب کنید.')}
++   draw(animT);return
++ }
+  const from=selected;
+  if(turn==='sheep'&&sheep[from]>0&&moves(from).includes(i)){playSfx('move');sheep[i]++;sheep[from]--;lastMove={from,to:i,start:performance.now(),kind:'sheep'};selected=null;turn='wolves';if(checkWinner())return;setMessage('نوبت گرگ‌هاست؛ گرگی را انتخاب کنید.')}
+  else if(turn==='wolves'&&wolves[from]){
+@@ -140,6 +152,7 @@
+    else if(chainWolf!==null){selected=chainWolf;setMessage('باید شکار پیاپی همین گرگ را ادامه دهید یا مقصد قانونی آن را انتخاب کنید.')}
+    else selected=wolves[i]?i:null;
+  }
++ else if(turn==='sheep'&&sheep[from]>0){setMessage('این مقصد برای گوسفند انتخاب‌شده مجاز نیست؛ یکی از مقصدهای روشن‌شده را انتخاب کنید.')}
+  draw(animT);update()
+ }
+ cvs.addEventListener('pointerup',e=>{const r=cvs.getBoundingClientRect(),x=(e.clientX-r.left)*600/r.width,y=(e.clientY-r.top)*600/r.height;const i=pts.findIndex(p=>Math.hypot(p.x-x,p.y-y)<35);if(i>=0)clickAt(i)});
