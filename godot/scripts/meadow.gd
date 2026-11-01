@@ -3,12 +3,36 @@ extends Node3D
 const GRID_SIZE := 5
 const SPACING := 2.2
 const BoardGraph = preload("res://scripts/board_graph.gd")
+const GameState = preload("res://scripts/game_state.gd")
+
+var game = GameState.new()
+var camera: Camera3D
+var status_label: Label
+var detail_label: Label
+var selected_node: int = -1
+var chain_time_left: float = 0.0
+var node_areas: Array[Area3D] = []
+var node_visuals: Array[Node3D] = []
 
 func _ready() -> void:
 	_build_environment()
-	_build_board_markers()
+	_build_board()
 	_build_camera()
 	_build_light()
+	_build_hud()
+	_refresh_board()
+	_update_hud()
+
+func _process(delta: float) -> void:
+	if chain_time_left > 0.0:
+		chain_time_left -= delta
+		if chain_time_left <= 0.0:
+			game.finish_wolf_turn()
+			selected_node = -1
+			_refresh_board()
+			_update_hud()
+		else:
+			detail_label.text = "فرصت شکار دوم: %.1f ثانیه" % chain_time_left
 
 func _build_environment() -> void:
 	var ground := MeshInstance3D.new()
@@ -37,8 +61,7 @@ func _node_position(index: int) -> Vector3:
 	var col: int = index % GRID_SIZE
 	return Vector3((col - 2) * SPACING, 0.18, (row - 2) * SPACING)
 
-func _build_board_markers() -> void:
-	# Render the recovered 0.5.1 graph; never infer or approximate connections.
+func _build_board() -> void:
 	var path_mesh := CylinderMesh.new()
 	path_mesh.top_radius = 0.055
 	path_mesh.bottom_radius = 0.055
@@ -47,7 +70,6 @@ func _build_board_markers() -> void:
 	var path_material := StandardMaterial3D.new()
 	path_material.albedo_color = Color(0.78, 0.66, 0.43)
 	path_material.roughness = 0.95
-
 	for edge in BoardGraph.EDGES:
 		var start: Vector3 = _node_position(edge[0])
 		var finish: Vector3 = _node_position(edge[1])
@@ -60,20 +82,24 @@ func _build_board_markers() -> void:
 		path.scale = Vector3(1.0, delta.length(), 1.0)
 		add_child(path)
 
-	var marker_mesh := SphereMesh.new()
-	marker_mesh.radius = 0.16
-	marker_mesh.height = 0.32
-	var marker_material := StandardMaterial3D.new()
-	marker_material.albedo_color = Color(0.91, 0.78, 0.48)
 	for index in range(BoardGraph.NODE_COUNT):
-		var marker := MeshInstance3D.new()
-		marker.mesh = marker_mesh
-		marker.material_override = marker_material
-		marker.position = _node_position(index)
-		add_child(marker)
+		var area := Area3D.new()
+		area.position = _node_position(index)
+		area.input_ray_pickable = true
+		var collision := CollisionShape3D.new()
+		var sphere := SphereShape3D.new()
+		sphere.radius = 0.62
+		collision.shape = sphere
+		area.add_child(collision)
+		area.input_event.connect(_on_node_input_event.bind(index))
+		add_child(area)
+		node_areas.append(area)
+		var visual := Node3D.new()
+		area.add_child(visual)
+		node_visuals.append(visual)
 
 func _build_camera() -> void:
-	var camera := Camera3D.new()
+	camera = Camera3D.new()
 	camera.position = Vector3(10.5, 12.5, 15.5)
 	camera.look_at(Vector3.ZERO, Vector3.UP)
 	camera.current = true
@@ -85,3 +111,186 @@ func _build_light() -> void:
 	light.light_energy = 1.15
 	light.shadow_enabled = true
 	add_child(light)
+
+func _build_hud() -> void:
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	var panel := PanelContainer.new()
+	panel.position = Vector2(18, 18)
+	panel.custom_minimum_size = Vector2(320, 116)
+	layer.add_child(panel)
+	var column := VBoxContainer.new()
+	panel.add_child(column)
+	status_label = Label.new()
+	status_label.add_theme_font_size_override("font_size", 21)
+	column.add_child(status_label)
+	detail_label = Label.new()
+	detail_label.add_theme_font_size_override("font_size", 15)
+	column.add_child(detail_label)
+	var reset_button := Button.new()
+	reset_button.text = "شروع دوباره"
+	reset_button.pressed.connect(_reset_game)
+	column.add_child(reset_button)
+	var credit := Label.new()
+	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
+	credit.position = Vector2(18, 178)
+	layer.add_child(credit)
+
+func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, _normal: Vector3, _shape_idx: int, index: int) -> void:
+	var pressed := false
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		pressed = true
+	elif event is InputEventScreenTouch and event.pressed:
+		pressed = true
+	if pressed:
+		_select_node(index)
+
+func _select_node(index: int) -> void:
+	if game.turn == GameState.Turn.FINISHED:
+		return
+	if game.turn == GameState.Turn.PLACE_WOLVES:
+		if game.place_wolf(index):
+			selected_node = -1
+			_refresh_board()
+			_update_hud()
+		return
+
+	if selected_node == -1:
+		if game.turn == GameState.Turn.SHEEP and game.sheep[index] > 0:
+			selected_node = index
+		elif game.turn == GameState.Turn.WOLVES and game.wolves[index]:
+			if game.chain_wolf == -1 or game.chain_wolf == index:
+				selected_node = index
+		_refresh_board()
+		_update_hud()
+		return
+
+	if index == selected_node:
+		selected_node = -1
+		_refresh_board()
+		_update_hud()
+		return
+
+	if game.turn == GameState.Turn.SHEEP:
+		if game.move_sheep(selected_node, index):
+			selected_node = -1
+	else:
+		var result: String = game.move_wolf(selected_node, index)
+		if result == "captured_chain_available":
+			selected_node = game.chain_wolf
+			chain_time_left = 3.0
+		elif result in ["moved", "captured", "won"]:
+			selected_node = -1
+			chain_time_left = 0.0
+		elif result == "invalid" and game.chain_wolf != -1:
+			game.finish_wolf_turn()
+			selected_node = -1
+			chain_time_left = 0.0
+	_refresh_board()
+	_update_hud()
+
+func _reset_game() -> void:
+	game.reset()
+	selected_node = -1
+	chain_time_left = 0.0
+	_refresh_board()
+	_update_hud()
+
+func _refresh_board() -> void:
+	for index in range(BoardGraph.NODE_COUNT):
+		var visual := node_visuals[index]
+		for child in visual.get_children():
+			child.queue_free()
+		var marker := MeshInstance3D.new()
+		var marker_mesh := SphereMesh.new()
+		marker_mesh.radius = 0.19 if index == selected_node else 0.14
+		marker_mesh.height = marker_mesh.radius * 2.0
+		marker.mesh = marker_mesh
+		var marker_material := StandardMaterial3D.new()
+		marker_material.albedo_color = Color(1.0, 0.82, 0.22) if index == selected_node else Color(0.91, 0.78, 0.48)
+		marker.material_override = marker_material
+		marker.position.y = 0.03
+		visual.add_child(marker)
+		if game.sheep[index] > 0:
+			_add_sheep_piece(visual, game.sheep[index])
+		if game.wolves[index]:
+			_add_wolf_piece(visual)
+
+func _add_sheep_piece(parent: Node3D, count: int) -> void:
+	var wool := _material(Color(0.93, 0.91, 0.82))
+	var dark := _material(Color(0.28, 0.24, 0.20))
+	for i in range(min(count, 5)):
+		var offset := Vector3((i % 3 - 1) * 0.15, 0.28 + float(i / 3) * 0.12, (i / 3) * 0.12)
+		var body := MeshInstance3D.new()
+		var body_mesh := SphereMesh.new()
+		body_mesh.radius = 0.20
+		body_mesh.height = 0.34
+		body.mesh = body_mesh
+		body.material_override = wool
+		body.position = offset
+		parent.add_child(body)
+		var head := MeshInstance3D.new()
+		var head_mesh := SphereMesh.new()
+		head_mesh.radius = 0.105
+		head_mesh.height = 0.19
+		head.mesh = head_mesh
+		head.material_override = dark
+		head.position = offset + Vector3(0.16, 0.02, -0.03)
+		parent.add_child(head)
+	var count_label := Label3D.new()
+	count_label.text = str(count)
+	count_label.font_size = 28
+	count_label.position = Vector3(0, 0.92, 0)
+	parent.add_child(count_label)
+
+func _add_wolf_piece(parent: Node3D) -> void:
+	var fur := _material(Color(0.22, 0.25, 0.29))
+	var muzzle := _material(Color(0.48, 0.49, 0.47))
+	var body := MeshInstance3D.new()
+	var body_mesh := SphereMesh.new()
+	body_mesh.radius = 0.29
+	body_mesh.height = 0.48
+	body.mesh = body_mesh
+	body.material_override = fur
+	body.position = Vector3(0, 0.42, 0)
+	parent.add_child(body)
+	var head := MeshInstance3D.new()
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.19
+	head_mesh.height = 0.34
+	head.mesh = head_mesh
+	head.material_override = muzzle
+	head.position = Vector3(0.22, 0.52, -0.02)
+	parent.add_child(head)
+	for side in [-1.0, 1.0]:
+		var ear := MeshInstance3D.new()
+		var ear_mesh := ConeMesh.new()
+		ear_mesh.radius = 0.075
+		ear_mesh.height = 0.22
+		ear.mesh = ear_mesh
+		ear.material_override = fur
+		ear.position = Vector3(0.15, 0.73, side * 0.12)
+		parent.add_child(ear)
+
+func _material(color: Color) -> StandardMaterial3D:
+	var result := StandardMaterial3D.new()
+	result.albedo_color = color
+	result.roughness = 0.9
+	return result
+
+func _update_hud() -> void:
+	if game.turn == GameState.Turn.PLACE_WOLVES:
+		status_label.text = "گرگ و میش — جای‌گذاری گرگ‌ها"
+		detail_label.text = "سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید (%d از ۳)" % game.wolf_total()
+	elif game.turn == GameState.Turn.SHEEP:
+		status_label.text = "نوبت گوسفندها"
+		detail_label.text = "گوسفندان باقی‌مانده: %d — یک گوسفند را انتخاب و جابه‌جا کنید" % game.sheep_total()
+	elif game.turn == GameState.Turn.WOLVES:
+		status_label.text = "نوبت گرگ‌ها"
+		detail_label.text = "گرگ را انتخاب کنید؛ برای شکار روی مقصد بزنید"
+	elif game.winner == "wolves":
+		status_label.text = "گرگ‌ها برنده شدند!"
+		detail_label.text = "تعداد گوسفندان به ۸ یا کمتر رسید."
+	elif game.winner == "sheep":
+		status_label.text = "گوسفندها برنده شدند!"
+		detail_label.text = "هر سه گرگ مسدود شدند."
