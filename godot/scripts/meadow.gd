@@ -49,7 +49,7 @@ func _process(delta: float) -> void:
 			pivot.position.y = 0.29 + sin(phase) * 0.035
 			pivot.rotation.y = PI * 0.5 + sin(phase * 0.55) * 0.07
 			pivot.rotation.z = sin(phase * 0.8) * 0.035
-	if camera != null:
+	if camera != null and camera.is_inside_tree():
 		camera.position = camera.position.lerp(camera_target_position, minf(delta * 2.8, 1.0))
 		camera.look_at(Vector3.ZERO, Vector3.UP)
 	if chain_time_left > 0.0:
