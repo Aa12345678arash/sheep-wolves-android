@@ -48,8 +48,8 @@ static func choose_wolf_move(state, difficulty: int) -> Dictionary:
 	var moves: Array[Dictionary] = []
 	# During an optional chain capture, only the wolf that made the first
 	# capture may move, and only another capture is legal.
-	var first_wolf := state.chain_wolf if state.chain_wolf != -1 else 0
-	var last_wolf := state.chain_wolf + 1 if state.chain_wolf != -1 else BoardGraph.NODE_COUNT
+	var first_wolf: int = state.chain_wolf if state.chain_wolf != -1 else 0
+	var last_wolf: int = state.chain_wolf + 1 if state.chain_wolf != -1 else BoardGraph.NODE_COUNT
 	for from in range(first_wolf, last_wolf):
 		if not state.wolves[from]:
 			continue
@@ -109,14 +109,14 @@ static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> flo
 		var wolf_row := int(wolf_node / 5)
 		var wolf_col := wolf_node % 5
 		var dr := node_row - wolf_row
-		var dc := node_col - wolf_col
+		var dc: int = node_col - wolf_col
 		if node not in adjacency[wolf_node]:
 			continue
 		for landing in adjacency[node]:
 			if landing == wolf_node:
 				continue
 			var landing_row := int(landing / 5)
-			var landing_col := landing % 5
+			var landing_col: int = landing % 5
 			if landing_row - node_row != dr or landing_col - node_col != dc:
 				continue
 			if landing == vacated_from or not state.is_occupied(landing):
