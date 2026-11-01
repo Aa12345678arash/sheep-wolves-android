@@ -50,7 +50,11 @@ func _initialize() -> void:
 		if option["middle"] == 6 and option["to"] == 12:
 			found = true
 	assert(found)
-	assert(capture_state.move_wolf(0, 12) == "captured")
+	var capture_result: String = capture_state.move_wolf(0, 12)
+	if capture_result != "captured":
+		push_error("Expected capture result 'captured', got: %s" % capture_result)
+		quit(1)
+		return
 	assert(capture_state.sheep_total() == 24)
 	assert(capture_state.turn == GameState.Turn.SHEEP)
 
