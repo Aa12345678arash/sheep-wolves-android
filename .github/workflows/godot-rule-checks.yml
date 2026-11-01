@@ -12,6 +12,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,4 +22,7 @@ jobs:
           version: 4.4.1
           use-dotnet: false
       - name: Run rule tests
-        run: godot --headless --path godot --script res://tests/validate_rules.gd
+        run: |
+          echo 'Starting WOLF-DUSK rule validation'
+          timeout 45s godot --headless --path godot --script res://tests/validate_rules.gd
+          echo 'WOLF-DUSK rule validation finished'
