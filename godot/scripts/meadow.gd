@@ -22,6 +22,8 @@ var setup_layer: CanvasLayer
 var player_one_name: String = "بازیکن گوسفندها"
 var player_two_name: String = "بازیکن گرگ‌ها"
 var player_names_label: Label
+var sheep_idle_pivots: Array[Node3D] = []
+var sheep_anim_clock: float = 0.0
 
 func _ready() -> void:
 	_build_environment()
@@ -34,6 +36,14 @@ func _ready() -> void:
 	_update_hud()
 
 func _process(delta: float) -> void:
+	sheep_anim_clock += delta
+	for i in range(sheep_idle_pivots.size()):
+		var pivot := sheep_idle_pivots[i]
+		if is_instance_valid(pivot):
+			var phase := sheep_anim_clock * 2.1 + float(i) * 0.8
+			pivot.position.y = 0.29 + sin(phase) * 0.035
+			pivot.rotation.y = PI * 0.5 + sin(phase * 0.55) * 0.07
+			pivot.rotation.z = sin(phase * 0.8) * 0.035
 	if camera != null:
 		camera.position = camera.position.lerp(camera_target_position, minf(delta * 2.8, 1.0))
 		camera.look_at(Vector3.ZERO, Vector3.UP)
@@ -396,6 +406,7 @@ func _reset_game() -> void:
 	_update_hud()
 
 func _refresh_board() -> void:
+	sheep_idle_pivots.clear()
 	for index in range(BoardGraph.NODE_COUNT):
 		var visual := node_visuals[index]
 		for child in visual.get_children():
@@ -439,27 +450,44 @@ func _refresh_board() -> void:
 			_add_wolf_piece(visual)
 
 func _add_sheep_piece(parent: Node3D, count: int) -> void:
+	# Five individual sheep per starting node, all facing the wolves across
+	# the square board. Each sheep has its own subtle idle animation pivot.
 	var wool := _material(Color(0.96, 0.94, 0.86))
 	var face := _material(Color(0.32, 0.27, 0.23))
 	var hoof := _material(Color(0.19, 0.17, 0.15))
-	for i in range(min(count, 5)):
-		var offset := Vector3((i % 3 - 1) * 0.15, 0.29 + float(i / 3) * 0.12, (i / 3) * 0.12)
+	var visible_count: int = mini(count, 5)
+	for i in range(visible_count):
+		var pivot := Node3D.new()
+		var column := i % 3
+		var row := int(i / 3)
+		pivot.position = Vector3((column - 1) * 0.25, 0.29, (row - 0.5) * 0.25)
+		pivot.rotation.y = PI * 0.5
+		parent.add_child(pivot)
+		sheep_idle_pivots.append(pivot)
 		var body := MeshInstance3D.new()
 		var body_mesh := SphereMesh.new()
-		body_mesh.radius = 0.205
-		body_mesh.height = 0.36
+		body_mesh.radius = 0.17
+		body_mesh.height = 0.31
 		body.mesh = body_mesh
 		body.material_override = wool
-		body.position = offset
-		parent.add_child(body)
+		pivot.add_child(body)
+		for tuft_index in range(3):
+			var tuft := MeshInstance3D.new()
+			var tuft_mesh := SphereMesh.new()
+			tuft_mesh.radius = 0.085
+			tuft_mesh.height = 0.13
+			tuft.mesh = tuft_mesh
+			tuft.material_override = wool
+			tuft.position = Vector3(-0.04 + float(tuft_index) * 0.07, 0.09, 0.0)
+			pivot.add_child(tuft)
 		var head := MeshInstance3D.new()
 		var head_mesh := SphereMesh.new()
-		head_mesh.radius = 0.11
-		head_mesh.height = 0.20
+		head_mesh.radius = 0.105
+		head_mesh.height = 0.19
 		head.mesh = head_mesh
 		head.material_override = face
-		head.position = offset + Vector3(0.17, 0.025, -0.035)
-		parent.add_child(head)
+		head.position = Vector3(0.16, 0.025, 0.0)
+		pivot.add_child(head)
 		for side in [-1.0, 1.0]:
 			var eye := MeshInstance3D.new()
 			var eye_mesh := SphereMesh.new()
@@ -467,23 +495,23 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 			eye_mesh.height = 0.044
 			eye.mesh = eye_mesh
 			eye.material_override = hoof
-			eye.position = offset + Vector3(0.245, 0.07, side * 0.065)
-			parent.add_child(eye)
+			eye.position = Vector3(0.235, 0.07, side * 0.065)
+			pivot.add_child(eye)
 		for leg_index in range(4):
 			var leg := MeshInstance3D.new()
 			var leg_mesh := CylinderMesh.new()
 			leg_mesh.top_radius = 0.025
 			leg_mesh.bottom_radius = 0.032
-			leg_mesh.height = 0.18
+			leg_mesh.height = 0.15
 			leg.mesh = leg_mesh
 			leg.material_override = hoof
-			leg.position = offset + Vector3(-0.08 if leg_index < 2 else 0.08, -0.16, -0.075 if leg_index % 2 == 0 else 0.075)
-			parent.add_child(leg)
+			leg.position = Vector3(-0.07 if leg_index < 2 else 0.07, -0.17, -0.065 if leg_index % 2 == 0 else 0.065)
+			pivot.add_child(leg)
 	var count_label := Label3D.new()
 	count_label.text = str(count)
-	count_label.font_size = 28
+	count_label.font_size = 25
 	count_label.outline_size = 5
-	count_label.position = Vector3(0, 0.94, 0)
+	count_label.position = Vector3(0, 0.91, 0)
 	parent.add_child(count_label)
 
 func _add_wolf_piece(parent: Node3D) -> void:
