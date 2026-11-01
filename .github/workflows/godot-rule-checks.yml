@@ -62,6 +62,13 @@ jobs:
             test -n "$ADB_BIN"
             ANDROID_SDK_DIR="$(dirname "$(dirname "$ADB_BIN")")"
           fi
+          SDKMANAGER="$(find "$ANDROID_SDK_DIR/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_DIR" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          echo "Installed Android SDK platforms:"
+          find "$ANDROID_SDK_DIR/platforms" -mindepth 1 -maxdepth 1 -type d -printf '%f\n'
+          echo "Installed Android build-tools:"
+          find "$ANDROID_SDK_DIR/build-tools" -mindepth 1 -maxdepth 1 -type d -printf '%f\n'
           mkdir -p "$HOME/.config/godot"
           cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
           [gd_resource type="EditorSettings" format=3]
