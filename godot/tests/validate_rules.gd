@@ -86,15 +86,29 @@ func _initialize() -> void:
 	chain_state.turn = GameState.Turn.WOLVES
 	assert(chain_state.move_wolf(0, 12) == "captured_chain_available")
 	assert(chain_state.chain_wolf == 12)
-	# The AI must continue the chain with the same wolf, not choose another wolf.
-	var chain_ai_action: Dictionary = AI.choose_wolf_move(chain_state, 2)
+	assert(chain_state.move_wolf(1, 3) == "wrong_chain_wolf")
+	# Test the AI's chain selection on an independent state so the main chain
+	# assertions below can still verify the human rule path.
+	var chain_ai_state = GameState.new()
+	for i in range(25):
+		chain_ai_state.sheep[i] = 0
+		chain_ai_state.wolves[i] = false
+	chain_ai_state.wolves[1] = true
+	chain_ai_state.wolves[2] = true
+	chain_ai_state.wolves[12] = true
+	chain_ai_state.sheep[18] = 1
+	chain_ai_state.sheep[20] = 5
+	chain_ai_state.sheep[21] = 5
+	chain_ai_state.turn = GameState.Turn.WOLVES
+	chain_ai_state.chain_wolf = 12
+	chain_ai_state.chain_capture_count = 1
+	var chain_ai_action: Dictionary = AI.choose_wolf_move(chain_ai_state, 2)
 	assert(not chain_ai_action.is_empty())
 	assert(int(chain_ai_action.from) == 12)
 	assert(int(chain_ai_action.to) == 24)
 	assert(bool(chain_ai_action.capture))
-	assert(chain_state.move_wolf(int(chain_ai_action.from), int(chain_ai_action.to)) == "captured")
-	assert(chain_state.turn == GameState.Turn.SHEEP)
-	assert(chain_state.move_wolf(1, 3) == "wrong_chain_wolf")
+	assert(chain_ai_state.move_wolf(int(chain_ai_action.from), int(chain_ai_action.to)) == "captured")
+	assert(chain_ai_state.turn == GameState.Turn.SHEEP)
 	# An unrelated destination cannot consume the pending chain opportunity.
 	assert(chain_state.move_wolf(12, 4) == "chain_capture_required")
 	assert(chain_state.wolves[12] and not chain_state.wolves[4])
