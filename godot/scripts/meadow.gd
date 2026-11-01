@@ -25,6 +25,8 @@ var player_one_name: String = "بازیکن گوسفندها"
 var player_two_name: String = "بازیکن گرگ‌ها"
 var player_names_label: Label
 var sheep_idle_pivots: Array[Node3D] = []
+var wolf_idle_pivots: Array[Node3D] = []
+var wolf_tail_pivots: Array[Node3D] = []
 var sheep_anim_clock: float = 0.0
 var match_mode: String = "local"
 var human_side: String = "sheep"
@@ -51,6 +53,16 @@ func _process(delta: float) -> void:
 			pivot.position.y = 0.29 + sin(phase) * 0.035
 			pivot.rotation.y = PI * 0.5 + sin(phase * 0.55) * 0.07
 			pivot.rotation.z = sin(phase * 0.8) * 0.035
+	for i in range(wolf_idle_pivots.size()):
+		var wolf_pivot := wolf_idle_pivots[i]
+		if is_instance_valid(wolf_pivot):
+			var wolf_phase := sheep_anim_clock * 1.45 + float(i) * 1.7
+			wolf_pivot.position.y = sin(wolf_phase) * 0.018
+			wolf_pivot.rotation.y = sin(wolf_phase * 0.42) * 0.025
+	for i in range(wolf_tail_pivots.size()):
+		var tail_pivot := wolf_tail_pivots[i]
+		if is_instance_valid(tail_pivot):
+			tail_pivot.rotation.z = 0.96 + sin(sheep_anim_clock * 2.3 + float(i)) * 0.12
 	if camera != null and camera.is_inside_tree():
 		camera.position = camera.position.lerp(camera_target_position, minf(delta * 2.8, 1.0))
 		camera.look_at(Vector3.ZERO, Vector3.UP)
@@ -605,6 +617,8 @@ func _reset_game() -> void:
 
 func _refresh_board() -> void:
 	sheep_idle_pivots.clear()
+	wolf_idle_pivots.clear()
+	wolf_tail_pivots.clear()
 	for index in range(BoardGraph.NODE_COUNT):
 		var visual := node_visuals[index]
 		for child in visual.get_children():
@@ -737,6 +751,9 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 	parent.add_child(count_label)
 
 func _add_wolf_piece(parent: Node3D) -> void:
+	var pivot := Node3D.new()
+	pivot.add_child(pivot)
+	wolf_idle_pivots.append(pivot)
 	var fur := _material(Color(0.19, 0.23, 0.29))
 	var muzzle := _material(Color(0.57, 0.57, 0.52))
 	var dark := _material(Color(0.075, 0.08, 0.09))
@@ -748,7 +765,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	body.mesh = body_mesh
 	body.material_override = fur
 	body.position = Vector3(-0.025, 0.43, 0.0)
-	parent.add_child(body)
+	pivot.add_child(body)
 	var chest := MeshInstance3D.new()
 	var chest_mesh := SphereMesh.new()
 	chest_mesh.radius = 0.19
@@ -756,7 +773,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	chest.mesh = chest_mesh
 	chest.material_override = muzzle
 	chest.position = Vector3(0.13, 0.43, -0.015)
-	parent.add_child(chest)
+	pivot.add_child(chest)
 	var head := MeshInstance3D.new()
 	var head_mesh := SphereMesh.new()
 	head_mesh.radius = 0.19
@@ -764,7 +781,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	head.mesh = head_mesh
 	head.material_override = fur
 	head.position = Vector3(0.22, 0.59, -0.02)
-	parent.add_child(head)
+	pivot.add_child(head)
 	var snout := MeshInstance3D.new()
 	var snout_mesh := SphereMesh.new()
 	snout_mesh.radius = 0.105
@@ -772,7 +789,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	snout.mesh = snout_mesh
 	snout.material_override = muzzle
 	snout.position = Vector3(0.39, 0.53, -0.02)
-	parent.add_child(snout)
+	pivot.add_child(snout)
 	for side in [-1.0, 1.0]:
 		var ear := MeshInstance3D.new()
 		var ear_mesh := CylinderMesh.new()
@@ -782,7 +799,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		ear.mesh = ear_mesh
 		ear.material_override = fur
 		ear.position = Vector3(0.15, 0.80, side * 0.13)
-		parent.add_child(ear)
+		pivot.add_child(ear)
 		var eye := MeshInstance3D.new()
 		var eye_mesh := SphereMesh.new()
 		eye_mesh.radius = 0.027
@@ -790,7 +807,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		eye.mesh = eye_mesh
 		eye.material_override = eye_amber
 		eye.position = Vector3(0.34, 0.63, side * 0.135)
-		parent.add_child(eye)
+		pivot.add_child(eye)
 		var pupil := MeshInstance3D.new()
 		var pupil_mesh := SphereMesh.new()
 		pupil_mesh.radius = 0.012
@@ -798,7 +815,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		pupil.mesh = pupil_mesh
 		pupil.material_override = dark
 		pupil.position = Vector3(0.36, 0.635, side * 0.15)
-		parent.add_child(pupil)
+		pivot.add_child(pupil)
 	var nose := MeshInstance3D.new()
 	var nose_mesh := SphereMesh.new()
 	nose_mesh.radius = 0.047
@@ -806,7 +823,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	nose.mesh = nose_mesh
 	nose.material_override = dark
 	nose.position = Vector3(0.475, 0.54, -0.02)
-	parent.add_child(nose)
+	pivot.add_child(nose)
 	for leg_index in range(4):
 		var leg := MeshInstance3D.new()
 		var leg_mesh := CylinderMesh.new()
@@ -816,7 +833,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		leg.mesh = leg_mesh
 		leg.material_override = fur
 		leg.position = Vector3(-0.12 if leg_index < 2 else 0.13, 0.20, -0.15 if leg_index % 2 == 0 else 0.15)
-		parent.add_child(leg)
+		pivot.add_child(leg)
 	var tail := MeshInstance3D.new()
 	var tail_mesh := CapsuleMesh.new()
 	tail_mesh.radius = 0.07
@@ -825,7 +842,8 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	tail.material_override = fur
 	tail.position = Vector3(-0.31, 0.47, 0.0)
 	tail.rotation_degrees.z = 55.0
-	parent.add_child(tail)
+	pivot.add_child(tail)
+	wolf_tail_pivots.append(tail)
 
 func _material(color: Color) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()
