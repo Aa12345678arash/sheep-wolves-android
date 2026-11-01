@@ -1,0 +1,37 @@
+name: Inspect Android source archive
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - inspection/extract-source-2026-11-01
+    paths:
+      - '.github/workflows/inspect-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout inspection branch
+        uses: actions/checkout@v4
+
+      - name: Extract project archive
+        run: |
+          mkdir -p extracted
+          unzip -o sheep_wolves_android_project.zip -d extracted
+          find extracted -type f \( -name 'index.html' -o -name 'MainActivity.java' \) -print
+          test -n "$(find extracted -type f -name 'index.html' -print -quit)"
+          test -n "$(find extracted -type f -name 'MainActivity.java' -print -quit)"
+          mkdir -p source-review
+          find extracted -type f \( -name 'index.html' -o -name 'MainActivity.java' \) -exec cp --parents {} source-review/ \;
+
+      - name: Upload extracted source for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheep-wolves-source-review
+          path: source-review/
+          if-no-files-found: error
+          retention-days: 3
