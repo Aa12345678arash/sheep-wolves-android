@@ -133,8 +133,7 @@ func _add_meadow_tree(at: Vector3) -> void:
 		var crown := MeshInstance3D.new()
 		var crown_mesh := CylinderMesh.new()
 		crown_mesh.top_radius = 0.0
-		crown_mesh.bottom_radius = 1.0
-		crown_mesh.radius = 1.0 - float(layer) * 0.16
+		crown_mesh.bottom_radius = 1.0 - float(layer) * 0.16
 		crown_mesh.height = 1.55
 		crown.mesh = crown_mesh
 		crown.material_override = _material([Color(0.13, 0.34, 0.17), Color(0.18, 0.42, 0.20), Color(0.24, 0.49, 0.23)][layer])
@@ -644,7 +643,6 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		var ear_mesh := CylinderMesh.new()
 		ear_mesh.top_radius = 0.0
 		ear_mesh.bottom_radius = 0.075
-		ear_mesh.radius = 0.075
 		ear_mesh.height = 0.23
 		ear.mesh = ear_mesh
 		ear.material_override = fur
