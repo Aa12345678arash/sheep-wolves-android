@@ -1,0 +1,39 @@
+name: Godot headless validation
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-004-GODOT
+    paths:
+      - "godot/**"
+      - ".github/workflows/godot-check.yml"
+  pull_request:
+    paths:
+      - "godot/**"
+      - ".github/workflows/godot-check.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Import project and run rule tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.4.1
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: false
+
+      - name: Verify Godot version
+        run: godot --version
+
+      - name: Import project resources
+        run: godot --headless --path godot --editor --quit
+
+      - name: Run rules and AI tests
+        run: godot --headless --path godot --script res://tests/validate_rules.gd
