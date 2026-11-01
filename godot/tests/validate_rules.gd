@@ -44,6 +44,8 @@ func _initialize() -> void:
 	assert(capture_state.place_wolf(2))
 	capture_state.sheep[20] -= 1
 	capture_state.sheep[6] = 1
+	# Three wolves have been placed; the sheep turn must be completed before a wolf capture.
+	capture_state.turn = GameState.Turn.WOLVES
 	var options := capture_state.capture_options(0)
 	var found := false
 	for option in options:
