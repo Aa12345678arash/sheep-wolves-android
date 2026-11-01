@@ -67,23 +67,38 @@ func _node_position(index: int) -> Vector3:
 	return Vector3((col - 2) * SPACING, 0.18, (row - 2) * SPACING)
 
 func _build_board() -> void:
+	# Two-layer path rails: a dark outline keeps every connection readable,
+	# while the warm stone center remains visible against both board and ground.
+	var rail_mesh := CylinderMesh.new()
+	rail_mesh.top_radius = 0.115
+	rail_mesh.bottom_radius = 0.115
+	rail_mesh.height = 1.0
+	rail_mesh.radial_segments = 12
+	var rail_material := _material(Color(0.16, 0.19, 0.14))
 	var path_mesh := CylinderMesh.new()
-	path_mesh.top_radius = 0.055
-	path_mesh.bottom_radius = 0.055
+	path_mesh.top_radius = 0.068
+	path_mesh.bottom_radius = 0.068
 	path_mesh.height = 1.0
-	path_mesh.radial_segments = 8
-	var path_material := StandardMaterial3D.new()
-	path_material.albedo_color = Color(0.78, 0.66, 0.43)
-	path_material.roughness = 0.95
+	path_mesh.radial_segments = 12
+	var path_material := _material(Color(0.91, 0.78, 0.51))
 	for edge in BoardGraph.EDGES:
 		var start: Vector3 = _node_position(edge[0])
 		var finish: Vector3 = _node_position(edge[1])
 		var delta: Vector3 = finish - start
+		var midpoint: Vector3 = (start + finish) * 0.5
+		var direction: Vector3 = delta.normalized()
+		var rail := MeshInstance3D.new()
+		rail.mesh = rail_mesh
+		rail.material_override = rail_material
+		rail.position = midpoint + Vector3(0.0, -0.045, 0.0)
+		rail.basis = Basis(Vector3.UP, direction)
+		rail.scale = Vector3(1.0, delta.length(), 1.0)
+		add_child(rail)
 		var path := MeshInstance3D.new()
 		path.mesh = path_mesh
 		path.material_override = path_material
-		path.position = (start + finish) * 0.5
-		path.basis = Basis(Vector3.UP, delta.normalized())
+		path.position = midpoint + Vector3(0.0, 0.025, 0.0)
+		path.basis = Basis(Vector3.UP, direction)
 		path.scale = Vector3(1.0, delta.length(), 1.0)
 		add_child(path)
 
@@ -275,60 +290,125 @@ func _refresh_board() -> void:
 			_add_wolf_piece(visual)
 
 func _add_sheep_piece(parent: Node3D, count: int) -> void:
-	var wool := _material(Color(0.93, 0.91, 0.82))
-	var dark := _material(Color(0.28, 0.24, 0.20))
+	var wool := _material(Color(0.96, 0.94, 0.86))
+	var face := _material(Color(0.32, 0.27, 0.23))
+	var hoof := _material(Color(0.19, 0.17, 0.15))
 	for i in range(min(count, 5)):
-		var offset := Vector3((i % 3 - 1) * 0.15, 0.28 + float(i / 3) * 0.12, (i / 3) * 0.12)
+		var offset := Vector3((i % 3 - 1) * 0.15, 0.29 + float(i / 3) * 0.12, (i / 3) * 0.12)
 		var body := MeshInstance3D.new()
 		var body_mesh := SphereMesh.new()
-		body_mesh.radius = 0.20
-		body_mesh.height = 0.34
+		body_mesh.radius = 0.205
+		body_mesh.height = 0.36
 		body.mesh = body_mesh
 		body.material_override = wool
 		body.position = offset
 		parent.add_child(body)
 		var head := MeshInstance3D.new()
 		var head_mesh := SphereMesh.new()
-		head_mesh.radius = 0.105
-		head_mesh.height = 0.19
+		head_mesh.radius = 0.11
+		head_mesh.height = 0.20
 		head.mesh = head_mesh
-		head.material_override = dark
-		head.position = offset + Vector3(0.16, 0.02, -0.03)
+		head.material_override = face
+		head.position = offset + Vector3(0.17, 0.025, -0.035)
 		parent.add_child(head)
+		for side in [-1.0, 1.0]:
+			var eye := MeshInstance3D.new()
+			var eye_mesh := SphereMesh.new()
+			eye_mesh.radius = 0.022
+			eye_mesh.height = 0.044
+			eye.mesh = eye_mesh
+			eye.material_override = hoof
+			eye.position = offset + Vector3(0.245, 0.07, side * 0.065)
+			parent.add_child(eye)
+		for leg_index in range(4):
+			var leg := MeshInstance3D.new()
+			var leg_mesh := CylinderMesh.new()
+			leg_mesh.top_radius = 0.025
+			leg_mesh.bottom_radius = 0.032
+			leg_mesh.height = 0.18
+			leg.mesh = leg_mesh
+			leg.material_override = hoof
+			leg.position = offset + Vector3(-0.08 if leg_index < 2 else 0.08, -0.16, -0.075 if leg_index % 2 == 0 else 0.075)
+			parent.add_child(leg)
 	var count_label := Label3D.new()
 	count_label.text = str(count)
 	count_label.font_size = 28
-	count_label.position = Vector3(0, 0.92, 0)
+	count_label.outline_size = 5
+	count_label.position = Vector3(0, 0.94, 0)
 	parent.add_child(count_label)
 
 func _add_wolf_piece(parent: Node3D) -> void:
-	var fur := _material(Color(0.22, 0.25, 0.29))
-	var muzzle := _material(Color(0.48, 0.49, 0.47))
+	var fur := _material(Color(0.19, 0.23, 0.29))
+	var muzzle := _material(Color(0.57, 0.57, 0.52))
+	var dark := _material(Color(0.075, 0.08, 0.09))
 	var body := MeshInstance3D.new()
 	var body_mesh := SphereMesh.new()
 	body_mesh.radius = 0.29
-	body_mesh.height = 0.48
+	body_mesh.height = 0.49
 	body.mesh = body_mesh
 	body.material_override = fur
-	body.position = Vector3(0, 0.42, 0)
+	body.position = Vector3(-0.025, 0.43, 0.0)
 	parent.add_child(body)
+	var chest := MeshInstance3D.new()
+	var chest_mesh := SphereMesh.new()
+	chest_mesh.radius = 0.19
+	chest_mesh.height = 0.36
+	chest.mesh = chest_mesh
+	chest.material_override = muzzle
+	chest.position = Vector3(0.13, 0.43, -0.015)
+	parent.add_child(chest)
 	var head := MeshInstance3D.new()
 	var head_mesh := SphereMesh.new()
 	head_mesh.radius = 0.19
 	head_mesh.height = 0.34
 	head.mesh = head_mesh
-	head.material_override = muzzle
-	head.position = Vector3(0.22, 0.52, -0.02)
+	head.material_override = fur
+	head.position = Vector3(0.22, 0.59, -0.02)
 	parent.add_child(head)
+	var snout := MeshInstance3D.new()
+	var snout_mesh := SphereMesh.new()
+	snout_mesh.radius = 0.105
+	snout_mesh.height = 0.15
+	snout.mesh = snout_mesh
+	snout.material_override = muzzle
+	snout.position = Vector3(0.39, 0.53, -0.02)
+	parent.add_child(snout)
 	for side in [-1.0, 1.0]:
 		var ear := MeshInstance3D.new()
 		var ear_mesh := ConeMesh.new()
 		ear_mesh.radius = 0.075
-		ear_mesh.height = 0.22
+		ear_mesh.height = 0.23
 		ear.mesh = ear_mesh
 		ear.material_override = fur
-		ear.position = Vector3(0.15, 0.73, side * 0.12)
+		ear.position = Vector3(0.15, 0.80, side * 0.13)
 		parent.add_child(ear)
+		var eye := MeshInstance3D.new()
+		var eye_mesh := SphereMesh.new()
+		eye_mesh.radius = 0.027
+		eye_mesh.height = 0.054
+		eye.mesh = eye_mesh
+		eye.material_override = dark
+		eye.position = Vector3(0.34, 0.63, side * 0.135)
+		parent.add_child(eye)
+	for leg_index in range(4):
+		var leg := MeshInstance3D.new()
+		var leg_mesh := CylinderMesh.new()
+		leg_mesh.top_radius = 0.045
+		leg_mesh.bottom_radius = 0.055
+		leg_mesh.height = 0.24
+		leg.mesh = leg_mesh
+		leg.material_override = fur
+		leg.position = Vector3(-0.12 if leg_index < 2 else 0.13, 0.20, -0.15 if leg_index % 2 == 0 else 0.15)
+		parent.add_child(leg)
+	var tail := MeshInstance3D.new()
+	var tail_mesh := CapsuleMesh.new()
+	tail_mesh.radius = 0.07
+	tail_mesh.height = 0.25
+	tail.mesh = tail_mesh
+	tail.material_override = fur
+	tail.position = Vector3(-0.31, 0.47, 0.0)
+	tail.rotation_degrees.z = 55.0
+	parent.add_child(tail)
 
 func _material(color: Color) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()
