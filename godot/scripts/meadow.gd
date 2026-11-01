@@ -4,6 +4,7 @@ const GRID_SIZE := 5
 const SPACING := 2.2
 const BoardGraph = preload("res://scripts/board_graph.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const AI = preload("res://scripts/ai_opponent.gd")
 
 var game = GameState.new()
 var camera: Camera3D
@@ -24,6 +25,10 @@ var player_two_name: String = "بازیکن گرگ‌ها"
 var player_names_label: Label
 var sheep_idle_pivots: Array[Node3D] = []
 var sheep_anim_clock: float = 0.0
+var match_mode: String = "local"
+var human_side: String = "sheep"
+var ai_difficulty: int = 1
+var ai_busy: bool = false
 
 func _ready() -> void:
 	_build_environment()
@@ -260,13 +265,13 @@ func _show_setup_menu() -> void:
 	setup_layer.layer = 5
 	add_child(setup_layer)
 	var shade := ColorRect.new()
-	shade.color = Color(0.02, 0.05, 0.04, 0.78)
+	shade.color = Color(0.02, 0.05, 0.04, 0.82)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(390, 330)
+	panel.custom_minimum_size = Vector2(430, 440)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-195, -165)
+	panel.position = Vector2(-215, -220)
 	setup_layer.add_child(panel)
 	var column := VBoxContainer.new()
 	panel.add_child(column)
@@ -276,7 +281,7 @@ func _show_setup_menu() -> void:
 	heading.add_theme_font_size_override("font_size", 23)
 	column.add_child(heading)
 	var subtitle := Label.new()
-	subtitle.text = "نام بازیکنان را وارد کنید و مسابقه را آغاز کنید"
+	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(subtitle)
 	var sheep_name := LineEdit.new()
@@ -287,34 +292,108 @@ func _show_setup_menu() -> void:
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
 	column.add_child(wolf_name)
-	var local_button := Button.new()
-	local_button.text = "شروع بازی دونفره روی همین دستگاه"
-	local_button.pressed.connect(func():
+	var mode_picker := OptionButton.new()
+	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
+	mode_picker.add_item("بازی با رایانه (هوش مصنوعی)", 1)
+	column.add_child(mode_picker)
+	var side_picker := OptionButton.new()
+	side_picker.add_item("من گوسفندها باشم", 0)
+	side_picker.add_item("من گرگ‌ها باشم", 1)
+	column.add_child(side_picker)
+	var difficulty_picker := OptionButton.new()
+	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
+	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
+	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
+	column.add_child(difficulty_picker)
+	var start_button := Button.new()
+	start_button.text = "شروع مسابقه"
+	start_button.pressed.connect(func():
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
 		if player_one_name.is_empty():
 			player_one_name = "بازیکن گوسفندها"
 		if player_two_name.is_empty():
 			player_two_name = "بازیکن گرگ‌ها"
+		match_mode = "ai" if mode_picker.get_selected_id() == 1 else "local"
+		human_side = "wolves" if side_picker.get_selected_id() == 1 else "sheep"
+		ai_difficulty = difficulty_picker.get_selected_id()
+		if match_mode == "ai":
+			if human_side == "sheep":
+				player_two_name = "رایانه (گرگ‌ها)"
+			else:
+				player_one_name = "رایانه (گوسفندها)"
 		player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
 		setup_layer.queue_free()
-		feedback_message = "مسابقهٔ دونفره آغاز شد؛ گوسفندها شروع می‌کنند."
+		feedback_message = "مسابقه آغاز شد؛ گوسفندها شروع می‌کنند."
 		_update_hud()
+		_schedule_ai_turn()
 	)
-	column.add_child(local_button)
+	column.add_child(start_button)
 	var private_online := Button.new()
-	private_online.text = "بازی آنلاین با کد اتاق — به‌زودی"
+	private_online.text = "بازی آنلاین با کد اتاق — در دست توسعه"
 	private_online.disabled = true
 	column.add_child(private_online)
 	var random_online := Button.new()
-	random_online.text = "حریف تصادفی آنلاین — به‌زودی"
+	random_online.text = "حریف تصادفی آنلاین — در دست توسعه"
 	random_online.disabled = true
 	column.add_child(random_online)
 	var note := Label.new()
-	note.text = "اتصال آنلاین پس از آماده‌سازی سرور فعال می‌شود."
+	note.text = "بازی آنلاین پس از راه‌اندازی سرور فعال خواهد شد."
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(note)
+
+func _is_ai_turn() -> bool:
+	if match_mode != "ai" or game.turn == GameState.Turn.FINISHED:
+		return false
+	if game.turn == GameState.Turn.PLACE_WOLVES or game.turn == GameState.Turn.WOLVES:
+		return human_side == "sheep"
+	if game.turn == GameState.Turn.SHEEP:
+		return human_side == "wolves"
+	return false
+
+func _schedule_ai_turn() -> void:
+	if _is_ai_turn() and not ai_busy:
+		ai_busy = true
+		call_deferred("_run_ai_turn")
+
+func _run_ai_turn() -> void:
+	await get_tree().create_timer(0.65).timeout
+	if not is_inside_tree() or not _is_ai_turn():
+		ai_busy = false
+		return
+	if game.turn == GameState.Turn.PLACE_WOLVES:
+		var placement: int = AI.choose_wolf_placement(game, ai_difficulty)
+		if placement >= 0:
+			game.place_wolf(placement)
+			feedback_message = "رایانه گرگ شمارهٔ %d را در جای خود قرار داد." % game.wolf_total()
+	elif game.turn == GameState.Turn.SHEEP:
+		var sheep_move: Dictionary = AI.choose_sheep_move(game, ai_difficulty)
+		if not sheep_move.is_empty():
+			game.move_sheep(int(sheep_move.from), int(sheep_move.to))
+			feedback_message = "رایانه یکی از گوسفندها را جابه‌جا کرد."
+	elif game.turn == GameState.Turn.WOLVES:
+		var wolf_move: Dictionary = AI.choose_wolf_move(game, ai_difficulty)
+		if not wolf_move.is_empty():
+			var result: String = game.move_wolf(int(wolf_move.from), int(wolf_move.to))
+			if result == "captured_chain_available":
+				var followups := game.capture_options(game.chain_wolf)
+				if not followups.is_empty():
+					game.move_wolf(game.chain_wolf, int(followups[0].to))
+				else:
+					game.finish_wolf_turn()
+				feedback_message = "رایانه حرکت شکار را انجام داد."
+			else:
+				feedback_message = "رایانه گرگ‌ها را حرکت داد."
+		else:
+			feedback_message = "رایانه حرکت قانونی دیگری ندارد."
+	ai_busy = false
+	selected_node = -1
+	chain_time_left = 0.0
+	pass_button.visible = false
+	_refresh_board()
+	_update_hud()
+	_schedule_ai_turn()
 
 func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, _normal: Vector3, _shape_idx: int, index: int) -> void:
 	var pressed := false
@@ -326,6 +405,8 @@ func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, 
 		_select_node(index)
 
 func _select_node(index: int) -> void:
+	if ai_busy or _is_ai_turn():
+		return
 	if game.turn == GameState.Turn.FINISHED:
 		feedback_message = "بازی تمام شده است؛ برای بازی تازه «شروع دوبارهٔ بازی» را بزنید."
 		_update_hud()
@@ -395,9 +476,11 @@ func _select_node(index: int) -> void:
 			feedback_message = "حرکت نامعتبر است؛ فقط روی مقصد سبزِ مجاز بزنید. نوبت تغییر نکرد."
 	_refresh_board()
 	_update_hud()
+	_schedule_ai_turn()
 
 func _reset_game() -> void:
 	game.reset()
+	ai_busy = false
 	selected_node = -1
 	chain_time_left = 0.0
 	pass_button.visible = false
