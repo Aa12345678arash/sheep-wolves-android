@@ -242,13 +242,6 @@ func _initialize() -> void:
 	var backward_score: float = AI._sheep_position_score(ai_direction_state, 6, 12)
 	assert(forward_score > backward_score)
 
-	# Safety is applied exactly once, with a stronger weight at hard difficulty.
-	var safe_base: float = AI._sheep_position_score(ai_direction_state, 12, 6)
-	var safe_medium: float = AI._sheep_move_score(ai_direction_state, 12, 6, 1)
-	var safe_hard: float = AI._sheep_move_score(ai_direction_state, 12, 6, 2)
-	assert(is_equal_approx(safe_base, safe_medium))
-	assert(is_equal_approx(safe_base, safe_hard))
-
 	# The AI must recognize a destination that becomes capturable after the move,
 	# including a landing point vacated by the moving sheep itself.
 	var ai_safety_state = GameState.new()
@@ -260,6 +253,11 @@ func _initialize() -> void:
 	ai_safety_state.wolves[2] = true
 	ai_safety_state.sheep[12] = 1
 	assert(AI._sheep_safety_score(ai_safety_state, 6, 12) < 0.0)
+	var exposed_base: float = AI._sheep_position_score(ai_safety_state, 12, 6)
+	var exposed_medium: float = AI._sheep_move_score(ai_safety_state, 12, 6, 1)
+	var exposed_hard: float = AI._sheep_move_score(ai_safety_state, 12, 6, 2)
+	assert(exposed_base > exposed_medium)
+	assert(exposed_medium > exposed_hard)
 
 	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain, win conditions and AI safety/direction.")
 	quit()
