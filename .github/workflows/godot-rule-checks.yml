@@ -43,6 +43,27 @@ jobs:
         run: |
           test -f godot/export_presets.cfg
           grep -q 'name="Android"' godot/export_presets.cfg
+      - name: Configure Godot Android export environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz -O /tmp/godot-templates.tpz
+          unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          JAVA_BIN="$(readlink -f "$(command -v java)")"
+          JAVA_HOME_DIR="$(dirname "$(dirname "$JAVA_BIN")")"
+          ANDROID_SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/lib/android-sdk}}"
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME_DIR"
+          export/android/android_sdk_path = "$ANDROID_SDK_DIR"
+          EOF
+          keytool -genkeypair -v -keystore /tmp/wolf-dusk-debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+          test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
+          test -s /tmp/wolf-dusk-debug.keystore
       - name: Import and validate Godot project
         run: |
           godot --headless --editor --path godot --quit
