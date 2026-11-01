@@ -577,13 +577,22 @@ func _select_node(index: int) -> void:
 		else:
 			feedback_message = "حرکت نامعتبر است؛ فقط به نقطهٔ خالیِ متصل حرکت کنید."
 	else:
+		var captured_node := -1
+		for capture_option in game.capture_options(selected_node):
+			if int(capture_option["to"]) == index:
+				captured_node = int(capture_option["middle"])
+				break
 		var result: String = game.move_wolf(selected_node, index)
 		if result == "captured_chain_available":
+			if captured_node >= 0:
+				_play_capture_effect(captured_node)
 			selected_node = game.chain_wolf
 			chain_time_left = 3.0
 			pass_button.visible = true
 			feedback_message = "شکار انجام شد؛ می‌توانید با همان گرگ شکار دوم کنید یا نوبت را پایان دهید."
 		elif result in ["moved", "captured", "won"]:
+			if captured_node >= 0:
+				_play_capture_effect(captured_node)
 			selected_node = -1
 			chain_time_left = 0.0
 			pass_button.visible = false
@@ -614,6 +623,58 @@ func _reset_game() -> void:
 	_refresh_board()
 	_update_hud()
 	_schedule_ai_turn()
+
+func _play_capture_effect(node_index: int) -> void:
+	if node_index < 0 or node_index >= node_visuals.size():
+		return
+	var effect_root := Node3D.new()
+	effect_root.position = Vector3(0.0, 0.16, 0.0)
+	node_visuals[node_index].add_child(effect_root)
+	var ring := MeshInstance3D.new()
+	var ring_mesh := TorusMesh.new()
+	ring_mesh.inner_radius = 0.20
+	ring_mesh.outer_radius = 0.27
+	ring_mesh.rings = 8
+	ring_mesh.ring_segments = 32
+	ring.mesh = ring_mesh
+	var ring_material := StandardMaterial3D.new()
+	ring_material.albedo_color = Color(1.0, 0.58, 0.12)
+	ring_material.emission_enabled = true
+	ring_material.emission = Color(1.0, 0.28, 0.035)
+	ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring.material_override = ring_material
+	ring.rotation.x = PI * 0.5
+	effect_root.add_child(ring)
+	var flash := MeshInstance3D.new()
+	var flash_mesh := SphereMesh.new()
+	flash_mesh.radius = 0.13
+	flash_mesh.height = 0.26
+	flash.mesh = flash_mesh
+	var flash_material := StandardMaterial3D.new()
+	flash_material.albedo_color = Color(1.0, 0.76, 0.32, 0.82)
+	flash_material.emission_enabled = true
+	flash_material.emission = Color(1.0, 0.42, 0.08)
+	flash_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash.material_override = flash_material
+	flash.position.y = 0.10
+	effect_root.add_child(flash)
+	var caption := Label3D.new()
+	caption.text = "شکار!"
+	caption.font_size = 30
+	caption.outline_size = 7
+	caption.modulate = Color(1.0, 0.88, 0.48)
+	caption.position = Vector3(0.0, 0.48, 0.0)
+	caption.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	effect_root.add_child(caption)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(ring, "scale", Vector3(2.7, 2.7, 2.7), 0.48).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(flash, "scale", Vector3(2.2, 2.2, 2.2), 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(flash, "transparency", 1.0, 0.38)
+	tween.tween_property(caption, "position:y", 0.95, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(caption, "modulate:a", 0.0, 0.62)
+	tween.chain().tween_callback(effect_root.queue_free).set_delay(0.04)
+
 
 func _refresh_board() -> void:
 	sheep_idle_pivots.clear()
