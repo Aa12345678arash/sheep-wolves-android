@@ -597,7 +597,7 @@ func _run_ai_turn(generation: int) -> void:
 			if result == "captured_chain_available":
 				var followups := game.capture_options(game.chain_wolf)
 				if not followups.is_empty():
-					var chain_from := game.chain_wolf
+					var chain_from: int = game.chain_wolf
 					var chain_to := int(followups[0].to)
 					var chain_capture_node := int(followups[0].middle)
 					game.move_wolf(chain_from, chain_to)
