@@ -35,8 +35,13 @@ var human_side: String = "sheep"
 var ai_difficulty: int = 1
 var ai_busy: bool = false
 var ai_turn_generation: int = 0
+var move_audio: AudioStreamPlayer
+var capture_audio: AudioStreamPlayer
+var victory_audio: AudioStreamPlayer
+var announced_winner: String = ""
 
 func _ready() -> void:
+	_build_audio()
 	_build_environment()
 	_build_board()
 	_build_camera()
@@ -86,6 +91,49 @@ func _process(delta: float) -> void:
 			_update_hud()
 		else:
 			_update_chain_countdown()
+
+func _build_audio() -> void:
+	# Original procedural sound effects: no external recordings or third-party music assets.
+	move_audio = AudioStreamPlayer.new()
+	move_audio.name = "MoveSound"
+	move_audio.stream = _make_sfx([660.0, 990.0], 0.14, 0.18, 5.5)
+	add_child(move_audio)
+	capture_audio = AudioStreamPlayer.new()
+	capture_audio.name = "CaptureSound"
+	capture_audio.stream = _make_sfx([145.0, 92.0, 310.0], 0.38, 0.34, 7.0)
+	add_child(capture_audio)
+	victory_audio = AudioStreamPlayer.new()
+	victory_audio.name = "VictorySound"
+	victory_audio.stream = _make_sfx([523.25, 659.25, 783.99], 0.82, 0.22, 1.8)
+	add_child(victory_audio)
+
+func _make_sfx(frequencies: Array, duration: float, amplitude: float, decay: float) -> AudioStreamWAV:
+	var sample_rate := 22050
+	var sample_count := int(sample_rate * duration)
+	var pcm := PackedByteArray()
+	pcm.resize(sample_count * 2)
+	for sample_index in range(sample_count):
+		var time := float(sample_index) / float(sample_rate)
+		var envelope := minf(1.0, time / 0.008) * exp(-time * decay)
+		var sample := 0.0
+		for frequency in frequencies:
+			sample += sin(TAU * float(frequency) * time) / float(frequencies.size())
+		sample *= envelope * amplitude
+		pcm.encode_s16(sample_index * 2, int(round(clampf(sample, -1.0, 1.0) * 32767.0)))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.data = pcm
+	return stream
+
+func _play_move_sound() -> void:
+	if move_audio != null:
+		move_audio.play()
+
+func _play_capture_sound() -> void:
+	if capture_audio != null:
+		capture_audio.play()
 
 func _build_environment() -> void:
 	# Soft stylized sky and ambient light make the meadow read as an outdoor scene.
@@ -510,7 +558,8 @@ func _run_ai_turn(generation: int) -> void:
 			ai_anim_from = int(sheep_move.from)
 			ai_anim_to = int(sheep_move.to)
 			ai_anim_kind = "sheep"
-			game.move_sheep(ai_anim_from, ai_anim_to)
+			if game.move_sheep(ai_anim_from, ai_anim_to):
+				_play_move_sound()
 			feedback_message = "رایانه یکی از گوسفندها را جابه‌جا کرد."
 	elif game.turn == GameState.Turn.WOLVES:
 		var wolf_move: Dictionary = AI.choose_wolf_move(game, ai_difficulty)
@@ -529,6 +578,8 @@ func _run_ai_turn(generation: int) -> void:
 				ai_anim_kind = "wolf"
 			if result in ["captured", "captured_chain_available", "won"] and ai_capture_node >= 0:
 				_play_capture_effect(ai_capture_node)
+			elif result == "moved":
+				_play_move_sound()
 			if result == "captured_chain_available":
 				var followups := game.capture_options(game.chain_wolf)
 				if not followups.is_empty():
@@ -612,6 +663,7 @@ func _select_node(index: int) -> void:
 
 	if game.turn == GameState.Turn.SHEEP:
 		if game.move_sheep(selected_node, index):
+			_play_move_sound()
 			animated_from = selected_node
 			animated_to = index
 			animated_kind = "sheep"
@@ -638,6 +690,8 @@ func _select_node(index: int) -> void:
 			pass_button.visible = true
 			feedback_message = "شکار انجام شد؛ می‌توانید با همان گرگ شکار دوم کنید یا نوبت را پایان دهید."
 		elif result in ["moved", "captured", "won"]:
+			if result == "moved":
+				_play_move_sound()
 			if captured_node >= 0:
 				_play_capture_effect(captured_node)
 			selected_node = -1
@@ -685,6 +739,7 @@ func _animate_piece_arrival(from_index: int, to_index: int, piece_kind: String) 
 
 func _reset_game() -> void:
 	game.reset()
+	announced_winner = ""
 	ai_turn_generation += 1
 	ai_busy = false
 	selected_node = -1
@@ -701,6 +756,7 @@ func _trigger_camera_shake() -> void:
 
 
 func _play_capture_effect(node_index: int) -> void:
+	_play_capture_sound()
 	_trigger_camera_shake()
 	if node_index < 0 or node_index >= node_visuals.size():
 		return
@@ -995,6 +1051,10 @@ func _update_chain_countdown() -> void:
 	detail_label.text = "شکار دوم با همان گرگ اختیاری است؛ زمان باقی‌مانده: %.1f ثانیه" % chain_time_left
 
 func _update_hud() -> void:
+	if game.turn == GameState.Turn.FINISHED and game.winner != "" and game.winner != announced_winner:
+		announced_winner = game.winner
+		if victory_audio != null:
+			victory_audio.play()
 	if game.turn == GameState.Turn.PLACE_WOLVES:
 		_set_turn_view(-1)
 		status_label.text = "گرگ و میش | چیدمان گرگ‌ها"
