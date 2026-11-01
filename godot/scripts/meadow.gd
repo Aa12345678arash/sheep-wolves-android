@@ -523,34 +523,51 @@ func _show_setup_menu() -> void:
 	setup_layer.layer = 5
 	add_child(setup_layer)
 	var shade := ColorRect.new()
-	shade.color = Color(0.02, 0.05, 0.04, 0.82)
+	# Keep the meadow visible but prevent the HUD behind the setup screen from competing.
+	shade.color = Color(0.015, 0.035, 0.025, 0.90)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(650, 680)
+	panel.custom_minimum_size = Vector2(660, 760)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-325, -340)
+	panel.position = Vector2(-330, -380)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.075, 0.12, 0.095, 0.98)
+	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(22)
+	panel_style.content_margin_left = 22.0
+	panel_style.content_margin_right = 22.0
+	panel_style.content_margin_top = 20.0
+	panel_style.content_margin_bottom = 20.0
+	panel.add_theme_stylebox_override("panel", panel_style)
 	setup_layer.add_child(panel)
 	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 12)
+	column.add_theme_font_size_override("font_size", 24)
+	column.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86))
 	panel.add_child(column)
 	var heading := Label.new()
 	heading.text = "گرگ و میش | راز دشت سبز"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_font_size_override("font_size", 36)
 	column.add_child(heading)
 	var subtitle := Label.new()
 	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 24)
 	column.add_child(subtitle)
 	var sheep_name := LineEdit.new()
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
-	sheep_name.custom_minimum_size = Vector2(0, 56)
+	sheep_name.custom_minimum_size = Vector2(0, 66)
+	sheep_name.add_theme_font_size_override("font_size", 24)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
-	wolf_name.custom_minimum_size = Vector2(0, 56)
+	wolf_name.custom_minimum_size = Vector2(0, 66)
+	wolf_name.add_theme_font_size_override("font_size", 24)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
@@ -564,20 +581,22 @@ func _show_setup_menu() -> void:
 	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
-	mode_picker.custom_minimum_size = Vector2(0, 56)
-	side_picker.custom_minimum_size = Vector2(0, 56)
-	difficulty_picker.custom_minimum_size = Vector2(0, 56)
+	mode_picker.custom_minimum_size = Vector2(0, 66)
+	side_picker.custom_minimum_size = Vector2(0, 66)
+	difficulty_picker.custom_minimum_size = Vector2(0, 66)
 	column.add_child(difficulty_picker)
 	setup_music_button = Button.new()
 	setup_music_button.text = "موسیقی دشت: روشن"
 	setup_music_button.toggle_mode = true
 	setup_music_button.button_pressed = true
-	setup_music_button.custom_minimum_size = Vector2(0, 54)
+	setup_music_button.custom_minimum_size = Vector2(0, 64)
+	setup_music_button.add_theme_font_size_override("font_size", 24)
 	setup_music_button.toggled.connect(_toggle_meadow_music)
 	column.add_child(setup_music_button)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
-	start_button.custom_minimum_size = Vector2(0, 64)
+	start_button.custom_minimum_size = Vector2(0, 76)
+	start_button.add_theme_font_size_override("font_size", 28)
 	start_button.pressed.connect(func():
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
@@ -603,15 +622,19 @@ func _show_setup_menu() -> void:
 	var private_online := Button.new()
 	private_online.text = "بازی آنلاین با کد اتاق — در دست توسعه"
 	private_online.disabled = true
+	private_online.visible = false
 	column.add_child(private_online)
 	var random_online := Button.new()
 	random_online.text = "حریف تصادفی آنلاین — در دست توسعه"
 	random_online.disabled = true
+	random_online.visible = false
 	column.add_child(random_online)
 	var note := Label.new()
-	note.text = "بازی آنلاین پس از راه‌اندازی سرور فعال خواهد شد."
+	note.text = "سازنده و معرفی‌کننده: آرش سلیمی"
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.add_theme_font_size_override("font_size", 20)
 	column.add_child(note)
 
 func _is_ai_turn() -> bool:
