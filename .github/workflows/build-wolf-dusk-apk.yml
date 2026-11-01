@@ -24,6 +24,37 @@ jobs:
         run: |
           test -f godot/export_presets.cfg
           grep -q 'name="Android"' godot/export_presets.cfg
+      - name: Configure Godot Android export environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz -O /tmp/godot-templates.tpz
+          unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          JAVA_BIN="$(readlink -f "$(command -v java)")"
+          JAVA_HOME_DIR="$(dirname "$(dirname "$JAVA_BIN")")"
+          if [ -n "${ANDROID_HOME:-}" ]; then
+            ANDROID_SDK_DIR="$ANDROID_HOME"
+          elif [ -n "${ANDROID_SDK_ROOT:-}" ]; then
+            ANDROID_SDK_DIR="$ANDROID_SDK_ROOT"
+          else
+            ADB_BIN="$(find /opt /usr/local /usr/lib -type f -name adb 2>/dev/null | head -n 1)"
+            test -n "$ADB_BIN"
+            ANDROID_SDK_DIR="$(dirname "$(dirname "$ADB_BIN")")"
+          fi
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME_DIR"
+          export/android/android_sdk_path = "$ANDROID_SDK_DIR"
+          EOF
+          keytool -genkeypair -v -keystore /tmp/wolf-dusk-debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+          echo "JAVA_HOME=$JAVA_HOME_DIR"
+          echo "ANDROID_SDK=$ANDROID_SDK_DIR"
+          test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
+          test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_release.apk"
       - name: Import and validate Godot project
         run: |
           godot --headless --editor --path godot --quit
