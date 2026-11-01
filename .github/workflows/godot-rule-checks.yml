@@ -71,7 +71,7 @@ jobs:
       - name: Export Android debug APK
         run: |
           mkdir -p godot/build/android
-          godot --headless --path godot --export-debug "Android" godot/build/android/wolf-dusk-debug.apk
+          godot --headless --path godot --export-debug "Android" build/android/wolf-dusk-debug.apk
           test -s godot/build/android/wolf-dusk-debug.apk
       - name: Upload installable debug APK
         uses: actions/upload-artifact@v4
