@@ -76,7 +76,7 @@ func _initialize() -> void:
 			if int(option.middle) == int(geometry[1]) and int(option.to) == int(geometry[2]):
 				geometry_found = true
 		assert(geometry_found)
-		assert(geometry_state.move_wolf(int(geometry[0]), int(geometry[2])) in ["captured", "captured_chain_available"])
+		assert(geometry_state.move_wolf(int(geometry[0]), int(geometry[2])) in ["captured", "captured_chain_available", "won"])
 
 	# A connected but non-collinear landing point is not a valid capture.
 	var non_collinear_state = GameState.new()
