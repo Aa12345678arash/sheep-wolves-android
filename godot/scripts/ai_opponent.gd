@@ -38,9 +38,7 @@ static func choose_sheep_move(state, difficulty: int) -> Dictionary:
 	var best: Dictionary = moves[0]
 	var best_score := -INF
 	for move in moves:
-		var score := _sheep_position_score(state, int(move.from), int(move.to))
-		if difficulty >= 2:
-			score += _sheep_safety_score(state, int(move.to), int(move.from)) * 1.5
+		var score := _sheep_move_score(state, int(move.from), int(move.to), difficulty)
 		if score > best_score:
 			best_score = score
 			best = move
@@ -92,8 +90,13 @@ static func _sheep_position_score(state, from: int, to: int) -> float:
 	var from_row := int(from / 5)
 	var to_row := int(to / 5)
 	# Sheep begin on row E and advance toward row A, where the wolves approach.
-	var score := float(from_row - to_row) * 0.4 + _centrality(to) * 0.2
-	score += _sheep_safety_score(state, to, from)
+	return float(from_row - to_row) * 0.4 + _centrality(to) * 0.2
+
+static func _sheep_move_score(state, from: int, to: int, difficulty: int) -> float:
+	var score := _sheep_position_score(state, from, to)
+	if difficulty >= 1:
+		var safety_weight := 1.0 if difficulty == 1 else 2.5
+		score += _sheep_safety_score(state, to, from) * safety_weight
 	return score
 
 static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> float:
