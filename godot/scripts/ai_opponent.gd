@@ -65,10 +65,7 @@ static func choose_wolf_move(state, difficulty: int) -> Dictionary:
 	var best: Dictionary = moves[0]
 	var best_score := -INF
 	for move in moves:
-		var score := 100.0 if bool(move.capture) else _centrality(int(move.to)) * 2.0
-		if difficulty >= 2:
-			score += _future_capture_potential(state, int(move.to)) * 2.5
-			score += _future_mobility(state, int(move.to)) * 0.25
+		var score := _wolf_move_score(state, int(move.from), int(move.to), bool(move.capture), difficulty)
 		if score > best_score:
 			best_score = score
 			best = move
@@ -126,7 +123,60 @@ static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> flo
 				danger += 3.0
 	return -danger
 
+static func _wolf_move_score(state, from: int, to: int, is_capture: bool, difficulty: int) -> float:
+	# Score the position after the wolf has moved, not merely the destination.
+	var score := 100.0 if is_capture else _centrality(to) * 2.0
+	if difficulty == 1:
+		if is_capture:
+			score += 12.0
+		else:
+			score += _count_capture_options_after(state, from, to, -1) * 4.0
+		return score
+	if difficulty >= 2:
+		var captured_middle := -1
+		if is_capture:
+			for option in state.capture_options(from):
+				if int(option.to) == to:
+					captured_middle = int(option.middle)
+					break
+		var follow_up_captures := _count_capture_options_after(state, from, to, captured_middle)
+		var mobility := _wolf_mobility_after(state, from, to)
+		score += float(follow_up_captures) * 24.0
+		score += float(mobility) * 0.8
+		# Avoid moves that leave this wolf stranded when another wolf can cover the area.
+		if mobility == 0 and follow_up_captures == 0:
+			score -= 5.0
+	return score
+
+static func _count_capture_options_after(state, wolf_from: int, wolf_to: int, captured_middle: int) -> int:
+	var total := 0
+	var adjacency := BoardGraph.adjacency()
+	var wolf_row := int(wolf_to / 5)
+	var wolf_col := wolf_to % 5
+	for middle in adjacency[wolf_to]:
+		if middle == captured_middle or state.sheep[middle] <= 0:
+			continue
+		var dr := int(middle / 5) - wolf_row
+		var dc := (middle % 5) - wolf_col
+		for landing in adjacency[middle]:
+			if landing == wolf_to:
+				continue
+			if int(landing / 5) - int(middle / 5) != dr or landing % 5 - middle % 5 != dc:
+				continue
+			# The wolf's previous node becomes empty after the simulated move.
+			if landing == wolf_from or not state.is_occupied(landing):
+				total += 1
+	return total
+
+static func _wolf_mobility_after(state, wolf_from: int, wolf_to: int) -> int:
+	var total := 0
+	for next_node in BoardGraph.adjacency()[wolf_to]:
+		if next_node == wolf_from or not state.is_occupied(next_node):
+			total += 1
+	return total
+
 static func _future_capture_potential(state, node: int) -> float:
+	# Retained as a small positional heuristic for callers that need it.
 	var total := 0.0
 	for middle in BoardGraph.adjacency()[node]:
 		if state.sheep[middle] > 0:
