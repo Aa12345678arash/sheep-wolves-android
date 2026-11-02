@@ -19,7 +19,7 @@ var selected_node: int = -1
 var chain_time_left: float = 0.0
 var node_areas: Array[Area3D] = []
 var node_visuals: Array[Node3D] = []
-var feedback_message: String = "برای شروع، سه نقطهٔ خالی را برای گرگ‌ها انتخاب کنید."
+var feedback_message: String = "سه نقطهٔ خالی را برای قرار دادن سه گرگ انتخاب کنید؛ سپس نوبت گوسفندهاست."
 var setup_layer: CanvasLayer
 var player_one_name: String = "بازیکن گوسفندها"
 var player_two_name: String = "بازیکن گرگ‌ها"
@@ -50,7 +50,7 @@ func _ready() -> void:
 	_build_camera()
 	_build_light()
 	_build_hud()
-	_show_setup_menu()
+	# Start directly in the playable match; no blocking setup overlay.
 	_refresh_board()
 	_update_hud()
 
@@ -445,78 +445,125 @@ func _build_board() -> void:
 
 func _build_camera() -> void:
 	camera = Camera3D.new()
-	camera.position = Vector3(10.5, 12.5, 15.5)
+	# Portrait framing: a slightly elevated, centered view keeps the full 5x5 board visible.
+	camera.position = Vector3(0.0, 20.0, 22.0)
 	camera.current = true
-	camera.fov = 58.0
+	camera.fov = 48.0
 	add_child(camera)
 	camera.look_at(Vector3.ZERO, Vector3.UP)
 
 func _build_light() -> void:
 	var light := DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
-	light.light_energy = 1.15
-	light.shadow_enabled = true
+	light.rotation_degrees = Vector3(-48.0, -25.0, 0.0)
+	light.light_energy = 1.0
+	# Mobile performance: avoid expensive real-time shadow maps.
+	light.shadow_enabled = false
 	add_child(light)
 
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
+	layer.layer = 10
 	add_child(layer)
-	var panel := PanelContainer.new()
-	panel.position = Vector2(15, 15)
-	panel.custom_minimum_size = Vector2(690, 300)
-	layer.add_child(panel)
-	var column := VBoxContainer.new()
-	panel.add_child(column)
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_PASS
+	layer.add_child(root)
+
+	# Compact header occupies its own safe area and never covers the board center.
+	var header := PanelContainer.new()
+	header.anchor_left = 0.0
+	header.anchor_top = 0.0
+	header.anchor_right = 1.0
+	header.anchor_bottom = 0.0
+	header.offset_left = 12.0
+	header.offset_top = 12.0
+	header.offset_right = -12.0
+	header.offset_bottom = 166.0
+	root.add_child(header)
+	var header_column := VBoxContainer.new()
+	header_column.add_theme_constant_override("separation", 3)
+	header.add_child(header_column)
+
 	player_names_label = Label.new()
 	player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
-	column.add_child(player_names_label)
+	player_names_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	player_names_label.add_theme_font_size_override("font_size", 16)
+	header_column.add_child(player_names_label)
+
 	status_label = Label.new()
-	status_label.add_theme_font_size_override("font_size", 28)
-	column.add_child(status_label)
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.add_theme_font_size_override("font_size", 23)
+	header_column.add_child(status_label)
+
 	capture_count_label = Label.new()
-	capture_count_label.text = "🐺 گوسفند شکارشده: ۰  |  باقی‌مانده: ۲۵"
-	capture_count_label.add_theme_font_size_override("font_size", 22)
+	capture_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	capture_count_label.add_theme_font_size_override("font_size", 17)
 	capture_count_label.add_theme_color_override("font_color", Color(0.98, 0.72, 0.36))
-	column.add_child(capture_count_label)
+	header_column.add_child(capture_count_label)
+
 	detail_label = Label.new()
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.custom_minimum_size = Vector2(660, 48)
-	detail_label.add_theme_font_size_override("font_size", 20)
-	column.add_child(detail_label)
+	detail_label.add_theme_font_size_override("font_size", 15)
+	header_column.add_child(detail_label)
+
 	message_label = Label.new()
+	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message_label.custom_minimum_size = Vector2(660, 44)
-	message_label.add_theme_font_size_override("font_size", 19)
-	column.add_child(message_label)
-	var touch_hint := Label.new()
-	touch_hint.text = "روش بازی: مهره را لمس کنید، سپس مقصد سبز یا نارنجی را بزنید."
-	touch_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	touch_hint.custom_minimum_size = Vector2(660, 42)
-	touch_hint.add_theme_font_size_override("font_size", 18)
-	column.add_child(touch_hint)
+	message_label.add_theme_font_size_override("font_size", 14)
+	header_column.add_child(message_label)
+
+	# Bottom controls remain outside the board's central play area.
+	var footer := PanelContainer.new()
+	footer.anchor_left = 0.0
+	footer.anchor_top = 1.0
+	footer.anchor_right = 1.0
+	footer.anchor_bottom = 1.0
+	footer.offset_left = 12.0
+	footer.offset_top = -116.0
+	footer.offset_right = -12.0
+	footer.offset_bottom = -12.0
+	root.add_child(footer)
+	var footer_column := VBoxContainer.new()
+	footer_column.add_theme_constant_override("separation", 5)
+	footer.add_child(footer_column)
+
+	var controls := HBoxContainer.new()
+	controls.add_theme_constant_override("separation", 8)
+	footer_column.add_child(controls)
+
 	pass_button = Button.new()
-	pass_button.text = "رد کردن شکار دوم و پایان نوبت گرگ"
-	pass_button.custom_minimum_size = Vector2(660, 58)
+	pass_button.text = "پایان شکار دوم"
+	pass_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pass_button.custom_minimum_size = Vector2(0, 44)
+	pass_button.add_theme_font_size_override("font_size", 15)
 	pass_button.visible = false
 	pass_button.pressed.connect(_decline_chain_capture)
-	column.add_child(pass_button)
+	controls.add_child(pass_button)
+
 	var reset_button := Button.new()
-	reset_button.text = "شروع دوبارهٔ بازی"
-	reset_button.custom_minimum_size = Vector2(660, 58)
+	reset_button.text = "بازی تازه"
+	reset_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset_button.custom_minimum_size = Vector2(0, 44)
+	reset_button.add_theme_font_size_override("font_size", 15)
 	reset_button.pressed.connect(_reset_game)
-	column.add_child(reset_button)
+	controls.add_child(reset_button)
+
 	music_button = Button.new()
-	music_button.text = "موسیقی دشت: روشن"
+	music_button.text = "موسیقی: روشن"
 	music_button.toggle_mode = true
 	music_button.button_pressed = true
-	music_button.custom_minimum_size = Vector2(660, 56)
+	music_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	music_button.custom_minimum_size = Vector2(0, 44)
+	music_button.add_theme_font_size_override("font_size", 14)
 	music_button.toggled.connect(_toggle_meadow_music)
-	column.add_child(music_button)
+	controls.add_child(music_button)
+
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
-	credit.position = Vector2(18, 310)
-	credit.add_theme_font_size_override("font_size", 18)
-	layer.add_child(credit)
+	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	credit.add_theme_font_size_override("font_size", 12)
+	footer_column.add_child(credit)
 
 func _show_setup_menu() -> void:
 	setup_layer = CanvasLayer.new()
