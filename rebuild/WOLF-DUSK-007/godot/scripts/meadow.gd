@@ -547,10 +547,16 @@ func _show_setup_menu() -> void:
 	column.add_theme_font_size_override("font_size", 24)
 	column.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86))
 	panel.add_child(column)
+	var emblem := TextureRect.new()
+	emblem.texture = load("res://assets/title_emblem.svg")
+	emblem.custom_minimum_size = Vector2(0, 112)
+	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	column.add_child(emblem)
 	var heading := Label.new()
 	heading.text = "گرگ و میش | راز دشت سبز"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_font_size_override("font_size", 28)
 	column.add_child(heading)
 	var subtitle := Label.new()
 	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
