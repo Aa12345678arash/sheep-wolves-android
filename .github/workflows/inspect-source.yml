@@ -35,3 +35,5 @@ jobs:
           path: source-review/
           if-no-files-found: error
           retention-days: 3
+
+# Temporary inspection run: archive contents only; no production branches modified.
