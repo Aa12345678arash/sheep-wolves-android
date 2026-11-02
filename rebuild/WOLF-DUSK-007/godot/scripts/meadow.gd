@@ -862,7 +862,7 @@ func _select_node(index: int) -> void:
 			if not available_moves.is_empty():
 				selected_node = index
 				_set_tactical_view(index)
-				feedback_message = "گوسفند انتخاب شد؛ مقصدهای سبز را در نمای تاکتیکی ببینید."
+				feedback_message = "یک گوسفند از %d گوسفند این جایگاه انتخاب شد؛ حلقهٔ طلایی آن را نشان می‌دهد. مقصد سبز را لمس کنید." % game.sheep[index]
 			else:
 				feedback_message = "این گوسفند حرکت قانونی ندارد؛ گوسفند دیگری را انتخاب کنید."
 		elif game.turn == GameState.Turn.WOLVES and game.wolves[index]:
@@ -1099,11 +1099,11 @@ func _refresh_board() -> void:
 		node_name.position = Vector3(0.0, -0.08, 0.48)
 		visual.add_child(node_name)
 		if game.sheep[index] > 0:
-			_add_sheep_piece(visual, game.sheep[index])
+			_add_sheep_piece(visual, game.sheep[index], game.turn == GameState.Turn.SHEEP and selected_node == index)
 		if game.wolves[index]:
 			_add_wolf_piece(visual)
 
-func _add_sheep_piece(parent: Node3D, count: int) -> void:
+func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -> void:
 	# Stylized premium sheep: layered wool curls, expressive face, ears and four small legs.
 	# Five pieces remain individually readable at each starting node on mobile screens.
 	var wool := _material(Color(0.98, 0.96, 0.88))
@@ -1120,9 +1120,22 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 		var column := i % 3
 		var row := int(i / 3)
 		pivot.position = Vector3((column - 1) * 0.34, 0.29, (row - 0.5) * 0.34)
-		pivot.scale = Vector3.ONE * 0.92
+		pivot.scale = Vector3.ONE * (1.04 if highlight_one and i == visible_count - 1 else 0.92)
 		pivot.rotation.y = PI * 0.5
 		parent.add_child(pivot)
+		if highlight_one and i == visible_count - 1:
+			# Gold ground ring identifies exactly one sheep from the five-piece stack.
+			var selected_ring := MeshInstance3D.new()
+			var ring_mesh := TorusMesh.new()
+			ring_mesh.inner_radius = 0.235
+			ring_mesh.outer_radius = 0.285
+			ring_mesh.rings = 20
+			ring_mesh.ring_segments = 12
+			selected_ring.mesh = ring_mesh
+			selected_ring.material_override = _material(Color(1.0, 0.72, 0.08))
+			selected_ring.position = Vector3(0.0, 0.045, 0.0)
+			selected_ring.rotation.x = PI * 0.5
+			pivot.add_child(selected_ring)
 
 		var body := MeshInstance3D.new()
 		var body_mesh := SphereMesh.new()
