@@ -7,7 +7,7 @@ on:
       - WOLF-DUSK-007-REBUILD
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
-      - '.github/workflows/build-wolf-dusk-apk.yml'
+      - '.github/workflows/build-wolf-dusk-007-apk.yml'
 
 permissions:
   contents: read
@@ -22,8 +22,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Verify Android export preset
         run: |
-          test -f rebuild/WOLF-DUSK-007/rebuild/WOLF-DUSK-007/godot/export_presets.cfg
-          grep -q 'name="Android"' godot/export_presets.cfg
+          test -f rebuild/WOLF-DUSK-007/godot/export_presets.cfg
+          grep -q 'name="Android"' rebuild/WOLF-DUSK-007/godot/export_presets.cfg
       - name: Configure Godot Android export environment
         shell: bash
         run: |
@@ -71,15 +71,15 @@ jobs:
       - name: Import and validate Godot project
         run: |
           godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
-          godot --headless --path godot --quit-after 2
+          godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
       - name: Export Android debug APK
         run: |
           godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-007-preview.apk"
-          test -s "$GITHUB_WORKSPACE/wolf-dusk-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-007-preview.apk"
       - name: Upload installable debug APK
         uses: actions/upload-artifact@v4
         with:
           name: wolf-dusk-007-android-preview
-          path: wolf-dusk-preview.apk
+          path: wolf-dusk-007-preview.apk
           if-no-files-found: error
           retention-days: 14
