@@ -41,8 +41,8 @@ static func validate(data: Dictionary) -> bool:
 		known[id] = true
 	var seen := {}
 	for edge in edges:
-		var a := str(edge.get("from", ""))
-		var b := str(edge.get("to", ""))
+		var a: String = str(edge.get("from", ""))
+		var b: String = str(edge.get("to", ""))
 		var key := edge_key(a, b)
 		if a == b or not known.has(a) or not known.has(b) or seen.has(key):
 			return false
