@@ -1,6 +1,6 @@
 extends Node3D
 
-const BOARD_JSON := "res://../CANONICAL_BOARD.json"
+const BOARD_JSON := "res://data/canonical_board.json"
 const CELL := 2.0
 var board: Dictionary = {}
 var edges: Dictionary = {}
@@ -80,6 +80,14 @@ func _build_board() -> void:
 	ground.material_override = mat
 	ground.position.y = -0.18
 	add_child(ground)
+	var floor_body := StaticBody3D.new()
+	var floor_shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(11.5, 0.25, 11.5)
+	floor_shape.shape = box
+	floor_body.position.y = -0.18
+	floor_body.add_child(floor_shape)
+	add_child(floor_body)
 	for node in board.nodes:
 		var id := str(node.id)
 		var pos := _world_pos(id)
