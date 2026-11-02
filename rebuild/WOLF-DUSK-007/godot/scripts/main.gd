@@ -7,6 +7,7 @@ var edges: Dictionary = {}
 var sheep_stacks: Dictionary = {}
 var wolves: Array[String] = []
 var selected := ""
+var chain_wolf := ""
 var phase := "setup"
 var turn := "sheep"
 var sheep_count := 25
@@ -224,6 +225,9 @@ func _on_node(id: String) -> void:
 			status_label.text = "نوبت گرگ‌ها"
 	else:
 		if wolves.has(id):
+			if chain_wolf != "" and id != chain_wolf:
+				status_label.text = "برای شکار پیاپی باید همان گرگ را انتخاب کنید"
+				return
 			selected = id
 			status_label.text = "گرگ %s انتخاب شد؛ مقصد را لمس کنید" % id
 			return
@@ -242,13 +246,16 @@ func _on_node(id: String) -> void:
 					phase = "over"
 					status_label.text = "گرگ‌ها پیروز شدند!"
 				elif not GameRules.legal_captures(id, _occupied(), sheep_stacks, edges).is_empty():
+					chain_wolf = id
+					selected = id
 					status_label.text = "شکار زنجیره‌ای؛ با همان گرگ ادامه دهید"
 				else:
+					chain_wolf = ""
 					selected = ""
 					turn = "sheep"
 					status_label.text = "نوبت گوسفندها"
 				return
-		if GameRules.legal_moves(selected, occupied, edges).has(id):
+		if chain_wolf == "" and GameRules.legal_moves(selected, occupied, edges).has(id):
 			wolves.erase(selected)
 			wolves.append(id)
 			selected = ""
