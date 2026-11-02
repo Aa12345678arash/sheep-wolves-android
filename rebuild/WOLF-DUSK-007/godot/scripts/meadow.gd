@@ -8,8 +8,11 @@ const AI = preload("res://scripts/ai_opponent.gd")
 
 var game = GameState.new()
 var camera: Camera3D
-var camera_target_position: Vector3 = Vector3(0.0, 20.0, 22.0)
+var camera_target_position: Vector3 = Vector3(0.0, 22.0, 8.0)
+var camera_target_look_at: Vector3 = Vector3.ZERO
 var camera_view_turn: int = -1
+var camera_mode: String = "overview"
+var camera_mode_generation: int = 0
 var status_label: Label
 var capture_count_label: Label
 var detail_label: Label
@@ -68,7 +71,7 @@ func _process(delta: float) -> void:
 		if is_instance_valid(tail_pivot):
 			tail_pivot.rotation.z = 0.96 + sin(sheep_anim_clock * 2.3 + float(i)) * 0.12
 	if camera != null and camera.is_inside_tree():
-		camera.position = camera.position.lerp(camera_target_position, minf(delta * 10.0, 1.0))
+		camera.position = camera.position.lerp(camera_target_position, minf(delta * 7.5, 1.0))
 		if camera_shake_time > 0.0:
 			camera_shake_time = maxf(0.0, camera_shake_time - delta)
 			var shake_phase := sheep_anim_clock * 58.0
@@ -76,7 +79,7 @@ func _process(delta: float) -> void:
 			camera.position += Vector3(sin(shake_phase) * camera_shake_strength, cos(shake_phase * 1.31) * camera_shake_strength * 0.45, sin(shake_phase * 0.77) * camera_shake_strength * 0.55) * shake_fade
 		else:
 			camera_shake_strength = 0.0
-		camera.look_at(Vector3.ZERO, Vector3.UP)
+		camera.look_at(camera_target_look_at, Vector3.UP)
 	if chain_time_left > 0.0:
 		chain_time_left = maxf(0.0, chain_time_left - delta)
 		if chain_time_left <= 0.0:
@@ -107,7 +110,7 @@ func _build_audio() -> void:
 	# Original synthesized meadow theme; no third-party recording or license dependency.
 	music_audio = AudioStreamPlayer.new()
 	music_audio.name = "OriginalMeadowTheme"
-	music_audio.volume_db = -12.0
+	music_audio.volume_db = -5.0
 	music_audio.bus = "Master"
 	music_audio.process_mode = Node.PROCESS_MODE_ALWAYS
 	music_audio.stream = _make_meadow_music()
@@ -135,7 +138,7 @@ func _make_meadow_music() -> AudioStreamWAV:
 			var hz := float(frequency)
 			sample += sin(TAU * hz * time) * 0.62
 			sample += sin(TAU * hz * 2.0 * time) * 0.10
-		sample = sample / 3.0 * envelope * 0.13
+		sample = sample / 3.0 * envelope * 0.42
 		pcm.encode_s16(sample_index * 2, int(round(clampf(sample, -1.0, 1.0) * 32767.0)))
 	var stream := AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
@@ -446,7 +449,7 @@ func _build_board() -> void:
 func _build_camera() -> void:
 	camera = Camera3D.new()
 	# Portrait framing: a slightly elevated, centered view keeps the full 5x5 board visible.
-	camera.position = Vector3(0.0, 20.0, 22.0)
+	camera.position = Vector3(0.0, 22.0, 8.0)
 	camera.current = true
 	camera.fov = 48.0
 	add_child(camera)
@@ -799,11 +802,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	query.collide_with_bodies = false
 	query.collision_mask = 1
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if hit.is_empty():
-		return
-	var collider := hit.get("collider") as Area3D
-	if collider != null and collider.has_meta("board_node_index"):
-		_select_node(int(collider.get_meta("board_node_index")))
+	if not hit.is_empty():
+		var collider := hit.get("collider") as Area3D
+		if collider != null and collider.has_meta("board_node_index"):
+			_select_node(int(collider.get_meta("board_node_index")))
+			get_viewport().set_input_as_handled()
+			return
+	# Touch fallback: choose the closest projected board point when physics picking misses.
+	# This makes small Android touch targets forgiving without allowing taps on distant cells.
+	var nearest_index := -1
+	var nearest_distance := 54.0
+	for node_index in range(node_areas.size()):
+		var point_on_screen := camera.unproject_position(node_areas[node_index].global_position)
+		var distance := point_on_screen.distance_to(screen_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_index = node_index
+	if nearest_index >= 0:
+		_select_node(nearest_index)
 		get_viewport().set_input_as_handled()
 
 func _select_node(index: int) -> void:
@@ -832,13 +848,15 @@ func _select_node(index: int) -> void:
 			var available_moves: Array[int] = game.sheep_moves(index)
 			if not available_moves.is_empty():
 				selected_node = index
-				feedback_message = "گوسفند انتخاب شد؛ اکنون یکی از مقصدهای سبز را بزنید."
+				_set_tactical_view(index)
+				feedback_message = "گوسفند انتخاب شد؛ مقصدهای سبز را در نمای تاکتیکی ببینید."
 			else:
 				feedback_message = "این گوسفند حرکت قانونی ندارد؛ گوسفند دیگری را انتخاب کنید."
 		elif game.turn == GameState.Turn.WOLVES and game.wolves[index]:
 			if game.chain_wolf == -1 or game.chain_wolf == index:
 				selected_node = index
-				feedback_message = "گرگ انتخاب شد؛ مقصد سبز را برای حرکت یا شکار بزنید."
+				_set_tactical_view(index)
+				feedback_message = "گرگ انتخاب شد؛ مسیر حرکت و خطرها را بررسی کنید."
 			else:
 				feedback_message = "در شکار زنجیره‌ای فقط همان گرگِ شکارکننده اجازهٔ حرکت دارد."
 		else:
@@ -849,6 +867,7 @@ func _select_node(index: int) -> void:
 
 	if index == selected_node:
 		selected_node = -1
+		_set_turn_view(-1 if game.turn == GameState.Turn.WOLVES else 1, true)
 		feedback_message = "انتخاب لغو شد؛ مهرهٔ دیگری را انتخاب کنید."
 		_refresh_board()
 		_update_hud()
@@ -858,7 +877,8 @@ func _select_node(index: int) -> void:
 		var alternate_moves: Array[int] = game.sheep_moves(index)
 		if not alternate_moves.is_empty():
 			selected_node = index
-			feedback_message = "انتخاب به گوسفند دیگری تغییر کرد؛ مقصد سبز را بزنید."
+			_set_tactical_view(index)
+			feedback_message = "انتخاب به گوسفند دیگری تغییر کرد؛ مقصدهای مجاز روشن شدند."
 		else:
 			feedback_message = "این گوسفند حرکت قانونی ندارد؛ گوسفند انتخاب‌شدهٔ قبلی حفظ شد."
 		_refresh_board()
@@ -920,6 +940,8 @@ func _select_node(index: int) -> void:
 	_schedule_ai_turn()
 
 func _animate_piece_arrival(from_index: int, to_index: int, piece_kind: String) -> void:
+	var camera_generation := _set_jump_view(from_index, to_index)
+	call_deferred("_restore_overview_after_jump", camera_generation)
 	if from_index < 0 or to_index < 0 or to_index >= node_visuals.size():
 		return
 	var destination_visual := node_visuals[to_index]
@@ -1263,13 +1285,48 @@ func _update_hud() -> void:
 	if chain_time_left > 0.0:
 		_update_chain_countdown()
 
-func _set_turn_view(side: int) -> void:
-	# Chess-like hot-seat orientation: each side sees the board from its own edge.
-	# Sheep start on row E (z positive); wolves face them from row A (z negative).
-	# The board and pieces never move; only the camera viewpoint rotates 180 degrees.
-	camera_view_turn = side
-	var view_sign := 1.0 if side >= 0 else -1.0
-	camera_target_position = Vector3(0.0, 20.0, 22.0 * view_sign)
+func _set_turn_view(side: int, force_overview: bool = false) -> void:
+	# Overview: show the entire board from a high, readable tactical angle.
+	# Keep the established hot-seat orientation when the active side changes.
+	if side != camera_view_turn or force_overview:
+		camera_view_turn = side
+		camera_mode = "overview"
+		camera_mode_generation += 1
+		var view_sign := 1.0 if side >= 0 else -1.0
+		camera_target_look_at = Vector3.ZERO
+		camera_target_position = Vector3(0.0, 22.0, 8.0 * view_sign)
+		camera.fov = 48.0
+
+func _set_tactical_view(node_index: int) -> void:
+	if node_index < 0 or node_index >= node_areas.size():
+		return
+	camera_mode = "tactical"
+	camera_mode_generation += 1
+	var focus: Vector3 = node_areas[node_index].global_position
+	var view_sign := 1.0 if camera_view_turn >= 0 else -1.0
+	camera_target_look_at = focus + Vector3(0.0, 0.25, 0.0)
+	camera_target_position = focus + Vector3(0.0, 12.5, 8.5 * view_sign)
+	camera.fov = 42.0
+
+func _set_jump_view(from_index: int, to_index: int) -> int:
+	if from_index < 0 or to_index < 0 or from_index >= node_areas.size() or to_index >= node_areas.size():
+		return camera_mode_generation
+	camera_mode = "jump"
+	camera_mode_generation += 1
+	var generation := camera_mode_generation
+	var midpoint: Vector3 = (node_areas[from_index].global_position + node_areas[to_index].global_position) * 0.5
+	var view_sign := 1.0 if camera_view_turn >= 0 else -1.0
+	camera_target_look_at = midpoint + Vector3(0.0, 0.35, 0.0)
+	camera_target_position = midpoint + Vector3(0.0, 9.5, 7.0 * view_sign)
+	camera.fov = 36.0
+	return generation
+
+func _restore_overview_after_jump(generation: int) -> void:
+	await get_tree().create_timer(0.72).timeout
+	if not is_inside_tree() or generation != camera_mode_generation:
+		return
+	var side := -1 if game.turn == GameState.Turn.PLACE_WOLVES or game.turn == GameState.Turn.WOLVES else 1
+	_set_turn_view(side, true)
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
