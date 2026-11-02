@@ -14,6 +14,7 @@ This directory is a clean, independent Godot 4 project. It must not reuse the pr
 - At match setup, offer a clear side choice: «گوسفندها» as the light side and «گرگ‌ها» as the dark side, analogous to choosing White or Black in online chess. Use distinctive character portraits/tokens, not only color.
 - In single-player, choosing sheep means the human controls sheep and easy AI controls wolves. Choosing wolves means easy AI controls sheep and the human controls wolves. The canonical first move remains with sheep; selecting wolves never changes the rules or lets wolves move first.
 - In local two-player, assign one player to sheep and the other to wolves; clearly show who controls each side. Sheep still move first.
+- Camera orientation: when the player chooses a side, rotate the board camera 180 degrees so the player's own pieces appear nearest/bottom of the screen. Sheep-player view looks from behind the sheep toward wolves; wolf-player view looks from behind wolves toward sheep. Provide a top-down overview option for full board planning. Camera rotation must not alter board coordinates, legal moves, or turn order, and should use a brief smooth transition.
 - Keep the board central, large, high-contrast and unobstructed. Use a light natural meadow/leaf-inspired board surface with clearly visible 5×5 nodes and all 56 connections. Do not use a dark, nearly black background or camouflage paths in grass.
 - Provide subtle visual feedback inspired by online chess interfaces: selected piece halo, legal destination markers, last-move origin/destination highlight, clear active-side indicator and smooth but brief move animation.
 - Use shapes and small labels as well as color so the sides remain distinguishable for color-vision differences and on small phone screens.
@@ -46,5 +47,5 @@ G. Test on a real Android phone. CI/build success is not gameplay acceptance.
 ## Acceptance gates
 - No milestone is called successful solely because it compiles.
 - Rule tests must cover edge cases and turn transitions, including choosing either side while preserving sheep-first play.
-- Real-device tests must confirm landscape layout, touch targets, all rules, no blocked-sheep selection dead-end, readable Persian UI and unobstructed board.
+- Real-device tests must confirm landscape layout, touch targets, all rules, no blocked-sheep selection dead-end, readable Persian UI and unobstructed board; verify both camera orientations and top-down overview.
 - Keep the old game and existing development branch unchanged. All new work stays on WOLF-DUSK-007-REBUILD.
