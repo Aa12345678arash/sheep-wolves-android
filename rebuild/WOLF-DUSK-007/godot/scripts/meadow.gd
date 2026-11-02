@@ -969,11 +969,14 @@ func _animate_piece_arrival(from_index: int, to_index: int, piece_kind: String) 
 	var source_world := node_visuals[from_index].global_position
 	var source_local := destination_visual.global_transform.affine_inverse() * source_world
 	piece.position = Vector3(source_local.x, maxf(source_local.y + 0.28, 0.38), source_local.z)
+	var takeoff := piece.position
+	var apex := (takeoff + target_position) * 0.5 + Vector3(0.0, 0.82 if piece_kind == "sheep" else 1.05, 0.0)
 	piece.scale = Vector3.ONE * 0.88
 	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(piece, "position", target_position, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(piece, "scale", Vector3.ONE, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(piece, "position", apex, 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(piece, "scale", Vector3.ONE * 1.10, 0.17).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(piece, "position", target_position, 0.19).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(piece, "scale", Vector3.ONE, 0.19).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _reset_game() -> void:
