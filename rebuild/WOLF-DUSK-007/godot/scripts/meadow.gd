@@ -8,7 +8,7 @@ const AI = preload("res://scripts/ai_opponent.gd")
 
 var game = GameState.new()
 var camera: Camera3D
-var camera_target_position: Vector3 = Vector3(10.5, 12.5, 15.5)
+var camera_target_position: Vector3 = Vector3(0.0, 20.0, 22.0)
 var camera_view_turn: int = -1
 var status_label: Label
 var capture_count_label: Label
@@ -1058,7 +1058,8 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 		pivot.add_to_group("animated_game_piece")
 		var column := i % 3
 		var row := int(i / 3)
-		pivot.position = Vector3((column - 1) * 0.25, 0.29, (row - 0.5) * 0.25)
+		pivot.position = Vector3((column - 1) * 0.29, 0.29, (row - 0.5) * 0.29)
+		pivot.scale = Vector3.ONE * 1.12
 		pivot.rotation.y = PI * 0.5
 		parent.add_child(pivot)
 		sheep_idle_pivots.append(pivot)
@@ -1133,6 +1134,7 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 func _add_wolf_piece(parent: Node3D) -> void:
 	var pivot := Node3D.new()
 	pivot.add_to_group("animated_game_piece")
+	pivot.scale = Vector3.ONE * 1.28
 	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
 	var fur := _material(Color(0.19, 0.23, 0.29))
@@ -1270,7 +1272,7 @@ func _set_turn_view(side: int) -> void:
 	if camera_view_turn == side:
 		return
 	camera_view_turn = side
-	camera_target_position = Vector3(10.5, 12.5, 15.5) if side == -1 else Vector3(-10.5, 12.5, -15.5)
+	camera_target_position = Vector3(0.0, 20.0, 22.0) if side == -1 else Vector3(0.0, 20.0, -22.0)
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
