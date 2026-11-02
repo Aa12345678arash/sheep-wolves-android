@@ -56,13 +56,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	sheep_anim_clock += delta
-	for i in range(sheep_idle_pivots.size()):
-		var pivot := sheep_idle_pivots[i]
-		if is_instance_valid(pivot):
-			var phase := sheep_anim_clock * 2.1 + float(i) * 0.8
-			pivot.position.y = 0.29 + sin(phase) * 0.035
-			pivot.rotation.y = PI * 0.5 + sin(phase * 0.55) * 0.07
-			pivot.rotation.z = sin(phase * 0.8) * 0.035
+	# Sheep use static low-poly poses on mobile; avoid per-frame work for 25 individual pieces.
 	for i in range(wolf_idle_pivots.size()):
 		var wolf_pivot := wolf_idle_pivots[i]
 		if is_instance_valid(wolf_pivot):
@@ -74,7 +68,7 @@ func _process(delta: float) -> void:
 		if is_instance_valid(tail_pivot):
 			tail_pivot.rotation.z = 0.96 + sin(sheep_anim_clock * 2.3 + float(i)) * 0.12
 	if camera != null and camera.is_inside_tree():
-		camera.position = camera.position.lerp(camera_target_position, minf(delta * 2.8, 1.0))
+		camera.position = camera.position.lerp(camera_target_position, minf(delta * 10.0, 1.0))
 		if camera_shake_time > 0.0:
 			camera_shake_time = maxf(0.0, camera_shake_time - delta)
 			var shake_phase := sheep_anim_clock * 58.0
@@ -113,7 +107,9 @@ func _build_audio() -> void:
 	# Original synthesized meadow theme; no third-party recording or license dependency.
 	music_audio = AudioStreamPlayer.new()
 	music_audio.name = "OriginalMeadowTheme"
-	music_audio.volume_db = -19.0
+	music_audio.volume_db = -12.0
+	music_audio.bus = "Master"
+	music_audio.process_mode = Node.PROCESS_MODE_ALWAYS
 	music_audio.stream = _make_meadow_music()
 	add_child(music_audio)
 	music_audio.play()
@@ -175,7 +171,7 @@ func _toggle_meadow_music(enabled: bool) -> void:
 	if music_audio == null:
 		return
 	if enabled:
-		music_audio.play()
+		_ensure_music_playing()
 		if is_instance_valid(music_button):
 			music_button.button_pressed = true
 			music_button.text = "موسیقی دشت: روشن"
@@ -194,6 +190,10 @@ func _toggle_meadow_music(enabled: bool) -> void:
 func _play_move_sound() -> void:
 	if move_audio != null:
 		move_audio.play()
+
+func _ensure_music_playing() -> void:
+	if music_audio != null and not music_audio.playing:
+		music_audio.play()
 
 func _play_capture_sound() -> void:
 	if capture_audio != null:
@@ -433,7 +433,7 @@ func _build_board() -> void:
 		area.input_ray_pickable = true
 		var collision := CollisionShape3D.new()
 		var sphere := SphereShape3D.new()
-		sphere.radius = 0.62
+		sphere.radius = 0.82
 		collision.shape = sphere
 		area.add_child(collision)
 		area.input_event.connect(_on_node_input_event.bind(index))
@@ -487,30 +487,30 @@ func _build_hud() -> void:
 	player_names_label = Label.new()
 	player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
 	player_names_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	player_names_label.add_theme_font_size_override("font_size", 16)
+	player_names_label.add_theme_font_size_override("font_size", 19)
 	header_column.add_child(player_names_label)
 
 	status_label = Label.new()
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.add_theme_font_size_override("font_size", 23)
+	status_label.add_theme_font_size_override("font_size", 28)
 	header_column.add_child(status_label)
 
 	capture_count_label = Label.new()
 	capture_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	capture_count_label.add_theme_font_size_override("font_size", 17)
+	capture_count_label.add_theme_font_size_override("font_size", 20)
 	capture_count_label.add_theme_color_override("font_color", Color(0.98, 0.72, 0.36))
 	header_column.add_child(capture_count_label)
 
 	detail_label = Label.new()
 	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.add_theme_font_size_override("font_size", 15)
+	detail_label.add_theme_font_size_override("font_size", 18)
 	header_column.add_child(detail_label)
 
 	message_label = Label.new()
 	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message_label.add_theme_font_size_override("font_size", 14)
+	message_label.add_theme_font_size_override("font_size", 18)
 	header_column.add_child(message_label)
 
 	# Bottom controls remain outside the board's central play area.
@@ -562,7 +562,7 @@ func _build_hud() -> void:
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
 	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	credit.add_theme_font_size_override("font_size", 12)
+	credit.add_theme_font_size_override("font_size", 14)
 	footer_column.add_child(credit)
 
 func _show_setup_menu() -> void:
@@ -1047,88 +1047,65 @@ func _refresh_board() -> void:
 			_add_wolf_piece(visual)
 
 func _add_sheep_piece(parent: Node3D, count: int) -> void:
-	# Five individual sheep per starting node, all facing the wolves across
-	# the square board. Each sheep has its own subtle idle animation pivot.
-	var wool := _material(Color(0.96, 0.94, 0.86))
-	var face := _material(Color(0.32, 0.27, 0.23))
-	var hoof := _material(Color(0.19, 0.17, 0.15))
+	# Five individually readable sheep, using a lightweight mesh budget for mobile.
+	var wool := _material(Color(0.98, 0.96, 0.88))
+	var face := _material(Color(0.24, 0.20, 0.17))
+	var hoof := _material(Color(0.12, 0.11, 0.10))
 	var visible_count: int = mini(count, 5)
 	for i in range(visible_count):
 		var pivot := Node3D.new()
 		pivot.add_to_group("animated_game_piece")
 		var column := i % 3
 		var row := int(i / 3)
-		pivot.position = Vector3((column - 1) * 0.29, 0.29, (row - 0.5) * 0.29)
-		pivot.scale = Vector3.ONE * 1.12
+		pivot.position = Vector3((column - 1) * 0.34, 0.30, (row - 0.5) * 0.34)
+		pivot.scale = Vector3.ONE * 1.18
 		pivot.rotation.y = PI * 0.5
 		parent.add_child(pivot)
-		sheep_idle_pivots.append(pivot)
 		var body := MeshInstance3D.new()
 		var body_mesh := SphereMesh.new()
-		body_mesh.radius = 0.17
-		body_mesh.height = 0.31
+		body_mesh.radius = 0.19
+		body_mesh.height = 0.34
 		body.mesh = body_mesh
 		body.material_override = wool
 		pivot.add_child(body)
-		for tuft_index in range(3):
+		for tuft_index in range(2):
 			var tuft := MeshInstance3D.new()
 			var tuft_mesh := SphereMesh.new()
-			tuft_mesh.radius = 0.085
-			tuft_mesh.height = 0.13
+			tuft_mesh.radius = 0.105
+			tuft_mesh.height = 0.15
 			tuft.mesh = tuft_mesh
 			tuft.material_override = wool
-			tuft.position = Vector3(-0.04 + float(tuft_index) * 0.07, 0.09, 0.0)
+			tuft.position = Vector3(-0.06 + float(tuft_index) * 0.13, 0.10, 0.0)
 			pivot.add_child(tuft)
 		var head := MeshInstance3D.new()
 		var head_mesh := SphereMesh.new()
-		head_mesh.radius = 0.105
-		head_mesh.height = 0.19
+		head_mesh.radius = 0.115
+		head_mesh.height = 0.20
 		head.mesh = head_mesh
 		head.material_override = face
-		head.position = Vector3(0.16, 0.025, 0.0)
+		head.position = Vector3(0.18, 0.04, 0.0)
 		pivot.add_child(head)
 		for side in [-1.0, 1.0]:
 			var eye := MeshInstance3D.new()
 			var eye_mesh := SphereMesh.new()
-			eye_mesh.radius = 0.022
-			eye_mesh.height = 0.044
+			eye_mesh.radius = 0.025
+			eye_mesh.height = 0.045
 			eye.mesh = eye_mesh
 			eye.material_override = hoof
-			eye.position = Vector3(0.235, 0.07, side * 0.065)
+			eye.position = Vector3(0.255, 0.085, side * 0.075)
 			pivot.add_child(eye)
-			var ear := MeshInstance3D.new()
-			var ear_mesh := SphereMesh.new()
-			ear_mesh.radius = 0.052
-			ear_mesh.height = 0.085
-			ear.mesh = ear_mesh
-			ear.material_override = face
-			ear.position = Vector3(0.105, 0.075, side * 0.115)
-			ear.scale = Vector3(1.0, 0.65, 1.25)
-			ear.rotation.x = side * 0.18
-			pivot.add_child(ear)
-		var nose := MeshInstance3D.new()
-		var nose_mesh := SphereMesh.new()
-		nose_mesh.radius = 0.028
-		nose_mesh.height = 0.045
-		nose.mesh = nose_mesh
-		nose.material_override = hoof
-		nose.position = Vector3(0.265, -0.005, 0.0)
-		pivot.add_child(nose)
-		for leg_index in range(4):
-			var leg := MeshInstance3D.new()
-			var leg_mesh := CylinderMesh.new()
-			leg_mesh.top_radius = 0.025
-			leg_mesh.bottom_radius = 0.032
-			leg_mesh.height = 0.15
-			leg.mesh = leg_mesh
-			leg.material_override = hoof
-			leg.position = Vector3(-0.07 if leg_index < 2 else 0.07, -0.17, -0.065 if leg_index % 2 == 0 else 0.065)
-			pivot.add_child(leg)
+		var legs := MeshInstance3D.new()
+		var legs_mesh := BoxMesh.new()
+		legs_mesh.size = Vector3(0.25, 0.16, 0.24)
+		legs.mesh = legs_mesh
+		legs.material_override = hoof
+		legs.position = Vector3(-0.015, -0.17, 0.0)
+		pivot.add_child(legs)
 	var count_label := Label3D.new()
 	count_label.text = str(count)
-	count_label.font_size = 25
-	count_label.outline_size = 5
-	count_label.position = Vector3(0, 0.91, 0)
+	count_label.font_size = 28
+	count_label.outline_size = 6
+	count_label.position = Vector3(0, 0.98, 0)
 	parent.add_child(count_label)
 
 func _add_wolf_piece(parent: Node3D) -> void:
@@ -1272,7 +1249,7 @@ func _set_turn_view(side: int) -> void:
 	if camera_view_turn == side:
 		return
 	camera_view_turn = side
-	camera_target_position = Vector3(0.0, 20.0, 22.0) if side == -1 else Vector3(0.0, 20.0, -22.0)
+	camera_target_position = Vector3(0.0, 20.0, -22.0) if side == -1 else Vector3(0.0, 20.0, 22.0)
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
