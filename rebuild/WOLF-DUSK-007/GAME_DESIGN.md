@@ -49,3 +49,29 @@ G. Test on a real Android phone. CI/build success is not gameplay acceptance.
 - Rule tests must cover edge cases and turn transitions, including choosing either side while preserving sheep-first play.
 - Real-device tests must confirm landscape layout, touch targets, all rules, no blocked-sheep selection dead-end, readable Persian UI and unobstructed board; verify both camera orientations and top-down overview.
 - Keep the old game and existing development branch unchanged. All new work stays on WOLF-DUSK-007-REBUILD.
+
+
+## New visual board-layout requirement (added 2026-11-02)
+The user explicitly requested a complete visual plan of the playable board, not decorative meadow art. The board view and its design reference must make the following immediately understandable:
+- All 25 node locations are individually visible and consistently addressable.
+- The complete set of 56 legal connections is drawn and distinguishable, including horizontal, vertical and diagonal links wherever those links exist in the canonical graph. A line must never imply a legal move unless that edge exists in the rule engine.
+- Use a clear legend and distinct line treatments for horizontal, vertical and diagonal connections (for example, line pattern/weight plus restrained hues); do not rely on color alone. Keep the board bright, uncluttered and readable on a phone.
+- Show the initial sheep formation as five visually separate groups of five sheep, each group anchored to one of the five designated starting nodes. Use a group marker or subtle base ring so the five groups are easy to count.
+- Show the three wolves as distinct, recognizable pieces in the opposing setup area/positions. The setup view must make it clear that the wolves are placed on legal unoccupied nodes and must not overlap sheep or obscure connections.
+- Include a compact legend for sheep, wolves, node, horizontal path, vertical path and diagonal path, plus a clear «شروع بازی» affordance. In-match view should retain the same graph and piece identity while removing setup-only clutter.
+- Provide a clean top-down board diagram in the design reference in addition to the slightly isometric 3D in-game presentation. The top-down diagram is the authority for checking node and edge connectivity.
+- The final 3D scene must be generated from the same canonical node/edge data used by move validation; visual paths and legal moves must never drift apart.
+
+### Placement and graph integrity — unresolved data, do not guess
+The current specification confirms 5×5 nodes, 56 connections, five sheep start nodes with five sheep per node, and three wolves. It does NOT yet contain the exact list of the five sheep start-node IDs, the complete 56-edge list, or fixed wolf start-node IDs. Therefore:
+- Do not invent or silently hard-code exact starting node positions or a made-up 56-edge pattern.
+- Treat the three wolf positions as setup-selected legal empty nodes unless the user supplies/approves a fixed arrangement.
+- Before implementation is accepted, recover the original board diagram/rules or obtain the user's approval of a numbered 1–25 node map and explicit edge/start-node list. The same approved data must drive the diagram, AI, move validation and tests.
+- Any concept illustration made before this data is confirmed must be labelled as a layout concept, not a verified rules-accurate board.
+
+### Board-first visual hierarchy
+1. Board and pieces occupy the majority of the landscape screen.
+2. Five sheep groups and three wolves are visually countable at a glance.
+3. Every legal route is visible at phone scale; path intersections and nodes remain distinct.
+4. Side-to-move, remaining sheep and concise status stay in slim peripheral strips.
+5. Rules, settings, move history and audio controls stay in a pause/collapsible panel.
