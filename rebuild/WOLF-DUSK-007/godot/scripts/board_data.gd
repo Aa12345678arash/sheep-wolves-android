@@ -1,7 +1,7 @@
 extends RefCounted
 class_name BoardData
 
-const DATA_PATH := "res://../CANONICAL_BOARD.json"
+const DATA_PATH := "res://data/canonical_board.json"
 
 static func load_data() -> Dictionary:
 	var file := FileAccess.open(DATA_PATH, FileAccess.READ)
