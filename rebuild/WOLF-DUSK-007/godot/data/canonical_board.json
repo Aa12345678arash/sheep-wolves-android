@@ -1,0 +1,455 @@
+{
+  "source": "Recovered from sheep_wolves_android/app/src/main/assets/index.html in the legacy archive; extracted by successful GitHub Actions run 41424748701.",
+  "verified": true,
+  "nodeLabelScheme": "Rows A-E from top to bottom; columns 1-5 from left to right.",
+  "nodes": [
+    {
+      "id": "A1",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "A2",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "A3",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "A4",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "A5",
+      "row": 0,
+      "col": 4
+    },
+    {
+      "id": "B1",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "B2",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "B3",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "B4",
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "B5",
+      "row": 1,
+      "col": 4
+    },
+    {
+      "id": "C1",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "C2",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "C3",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "C4",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "id": "C5",
+      "row": 2,
+      "col": 4
+    },
+    {
+      "id": "D1",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "D2",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "D3",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "D4",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "id": "D5",
+      "row": 3,
+      "col": 4
+    },
+    {
+      "id": "E1",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "E2",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "E3",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "E4",
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "E5",
+      "row": 4,
+      "col": 4
+    }
+  ],
+  "edges": [
+    {
+      "from": "A1",
+      "to": "A2",
+      "type": "horizontal"
+    },
+    {
+      "from": "A1",
+      "to": "B1",
+      "type": "vertical"
+    },
+    {
+      "from": "A2",
+      "to": "A3",
+      "type": "horizontal"
+    },
+    {
+      "from": "A2",
+      "to": "B2",
+      "type": "vertical"
+    },
+    {
+      "from": "A3",
+      "to": "A4",
+      "type": "horizontal"
+    },
+    {
+      "from": "A3",
+      "to": "B3",
+      "type": "vertical"
+    },
+    {
+      "from": "A4",
+      "to": "A5",
+      "type": "horizontal"
+    },
+    {
+      "from": "A4",
+      "to": "B4",
+      "type": "vertical"
+    },
+    {
+      "from": "A5",
+      "to": "B5",
+      "type": "vertical"
+    },
+    {
+      "from": "B1",
+      "to": "B2",
+      "type": "horizontal"
+    },
+    {
+      "from": "B1",
+      "to": "C1",
+      "type": "vertical"
+    },
+    {
+      "from": "B2",
+      "to": "B3",
+      "type": "horizontal"
+    },
+    {
+      "from": "B2",
+      "to": "C2",
+      "type": "vertical"
+    },
+    {
+      "from": "B3",
+      "to": "B4",
+      "type": "horizontal"
+    },
+    {
+      "from": "B3",
+      "to": "C3",
+      "type": "vertical"
+    },
+    {
+      "from": "B4",
+      "to": "B5",
+      "type": "horizontal"
+    },
+    {
+      "from": "B4",
+      "to": "C4",
+      "type": "vertical"
+    },
+    {
+      "from": "B5",
+      "to": "C5",
+      "type": "vertical"
+    },
+    {
+      "from": "C1",
+      "to": "C2",
+      "type": "horizontal"
+    },
+    {
+      "from": "C1",
+      "to": "D1",
+      "type": "vertical"
+    },
+    {
+      "from": "C2",
+      "to": "C3",
+      "type": "horizontal"
+    },
+    {
+      "from": "C2",
+      "to": "D2",
+      "type": "vertical"
+    },
+    {
+      "from": "C3",
+      "to": "C4",
+      "type": "horizontal"
+    },
+    {
+      "from": "C3",
+      "to": "D3",
+      "type": "vertical"
+    },
+    {
+      "from": "C4",
+      "to": "C5",
+      "type": "horizontal"
+    },
+    {
+      "from": "C4",
+      "to": "D4",
+      "type": "vertical"
+    },
+    {
+      "from": "C5",
+      "to": "D5",
+      "type": "vertical"
+    },
+    {
+      "from": "D1",
+      "to": "D2",
+      "type": "horizontal"
+    },
+    {
+      "from": "D1",
+      "to": "E1",
+      "type": "vertical"
+    },
+    {
+      "from": "D2",
+      "to": "D3",
+      "type": "horizontal"
+    },
+    {
+      "from": "D2",
+      "to": "E2",
+      "type": "vertical"
+    },
+    {
+      "from": "D3",
+      "to": "D4",
+      "type": "horizontal"
+    },
+    {
+      "from": "D3",
+      "to": "E3",
+      "type": "vertical"
+    },
+    {
+      "from": "D4",
+      "to": "D5",
+      "type": "horizontal"
+    },
+    {
+      "from": "D4",
+      "to": "E4",
+      "type": "vertical"
+    },
+    {
+      "from": "D5",
+      "to": "E5",
+      "type": "vertical"
+    },
+    {
+      "from": "E1",
+      "to": "E2",
+      "type": "horizontal"
+    },
+    {
+      "from": "E2",
+      "to": "E3",
+      "type": "horizontal"
+    },
+    {
+      "from": "E3",
+      "to": "E4",
+      "type": "horizontal"
+    },
+    {
+      "from": "E4",
+      "to": "E5",
+      "type": "horizontal"
+    },
+    {
+      "from": "A1",
+      "to": "B2",
+      "type": "diagonal"
+    },
+    {
+      "from": "A3",
+      "to": "B2",
+      "type": "diagonal"
+    },
+    {
+      "from": "A3",
+      "to": "B4",
+      "type": "diagonal"
+    },
+    {
+      "from": "A5",
+      "to": "B4",
+      "type": "diagonal"
+    },
+    {
+      "from": "B2",
+      "to": "C1",
+      "type": "diagonal"
+    },
+    {
+      "from": "B2",
+      "to": "C3",
+      "type": "diagonal"
+    },
+    {
+      "from": "B4",
+      "to": "C3",
+      "type": "diagonal"
+    },
+    {
+      "from": "B4",
+      "to": "C5",
+      "type": "diagonal"
+    },
+    {
+      "from": "C1",
+      "to": "D2",
+      "type": "diagonal"
+    },
+    {
+      "from": "C3",
+      "to": "D2",
+      "type": "diagonal"
+    },
+    {
+      "from": "C3",
+      "to": "D4",
+      "type": "diagonal"
+    },
+    {
+      "from": "C5",
+      "to": "D4",
+      "type": "diagonal"
+    },
+    {
+      "from": "D2",
+      "to": "E1",
+      "type": "diagonal"
+    },
+    {
+      "from": "D2",
+      "to": "E3",
+      "type": "diagonal"
+    },
+    {
+      "from": "D4",
+      "to": "E3",
+      "type": "diagonal"
+    },
+    {
+      "from": "D4",
+      "to": "E5",
+      "type": "diagonal"
+    }
+  ],
+  "sheepStartingStacks": [
+    {
+      "node": "E1",
+      "count": 5
+    },
+    {
+      "node": "E2",
+      "count": 5
+    },
+    {
+      "node": "E3",
+      "count": 5
+    },
+    {
+      "node": "E4",
+      "count": 5
+    },
+    {
+      "node": "E5",
+      "count": 5
+    }
+  ],
+  "wolves": {
+    "count": 3,
+    "placement": "During setup, place on any three distinct unoccupied nodes."
+  },
+  "turnOrder": "After wolf placement, sheep move first.",
+  "normalMove": "Move one piece along one listed edge to an unoccupied node.",
+  "capture": {
+    "rule": "A wolf captures by moving from its node across one adjacent sheep to an empty landing node. Both hops must be listed edges, and the row/column coordinate delta from wolf to sheep must equal the delta from sheep to landing node (straight line).",
+    "removedPiece": "The jumped sheep is removed.",
+    "chain": "The same wolf must continue capturing while another legal capture is available; the turn passes to sheep when no further capture exists."
+  },
+  "winConditions": {
+    "wolves": "Remaining sheep count is 8 or fewer.",
+    "sheep": "All three wolves have neither a normal move nor a legal capture."
+  },
+  "compatibilityNotes": [
+    "The legacy source has no fixed wolf start positions; the player selects any three empty nodes.",
+    "The recovered legacy source requires same-wolf chained capture while available. An older planning note described an optional 3-second window; that is not implemented in the source and must not silently override recovered behavior."
+  ]
+}
