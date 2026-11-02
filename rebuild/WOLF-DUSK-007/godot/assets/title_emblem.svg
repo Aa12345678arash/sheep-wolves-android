@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="320" viewBox="0 0 512 320">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#173d55"/><stop offset=".58" stop-color="#6e9b83"/><stop offset="1" stop-color="#f0c879"/></linearGradient>
+ <linearGradient id="hill" x2="0" y2="1"><stop stop-color="#8fc17a"/><stop offset="1" stop-color="#386b4a"/></linearGradient>
+ <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#9c7142"/><stop offset="1" stop-color="#55351f"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<rect x="9" y="9" width="494" height="302" rx="46" fill="#172d27" stroke="#e7c77e" stroke-width="9"/>
+<rect x="25" y="25" width="462" height="270" rx="34" fill="url(#sky)"/>
+<circle cx="398" cy="83" r="32" fill="#ffe5a3"/>
+<path d="M25 190 Q112 112 211 180 T487 164 V295 H25Z" fill="#588b61"/>
+<path d="M25 222 Q145 152 250 220 T487 204 V295 H25Z" fill="url(#hill)"/>
+<path d="M42 250 Q160 205 256 242 T470 236" fill="none" stroke="#d5c08b" stroke-width="7" stroke-linecap="round"/>
+<g fill="#f8f0d8" stroke="#d8cba8" stroke-width="3">
+ <ellipse cx="175" cy="204" rx="42" ry="30"/><circle cx="210" cy="194" r="19"/><circle cx="145" cy="184" r="17"/><circle cx="170" cy="174" r="18"/><circle cx="195" cy="176" r="17"/>
+</g>
+<g fill="#54483c"><ellipse cx="215" cy="199" rx="12" ry="10"/><circle cx="217" cy="191" r="2.5"/><path d="M142 225v20m24-16v17m28-17v17" stroke="#54483c" stroke-width="7" stroke-linecap="round"/></g>
+<g fill="#34404a" stroke="#202d34" stroke-width="3">
+ <path d="M294 215 Q282 185 306 169 L333 172 350 155 361 177 382 187 373 206 352 213 344 239 330 239 327 215 310 216 304 239 290 239Z"/>
+ <path d="M347 174l12-27 13 25" fill="#34404a"/><path d="M302 185l-16-11 7 24" fill="#34404a"/>
+</g>
+<circle cx="352" cy="184" r="4" fill="#f4ca65"/>
+<path d="M70 264 Q256 285 442 263" stroke="#e9ce91" stroke-width="4" fill="none" opacity=".8"/>
+<g fill="#fff1c9" opacity=".9"><circle cx="83" cy="77" r="3"/><circle cx="124" cy="55" r="2"/><circle cx="266" cy="73" r="3"/><path d="M455 115l4 10 10 4-10 4-4 10-4-10-10-4 10-4Z"/></g>
+<rect x="82" y="257" width="348" height="39" rx="18" fill="url(#wood)" stroke="#e8ca88" stroke-width="3"/>
+<text x="256" y="284" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#fff4d8">راز دشت سبز</text>
+</svg>
