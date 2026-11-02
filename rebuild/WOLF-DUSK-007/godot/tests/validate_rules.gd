@@ -38,6 +38,10 @@ func _initialize() -> void:
 	assert(state.move_sheep(20, 15))
 	assert(state.sheep_total() == 25)
 	assert(state.turn == GameState.Turn.WOLVES)
+	# A normal wolf move must be accepted immediately after a legal sheep move.
+	assert(state.move_wolf(0, 5) == "moved")
+	assert(state.wolves[5] and not state.wolves[0])
+	assert(state.turn == GameState.Turn.SHEEP)
 
 	var capture_state = GameState.new()
 	assert(capture_state.place_wolf(0))
