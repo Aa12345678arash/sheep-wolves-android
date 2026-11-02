@@ -1,4 +1,4 @@
-; Godot 4 project scaffold for WOLF-DUSK-004
+; Godot 4 project for WOLF-DUSK-008 portrait-first rebuild
 config_version=5
 
 [application]
@@ -8,11 +8,14 @@ config/description="راز دشت سبز - نسخه سه‌بعدی"
 run/main_scene="res://scenes/main.tscn"
 
 [display]
-window/size/viewport_width=1280
-window/size/viewport_height=720
-window/handheld/orientation=0
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=720
+window/size/window_height_override=1280
+window/size/mode=3
+window/handheld/orientation=1
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
+window/stretch/aspect="expand"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
