@@ -776,9 +776,9 @@ func _run_ai_turn(generation: int) -> void:
 	chain_time_left = 0.0
 	pass_button.visible = false
 	_refresh_board()
+	_update_hud()
 	if ai_anim_from >= 0 and ai_anim_to >= 0:
 		_animate_piece_arrival(ai_anim_from, ai_anim_to, ai_anim_kind)
-	_update_hud()
 	_schedule_ai_turn()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -934,9 +934,9 @@ func _select_node(index: int) -> void:
 		else:
 			feedback_message = "حرکت نامعتبر است؛ فقط روی مقصد سبزِ مجاز بزنید. نوبت تغییر نکرد."
 	_refresh_board()
+	_update_hud()
 	if animated_from >= 0 and animated_to >= 0:
 		_animate_piece_arrival(animated_from, animated_to, animated_kind)
-	_update_hud()
 	_schedule_ai_turn()
 
 func _animate_piece_arrival(from_index: int, to_index: int, piece_kind: String) -> void:
