@@ -431,12 +431,12 @@ func _build_board() -> void:
 		var area := Area3D.new()
 		area.position = _node_position(index)
 		area.input_ray_pickable = true
+		area.set_meta("board_node_index", index)
 		var collision := CollisionShape3D.new()
 		var sphere := SphereShape3D.new()
-		sphere.radius = 0.82
+		sphere.radius = 0.92
 		collision.shape = sphere
 		area.add_child(collision)
-		area.input_event.connect(_on_node_input_event.bind(index))
 		add_child(area)
 		node_areas.append(area)
 		var visual := Node3D.new()
@@ -778,14 +778,33 @@ func _run_ai_turn(generation: int) -> void:
 	_update_hud()
 	_schedule_ai_turn()
 
-func _on_node_input_event(_camera: Node, event: InputEvent, _position: Vector3, _normal: Vector3, _shape_idx: int, index: int) -> void:
+func _unhandled_input(event: InputEvent) -> void:
+	# Reliable mobile input: ray-pick board areas directly from the screen touch.
+	# This avoids depending on Area3D.input_event delivery, which can be swallowed
+	# by the viewport/UI on some Android devices.
+	var screen_position := Vector2.ZERO
 	var pressed := false
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+	if event is InputEventScreenTouch and event.pressed:
+		screen_position = event.position
 		pressed = true
-	elif event is InputEventScreenTouch and event.pressed:
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		screen_position = event.position
 		pressed = true
-	if pressed:
-		_select_node(index)
+	if not pressed or camera == null or not camera.is_inside_tree():
+		return
+	var ray_origin := camera.project_ray_origin(screen_position)
+	var ray_end := ray_origin + camera.project_ray_normal(screen_position) * 100.0
+	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	query.collision_mask = 1
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return
+	var collider := hit.get("collider") as Area3D
+	if collider != null and collider.has_meta("board_node_index"):
+		_select_node(int(collider.get_meta("board_node_index")))
+		get_viewport().set_input_as_handled()
 
 func _select_node(index: int) -> void:
 	var animated_from := -1
