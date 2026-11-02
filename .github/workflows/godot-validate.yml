@@ -1,0 +1,27 @@
+name: Godot board validation
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-007-REBUILD
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/**'
+      - '.github/workflows/godot-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-board:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.3
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: 4.3.0
+          use-dotnet: false
+      - name: Validate canonical board
+        working-directory: rebuild/WOLF-DUSK-007/godot
+        run: godot --headless --path . --script tests/validate_board.gd
