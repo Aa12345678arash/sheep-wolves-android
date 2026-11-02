@@ -868,6 +868,9 @@ func _select_node(index: int) -> void:
 			feedback_message = "این نقطه خالی نیست؛ برای گرگ یک نقطهٔ خالی انتخاب کنید."
 		_refresh_board()
 		_update_hud()
+		# If the human chose the wolves in AI mode, the computer must begin
+		# its sheep turn immediately after the third wolf is placed.
+		_schedule_ai_turn()
 		return
 
 	if selected_node == -1:
