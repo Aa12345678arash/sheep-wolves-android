@@ -6,9 +6,20 @@ This directory is a clean, independent Godot 4 project. It must not reuse the pr
 - Title: گرگ و میش؛ راز دشت سبز
 - Credit, exactly: سازنده و معرفی‌کننده: آرش سلیمی
 - Target: Android phones, landscape orientation.
-- Visual identity: polished stylized 3D storybook meadow; readable board; expressive sheep and wolves; warm daylight, natural terrain, trees, rocks and paths.
+- Visual identity: polished stylized 3D storybook meadow; readable board; expressive sheep and wolves; warm daylight, natural terrain, trees and rocks.
 - UI: designed from scratch, large touch targets, clear Persian RTL labels, no oversized plain form dialog, no obscuring the board.
 - Audio: optional, freely licensed/original ambient game music with mute control. Do not bundle unlicensed tracks.
+
+## Chess-inspired side selection and board UX
+- At match setup, offer a clear side choice: «گوسفندها» as the light side and «گرگ‌ها» as the dark side, analogous to choosing White or Black in online chess. Use distinctive character portraits/tokens, not only color.
+- In single-player, choosing sheep means the human controls sheep and easy AI controls wolves. Choosing wolves means easy AI controls sheep and the human controls wolves. The canonical first move remains with sheep; selecting wolves never changes the rules or lets wolves move first.
+- In local two-player, assign one player to sheep and the other to wolves; clearly show who controls each side. Sheep still move first.
+- Keep the board central, large, high-contrast and unobstructed. Use a light natural meadow/leaf-inspired board surface with clearly visible 5×5 nodes and all 56 connections. Do not use a dark, nearly black background or camouflage paths in grass.
+- Provide subtle visual feedback inspired by online chess interfaces: selected piece halo, legal destination markers, last-move origin/destination highlight, clear active-side indicator and smooth but brief move animation.
+- Use shapes and small labels as well as color so the sides remain distinguishable for color-vision differences and on small phone screens.
+- Put only essential information in slim player strips around the board: side/turn, remaining sheep count, and concise game status. Secondary details (rules, settings, move history, sound) belong in collapsible or pause panels and must never cover the board during play.
+- Controls must be touch-friendly and legible in landscape orientation. Avoid large modal forms, crowded text, persistent chat, clocks, ratings, or other chess-site features that do not serve this game.
+- The visual inspiration is the clarity of online chess boards: legal-move dots, last-move highlights, side identity, compact player information and board-first layout. Do not copy any proprietary chess site's branding or exact artwork.
 
 ## Canonical gameplay rules (preserve)
 1. Board is a 5×5 node layout with 56 valid connections.
@@ -25,15 +36,15 @@ This directory is a clean, independent Godot 4 project. It must not reuse the pr
 
 ## Rebuild sequence
 A. Lock down and test the board graph and rule engine independently of graphics.
-B. Build a clean landscape onboarding/setup screen and a playable 2D/3D board prototype.
+B. Build a clean landscape side-selection screen and a board-first playable prototype.
 C. Implement turn flow, legal moves, captures, chained capture, win/loss and restart.
 D. Add easy AI and local two-player.
-E. Replace prototype visuals with finished 3D meadow, animated characters, camera and effects.
+E. Build finished 3D meadow, animated characters, camera and effects around a readable board.
 F. Add settings, sound, accessibility/readability, app icon and Android packaging.
 G. Test on a real Android phone. CI/build success is not gameplay acceptance.
 
 ## Acceptance gates
 - No milestone is called successful solely because it compiles.
-- Rule tests must cover edge cases and turn transitions.
-- Real-device tests must confirm landscape layout, touch targets, all rules, no blocked-sheep selection dead-end, and readable Persian UI.
+- Rule tests must cover edge cases and turn transitions, including choosing either side while preserving sheep-first play.
+- Real-device tests must confirm landscape layout, touch targets, all rules, no blocked-sheep selection dead-end, readable Persian UI and unobstructed board.
 - Keep the old game and existing development branch unchanged. All new work stays on WOLF-DUSK-007-REBUILD.
