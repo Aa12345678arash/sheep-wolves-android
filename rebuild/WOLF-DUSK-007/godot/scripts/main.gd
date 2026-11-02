@@ -169,13 +169,21 @@ func _start_match() -> void:
 		_refresh_pieces()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+	var pressed := false
+	var screen_pos := Vector2.ZERO
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		pressed = true
+		screen_pos = event.position
+	elif event is InputEventScreenTouch and event.pressed:
+		pressed = true
+		screen_pos = event.position
+	if not pressed:
 		return
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		return
-	var origin := camera.project_ray_origin(event.position)
-	var direction := camera.project_ray_normal(event.position)
+	var origin := camera.project_ray_origin(screen_pos)
+	var direction := camera.project_ray_normal(screen_pos)
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 100.0)
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
@@ -206,9 +214,10 @@ func _on_node(id: String) -> void:
 				status_label.text = "این گروه گوسفند حرکت ندارد؛ گروه دیگری را انتخاب کنید"
 			return
 		if selected != "" and GameRules.legal_moves(selected, occupied, edges).has(id):
-			var n: int = sheep_stacks[selected]
-			sheep_stacks.erase(selected)
-			sheep_stacks[id] = n
+			sheep_stacks[selected] -= 1
+			if sheep_stacks[selected] <= 0:
+				sheep_stacks.erase(selected)
+			sheep_stacks[id] = int(sheep_stacks.get(id, 0)) + 1
 			selected = ""
 			turn = "wolves"
 			_refresh_pieces()
