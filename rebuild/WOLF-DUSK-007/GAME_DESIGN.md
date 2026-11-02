@@ -75,3 +75,16 @@ The current specification confirms 5×5 nodes, 56 connections, five sheep start 
 3. Every legal route is visible at phone scale; path intersections and nodes remain distinct.
 4. Side-to-move, remaining sheep and concise status stay in slim peripheral strips.
 5. Rules, settings, move history and audio controls stay in a pause/collapsible panel.
+
+
+## Recovered legacy rule authority (2026-11-02)
+
+The original Android archive has now been extracted and inspected. The exact graph and initial sheep stacks are recorded in `CANONICAL_BOARD.json`; `BOARD_LAYOUT_SPEC.md` is updated to match it.
+
+- Node labels A1-E5; exactly 56 edges (40 horizontal/vertical grid edges and 16 specified diagonals).
+- Initial sheep stacks are E1, E2, E3, E4 and E5, five sheep at each.
+- Wolves are placed on any three distinct empty nodes during setup; no fixed wolf start positions exist in the legacy source.
+- Sheep move first after setup.
+- Capture is a straight-line two-edge jump over one adjacent sheep into an empty node; the jumped sheep is removed.
+- Same-wolf chained capture is mandatory while another legal capture exists. The old source does not implement the optional three-second window described in an earlier planning note. The faithful rebuild follows the recovered source unless a rule change is explicitly approved.
+- The canonical JSON is the single source of truth for graph rendering, move validation, AI and tests.
