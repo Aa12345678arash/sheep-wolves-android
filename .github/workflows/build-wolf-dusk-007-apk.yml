@@ -1,11 +1,11 @@
-name: Build WOLF-DUSK-008 Android APK
+name: Build WOLF-DUSK-009 Android APK
 
 on:
   workflow_dispatch:
   push:
     branches:
       - WOLF-DUSK-007-REBUILD
-      - WOLF-DUSK-008-FIX
+      - WOLF-DUSK-009-FIX
       - WOLF-DUSK-009-PRESERVE-UPGRADE
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
@@ -76,12 +76,12 @@ jobs:
           godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
       - name: Export Android debug APK
         run: |
-          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-008-preview.apk"
-          test -s "$GITHUB_WORKSPACE/wolf-dusk-008-preview.apk"
-      - name: Upload WOLF-DUSK-008 installable debug APK
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-009-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-009-preview.apk"
+      - name: Upload WOLF-DUSK-009 installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: wolf-dusk-008-android-preview
-          path: wolf-dusk-008-preview.apk
+          name: wolf-dusk-009-android-preview
+          path: wolf-dusk-009-preview.apk
           if-no-files-found: error
           retention-days: 14
