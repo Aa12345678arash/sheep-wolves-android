@@ -53,9 +53,10 @@ func _ready() -> void:
 	_build_camera()
 	_build_light()
 	_build_hud()
-	# Start directly in the playable match; no blocking setup overlay.
+	# Require an explicit game-mode and side selection before the match starts.
 	_refresh_board()
 	_update_hud()
+	_show_setup_menu()
 
 func _process(delta: float) -> void:
 	sheep_anim_clock += delta
@@ -662,6 +663,10 @@ func _show_setup_menu() -> void:
 	mode_picker.custom_minimum_size = Vector2(0, 48)
 	side_picker.custom_minimum_size = Vector2(0, 48)
 	difficulty_picker.custom_minimum_size = Vector2(0, 48)
+	mode_picker.custom_minimum_size = Vector2(0, 48)
+	side_picker.custom_minimum_size = Vector2(0, 48)
+	column.add_child(mode_picker)
+	column.add_child(side_picker)
 	column.add_child(difficulty_picker)
 	setup_music_button = Button.new()
 	setup_music_button.text = "موسیقی دشت: روشن"
