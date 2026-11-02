@@ -1245,11 +1245,12 @@ func _update_hud() -> void:
 		_update_chain_countdown()
 
 func _set_turn_view(side: int) -> void:
-	# Keep one clear player-side view for both setup and sheep movement:
-	# sheep begin on row E (z positive), so the camera stays at z +22.
-	# Wolves are placed on the opposite half and remain visible across the board.
+	# Chess-like hot-seat orientation: each side sees the board from its own edge.
+	# Sheep start on row E (z positive); wolves face them from row A (z negative).
+	# The board and pieces never move; only the camera viewpoint rotates 180 degrees.
 	camera_view_turn = side
-	camera_target_position = Vector3(0.0, 20.0, 22.0)
+	var view_sign := 1.0 if side >= 0 else -1.0
+	camera_target_position = Vector3(0.0, 20.0, 22.0 * view_sign)
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
