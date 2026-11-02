@@ -8,9 +8,9 @@ config/description="راز دشت سبز - نسخه سه‌بعدی"
 run/main_scene="res://scenes/main.tscn"
 
 [display]
-window/size/viewport_width=720
-window/size/viewport_height=1280
-window/handheld/orientation=1
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/handheld/orientation=0
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 
