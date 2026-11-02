@@ -194,6 +194,11 @@ func _play_move_sound() -> void:
 	if move_audio != null:
 		move_audio.play()
 
+func _play_audio_test() -> void:
+	# A clearly audible reference tone helps distinguish a silent output route from a music issue.
+	if victory_audio != null:
+		victory_audio.play()
+
 func _ensure_music_playing() -> void:
 	if music_audio != null and not music_audio.playing:
 		music_audio.play()
@@ -561,6 +566,14 @@ func _build_hud() -> void:
 	music_button.add_theme_font_size_override("font_size", 14)
 	music_button.toggled.connect(_toggle_meadow_music)
 	controls.add_child(music_button)
+
+	var sound_test_button := Button.new()
+	sound_test_button.text = "آزمون صدا"
+	sound_test_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sound_test_button.custom_minimum_size = Vector2(0, 44)
+	sound_test_button.add_theme_font_size_override("font_size", 14)
+	sound_test_button.pressed.connect(_play_audio_test)
+	controls.add_child(sound_test_button)
 
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
