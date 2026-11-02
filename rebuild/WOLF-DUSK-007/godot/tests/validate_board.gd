@@ -15,7 +15,9 @@ func _initialize() -> void:
 	for edge in data.edges:
 		assert(known.has(edge.from) and known.has(edge.to), "edge endpoint missing")
 		assert(edge.from != edge.to, "self edge")
-		var key := BoardData.edge_key(edge.from, edge.to)
+		var a := str(edge.from)
+		var b := str(edge.to)
+		var key := a + "|" + b if a < b else b + "|" + a
 		assert(not seen.has(key), "duplicate undirected edge")
 		seen[key] = true
 	var total := 0
