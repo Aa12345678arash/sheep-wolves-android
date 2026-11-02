@@ -453,12 +453,21 @@ func _build_board() -> void:
 
 func _build_camera() -> void:
 	camera = Camera3D.new()
-	# Portrait framing: a slightly elevated, centered view keeps the full 5x5 board visible.
-	camera.position = Vector3(0.0, 22.0, 8.0)
+	# Fit the complete board with a small safety margin on narrow phones and tablets.
 	camera.current = true
 	camera.fov = 48.0
+	camera.position = _overview_camera_position(1)
 	add_child(camera)
 	camera.look_at(Vector3.ZERO, Vector3.UP)
+
+func _overview_camera_position(side: int) -> Vector3:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var aspect := viewport_size.x / maxf(viewport_size.y, 1.0)
+	var horizontal_half_fov := atan(tan(deg_to_rad(camera.fov) * 0.5) * aspect)
+	var required_distance := (5.7 / maxf(tan(horizontal_half_fov), 0.01)) * 1.12
+	var direction := Vector3(0.0, 22.0, 8.0).normalized()
+	direction.z *= -1.0 if side < 0 else 1.0
+	return direction * required_distance
 
 func _build_light() -> void:
 	var light := DirectionalLight3D.new()
@@ -1446,8 +1455,8 @@ func _set_turn_view(side: int, force_overview: bool = false) -> void:
 		camera_mode_generation += 1
 		var view_sign := 1.0 if side >= 0 else -1.0
 		camera_target_look_at = Vector3.ZERO
-		camera_target_position = Vector3(0.0, 22.0, 8.0 * view_sign)
 		camera.fov = 48.0
+		camera_target_position = _overview_camera_position(side)
 
 func _set_tactical_view(node_index: int) -> void:
 	if node_index < 0 or node_index >= node_areas.size():
