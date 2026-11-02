@@ -528,9 +528,9 @@ func _show_setup_menu() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(660, 760)
+	panel.custom_minimum_size = Vector2(660, 560)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-330, -380)
+	panel.position = Vector2(-330, -280)
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.075, 0.12, 0.095, 0.98)
 	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
@@ -543,31 +543,31 @@ func _show_setup_menu() -> void:
 	panel.add_theme_stylebox_override("panel", panel_style)
 	setup_layer.add_child(panel)
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", 7)
 	column.add_theme_font_size_override("font_size", 24)
 	column.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86))
 	panel.add_child(column)
 	var heading := Label.new()
 	heading.text = "گرگ و میش | راز دشت سبز"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 36)
+	heading.add_theme_font_size_override("font_size", 30)
 	column.add_child(heading)
 	var subtitle := Label.new()
 	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 24)
+	subtitle.add_theme_font_size_override("font_size", 20)
 	column.add_child(subtitle)
 	var sheep_name := LineEdit.new()
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
-	sheep_name.custom_minimum_size = Vector2(0, 66)
-	sheep_name.add_theme_font_size_override("font_size", 24)
+	sheep_name.custom_minimum_size = Vector2(0, 48)
+	sheep_name.add_theme_font_size_override("font_size", 20)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
-	wolf_name.custom_minimum_size = Vector2(0, 66)
-	wolf_name.add_theme_font_size_override("font_size", 24)
+	wolf_name.custom_minimum_size = Vector2(0, 48)
+	wolf_name.add_theme_font_size_override("font_size", 20)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
@@ -581,22 +581,22 @@ func _show_setup_menu() -> void:
 	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
-	mode_picker.custom_minimum_size = Vector2(0, 66)
-	side_picker.custom_minimum_size = Vector2(0, 66)
-	difficulty_picker.custom_minimum_size = Vector2(0, 66)
+	mode_picker.custom_minimum_size = Vector2(0, 48)
+	side_picker.custom_minimum_size = Vector2(0, 48)
+	difficulty_picker.custom_minimum_size = Vector2(0, 48)
 	column.add_child(difficulty_picker)
 	setup_music_button = Button.new()
 	setup_music_button.text = "موسیقی دشت: روشن"
 	setup_music_button.toggle_mode = true
 	setup_music_button.button_pressed = true
-	setup_music_button.custom_minimum_size = Vector2(0, 64)
-	setup_music_button.add_theme_font_size_override("font_size", 24)
+	setup_music_button.custom_minimum_size = Vector2(0, 46)
+	setup_music_button.add_theme_font_size_override("font_size", 20)
 	setup_music_button.toggled.connect(_toggle_meadow_music)
 	column.add_child(setup_music_button)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
-	start_button.custom_minimum_size = Vector2(0, 76)
-	start_button.add_theme_font_size_override("font_size", 28)
+	start_button.custom_minimum_size = Vector2(0, 56)
+	start_button.add_theme_font_size_override("font_size", 24)
 	start_button.pressed.connect(func():
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
@@ -634,7 +634,7 @@ func _show_setup_menu() -> void:
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note.add_theme_font_size_override("font_size", 20)
+	note.add_theme_font_size_override("font_size", 18)
 	column.add_child(note)
 
 func _is_ai_turn() -> bool:
@@ -757,8 +757,12 @@ func _select_node(index: int) -> void:
 
 	if selected_node == -1:
 		if game.turn == GameState.Turn.SHEEP and game.sheep[index] > 0:
-			selected_node = index
-			feedback_message = "گوسفندها انتخاب شدند؛ اکنون یکی از مقصدهای سبز را بزنید."
+			var available_moves: Array[int] = game.sheep_moves(index)
+			if not available_moves.is_empty():
+				selected_node = index
+				feedback_message = "گوسفند انتخاب شد؛ اکنون یکی از مقصدهای سبز را بزنید."
+			else:
+				feedback_message = "این گوسفند حرکت قانونی ندارد؛ گوسفند دیگری را انتخاب کنید."
 		elif game.turn == GameState.Turn.WOLVES and game.wolves[index]:
 			if game.chain_wolf == -1 or game.chain_wolf == index:
 				selected_node = index
@@ -774,6 +778,17 @@ func _select_node(index: int) -> void:
 	if index == selected_node:
 		selected_node = -1
 		feedback_message = "انتخاب لغو شد؛ مهرهٔ دیگری را انتخاب کنید."
+		_refresh_board()
+		_update_hud()
+		return
+
+	if game.turn == GameState.Turn.SHEEP and game.sheep[index] > 0:
+		var alternate_moves: Array[int] = game.sheep_moves(index)
+		if not alternate_moves.is_empty():
+			selected_node = index
+			feedback_message = "انتخاب به گوسفند دیگری تغییر کرد؛ مقصد سبز را بزنید."
+		else:
+			feedback_message = "این گوسفند حرکت قانونی ندارد؛ گوسفند انتخاب‌شدهٔ قبلی حفظ شد."
 		_refresh_board()
 		_update_hud()
 		return
