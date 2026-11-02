@@ -1104,60 +1104,123 @@ func _refresh_board() -> void:
 			_add_wolf_piece(visual)
 
 func _add_sheep_piece(parent: Node3D, count: int) -> void:
-	# Five individually readable sheep, using a lightweight mesh budget for mobile.
+	# Stylized premium sheep: layered wool curls, expressive face, ears and four small legs.
+	# Five pieces remain individually readable at each starting node on mobile screens.
 	var wool := _material(Color(0.98, 0.96, 0.88))
-	var face := _material(Color(0.24, 0.20, 0.17))
-	var hoof := _material(Color(0.12, 0.11, 0.10))
+	var wool_light := _material(Color(1.0, 0.99, 0.94))
+	var face := _material(Color(0.72, 0.53, 0.43))
+	var inner_ear := _material(Color(0.91, 0.63, 0.58))
+	var hoof := _material(Color(0.20, 0.17, 0.16))
+	var eye := _material(Color(0.055, 0.045, 0.04))
+	var shine := _material(Color(1.0, 1.0, 0.94))
 	var visible_count: int = mini(count, 5)
 	for i in range(visible_count):
 		var pivot := Node3D.new()
 		pivot.add_to_group("animated_game_piece")
 		var column := i % 3
 		var row := int(i / 3)
-		pivot.position = Vector3((column - 1) * 0.34, 0.30, (row - 0.5) * 0.34)
-		pivot.scale = Vector3.ONE * 1.18
+		pivot.position = Vector3((column - 1) * 0.34, 0.29, (row - 0.5) * 0.34)
+		pivot.scale = Vector3.ONE * 0.92
 		pivot.rotation.y = PI * 0.5
 		parent.add_child(pivot)
+
 		var body := MeshInstance3D.new()
 		var body_mesh := SphereMesh.new()
-		body_mesh.radius = 0.19
-		body_mesh.height = 0.34
+		body_mesh.radius = 0.205
+		body_mesh.height = 0.37
 		body.mesh = body_mesh
 		body.material_override = wool
+		body.position = Vector3(-0.015, 0.36, 0.0)
+		body.scale = Vector3(1.12, 0.94, 0.92)
 		pivot.add_child(body)
-		for tuft_index in range(2):
-			var tuft := MeshInstance3D.new()
-			var tuft_mesh := SphereMesh.new()
-			tuft_mesh.radius = 0.105
-			tuft_mesh.height = 0.15
-			tuft.mesh = tuft_mesh
-			tuft.material_override = wool
-			tuft.position = Vector3(-0.06 + float(tuft_index) * 0.13, 0.10, 0.0)
-			pivot.add_child(tuft)
+
+		# Puffy curls form a recognizable fleece silhouette instead of a plain sphere.
+		var curl_positions := [
+			Vector3(-0.13, 0.43, -0.12), Vector3(-0.02, 0.51, -0.13),
+			Vector3(0.10, 0.45, -0.12), Vector3(-0.15, 0.48, 0.0),
+			Vector3(0.00, 0.55, 0.0), Vector3(0.14, 0.48, 0.0),
+			Vector3(-0.12, 0.43, 0.12), Vector3(0.02, 0.50, 0.13),
+			Vector3(0.13, 0.42, 0.12)
+		]
+		for curl_index in range(curl_positions.size()):
+			var curl := MeshInstance3D.new()
+			var curl_mesh := SphereMesh.new()
+			curl_mesh.radius = 0.092 if curl_index != 4 else 0.105
+			curl_mesh.height = curl_mesh.radius * 2.0
+			curl.mesh = curl_mesh
+			curl.material_override = wool_light if curl_index % 3 == 0 else wool
+			curl.position = curl_positions[curl_index]
+			pivot.add_child(curl)
+
 		var head := MeshInstance3D.new()
 		var head_mesh := SphereMesh.new()
-		head_mesh.radius = 0.115
-		head_mesh.height = 0.20
+		head_mesh.radius = 0.125
+		head_mesh.height = 0.23
 		head.mesh = head_mesh
 		head.material_override = face
-		head.position = Vector3(0.18, 0.04, 0.0)
+		head.position = Vector3(0.205, 0.405, 0.0)
+		head.scale = Vector3(1.0, 1.05, 0.88)
 		pivot.add_child(head)
+
+		var muzzle := MeshInstance3D.new()
+		var muzzle_mesh := SphereMesh.new()
+		muzzle_mesh.radius = 0.068
+		muzzle_mesh.height = 0.105
+		muzzle.mesh = muzzle_mesh
+		muzzle.material_override = inner_ear
+		muzzle.position = Vector3(0.292, 0.365, 0.0)
+		pivot.add_child(muzzle)
+
 		for side in [-1.0, 1.0]:
-			var eye := MeshInstance3D.new()
-			var eye_mesh := SphereMesh.new()
-			eye_mesh.radius = 0.025
-			eye_mesh.height = 0.045
-			eye.mesh = eye_mesh
-			eye.material_override = hoof
-			eye.position = Vector3(0.255, 0.085, side * 0.075)
-			pivot.add_child(eye)
-		var legs := MeshInstance3D.new()
-		var legs_mesh := BoxMesh.new()
-		legs_mesh.size = Vector3(0.25, 0.16, 0.24)
-		legs.mesh = legs_mesh
-		legs.material_override = hoof
-		legs.position = Vector3(-0.015, -0.17, 0.0)
-		pivot.add_child(legs)
+			var ear := MeshInstance3D.new()
+			var ear_mesh := SphereMesh.new()
+			ear_mesh.radius = 0.052
+			ear_mesh.height = 0.15
+			ear.mesh = ear_mesh
+			ear.material_override = face
+			ear.position = Vector3(0.16, 0.47, side * 0.125)
+			ear.rotation.z = -0.38
+			ear.scale = Vector3(0.7, 1.0, 0.7)
+			pivot.add_child(ear)
+
+			var eye_white := MeshInstance3D.new()
+			var eye_white_mesh := SphereMesh.new()
+			eye_white_mesh.radius = 0.033
+			eye_white_mesh.height = 0.055
+			eye_white.mesh = eye_white_mesh
+			eye_white.material_override = shine
+			eye_white.position = Vector3(0.286, 0.445, side * 0.066)
+			pivot.add_child(eye_white)
+
+			var pupil := MeshInstance3D.new()
+			var pupil_mesh := SphereMesh.new()
+			pupil_mesh.radius = 0.018
+			pupil_mesh.height = 0.034
+			pupil.mesh = pupil_mesh
+			pupil.material_override = eye
+			pupil.position = Vector3(0.309, 0.447, side * 0.071)
+			pivot.add_child(pupil)
+
+		var nose := MeshInstance3D.new()
+		var nose_mesh := SphereMesh.new()
+		nose_mesh.radius = 0.022
+		nose_mesh.height = 0.035
+		nose.mesh = nose_mesh
+		nose.material_override = hoof
+		nose.position = Vector3(0.354, 0.366, 0.0)
+		pivot.add_child(nose)
+
+		for leg_index in range(4):
+			var leg := MeshInstance3D.new()
+			var leg_mesh := CylinderMesh.new()
+			leg_mesh.top_radius = 0.027
+			leg_mesh.bottom_radius = 0.034
+			leg_mesh.height = 0.17
+			leg.mesh = leg_mesh
+			leg.material_override = hoof
+			leg.position = Vector3(-0.105 if leg_index < 2 else 0.12, 0.18, -0.115 if leg_index % 2 == 0 else 0.115)
+			pivot.add_child(leg)
+
 	var count_label := Label3D.new()
 	count_label.text = str(count)
 	count_label.font_size = 28
@@ -1166,101 +1229,161 @@ func _add_sheep_piece(parent: Node3D, count: int) -> void:
 	parent.add_child(count_label)
 
 func _add_wolf_piece(parent: Node3D) -> void:
+	# Stronger silhouette and amber eyes echo the wolf artwork on the new app icon.
 	var pivot := Node3D.new()
 	pivot.add_to_group("animated_game_piece")
-	pivot.scale = Vector3.ONE * 1.28
+	pivot.scale = Vector3.ONE * 1.24
 	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
-	var fur := _material(Color(0.19, 0.23, 0.29))
-	var muzzle := _material(Color(0.57, 0.57, 0.52))
-	var dark := _material(Color(0.075, 0.08, 0.09))
-	var eye_amber := _material(Color(0.98, 0.68, 0.18))
-	var body := MeshInstance3D.new()
-	var body_mesh := SphereMesh.new()
-	body_mesh.radius = 0.29
-	body_mesh.height = 0.49
-	body.mesh = body_mesh
-	body.material_override = fur
-	body.position = Vector3(-0.025, 0.43, 0.0)
-	pivot.add_child(body)
+	var fur := _material(Color(0.27, 0.32, 0.39))
+	var fur_light := _material(Color(0.43, 0.49, 0.55))
+	var muzzle_mat := _material(Color(0.72, 0.70, 0.64))
+	var dark := _material(Color(0.055, 0.065, 0.075))
+	var ear_inner := _material(Color(0.68, 0.37, 0.35))
+	var eye_amber := _material(Color(1.0, 0.66, 0.12))
+	var eye_glint := _material(Color(1.0, 0.94, 0.68))
+
+	var torso := MeshInstance3D.new()
+	var torso_mesh := SphereMesh.new()
+	torso_mesh.radius = 0.29
+	torso_mesh.height = 0.49
+	torso.mesh = torso_mesh
+	torso.material_override = fur
+	torso.position = Vector3(-0.035, 0.39, 0.0)
+	torso.scale = Vector3(1.22, 0.92, 0.88)
+	pivot.add_child(torso)
+
 	var chest := MeshInstance3D.new()
 	var chest_mesh := SphereMesh.new()
-	chest_mesh.radius = 0.19
-	chest_mesh.height = 0.36
+	chest_mesh.radius = 0.18
+	chest_mesh.height = 0.34
 	chest.mesh = chest_mesh
-	chest.material_override = muzzle
-	chest.position = Vector3(0.13, 0.43, -0.015)
+	chest.material_override = fur_light
+	chest.position = Vector3(0.15, 0.39, 0.0)
 	pivot.add_child(chest)
+
+	var neck := MeshInstance3D.new()
+	var neck_mesh := SphereMesh.new()
+	neck_mesh.radius = 0.17
+	neck_mesh.height = 0.30
+	neck.mesh = neck_mesh
+	neck.material_override = fur_light
+	neck.position = Vector3(0.16, 0.53, 0.0)
+	neck.rotation.z = -0.22
+	pivot.add_child(neck)
+
 	var head := MeshInstance3D.new()
 	var head_mesh := SphereMesh.new()
 	head_mesh.radius = 0.19
 	head_mesh.height = 0.34
 	head.mesh = head_mesh
 	head.material_override = fur
-	head.position = Vector3(0.22, 0.59, -0.02)
+	head.position = Vector3(0.235, 0.61, 0.0)
+	head.scale = Vector3(1.0, 1.08, 0.92)
 	pivot.add_child(head)
-	var snout := MeshInstance3D.new()
-	var snout_mesh := SphereMesh.new()
-	snout_mesh.radius = 0.105
-	snout_mesh.height = 0.15
-	snout.mesh = snout_mesh
-	snout.material_override = muzzle
-	snout.position = Vector3(0.39, 0.53, -0.02)
-	pivot.add_child(snout)
+
+	# Pointed ears, visible even from the board overview.
 	for side in [-1.0, 1.0]:
 		var ear := MeshInstance3D.new()
 		var ear_mesh := CylinderMesh.new()
 		ear_mesh.top_radius = 0.0
-		ear_mesh.bottom_radius = 0.075
-		ear_mesh.height = 0.23
+		ear_mesh.bottom_radius = 0.095
+		ear_mesh.height = 0.29
 		ear.mesh = ear_mesh
 		ear.material_override = fur
-		ear.position = Vector3(0.15, 0.80, side * 0.13)
+		ear.position = Vector3(0.16, 0.83, side * 0.13)
+		ear.rotation_degrees = Vector3(0.0, 0.0, -13.0)
 		pivot.add_child(ear)
+
+		var ear_center := MeshInstance3D.new()
+		var ear_center_mesh := SphereMesh.new()
+		ear_center_mesh.radius = 0.045
+		ear_center_mesh.height = 0.12
+		ear_center.mesh = ear_center_mesh
+		ear_center.material_override = ear_inner
+		ear_center.position = Vector3(0.19, 0.82, side * 0.13)
+		pivot.add_child(ear_center)
+
 		var eye := MeshInstance3D.new()
 		var eye_mesh := SphereMesh.new()
-		eye_mesh.radius = 0.027
-		eye_mesh.height = 0.054
+		eye_mesh.radius = 0.041
+		eye_mesh.height = 0.072
 		eye.mesh = eye_mesh
 		eye.material_override = eye_amber
-		eye.position = Vector3(0.34, 0.63, side * 0.135)
+		eye.position = Vector3(0.375, 0.655, side * 0.126)
 		pivot.add_child(eye)
+
 		var pupil := MeshInstance3D.new()
 		var pupil_mesh := SphereMesh.new()
-		pupil_mesh.radius = 0.012
-		pupil_mesh.height = 0.024
+		pupil_mesh.radius = 0.019
+		pupil_mesh.height = 0.038
 		pupil.mesh = pupil_mesh
 		pupil.material_override = dark
-		pupil.position = Vector3(0.36, 0.635, side * 0.15)
+		pupil.position = Vector3(0.401, 0.658, side * 0.139)
 		pivot.add_child(pupil)
+
+		var glint := MeshInstance3D.new()
+		var glint_mesh := SphereMesh.new()
+		glint_mesh.radius = 0.010
+		glint_mesh.height = 0.018
+		glint.mesh = glint_mesh
+		glint.material_override = eye_glint
+		glint.position = Vector3(0.414, 0.676, side * 0.142)
+		pivot.add_child(glint)
+
+	var snout := MeshInstance3D.new()
+	var snout_mesh := SphereMesh.new()
+	snout_mesh.radius = 0.11
+	snout_mesh.height = 0.17
+	snout.mesh = snout_mesh
+	snout.material_override = muzzle_mat
+	snout.position = Vector3(0.395, 0.525, 0.0)
+	snout.scale = Vector3(1.18, 0.75, 0.82)
+	pivot.add_child(snout)
+
 	var nose := MeshInstance3D.new()
 	var nose_mesh := SphereMesh.new()
-	nose_mesh.radius = 0.047
+	nose_mesh.radius = 0.045
 	nose_mesh.height = 0.065
 	nose.mesh = nose_mesh
 	nose.material_override = dark
-	nose.position = Vector3(0.475, 0.54, -0.02)
+	nose.position = Vector3(0.49, 0.545, 0.0)
 	pivot.add_child(nose)
+
+	var jaw := MeshInstance3D.new()
+	var jaw_mesh := SphereMesh.new()
+	jaw_mesh.radius = 0.078
+	jaw_mesh.height = 0.10
+	jaw.mesh = jaw_mesh
+	jaw.material_override = dark
+	jaw.position = Vector3(0.385, 0.445, 0.0)
+	jaw.scale = Vector3(1.2, 0.5, 0.9)
+	pivot.add_child(jaw)
+
 	for leg_index in range(4):
 		var leg := MeshInstance3D.new()
 		var leg_mesh := CylinderMesh.new()
-		leg_mesh.top_radius = 0.045
-		leg_mesh.bottom_radius = 0.055
-		leg_mesh.height = 0.24
+		leg_mesh.top_radius = 0.047
+		leg_mesh.bottom_radius = 0.058
+		leg_mesh.height = 0.25
 		leg.mesh = leg_mesh
 		leg.material_override = fur
-		leg.position = Vector3(-0.12 if leg_index < 2 else 0.13, 0.20, -0.15 if leg_index % 2 == 0 else 0.15)
+		leg.position = Vector3(-0.15 if leg_index < 2 else 0.15, 0.17, -0.16 if leg_index % 2 == 0 else 0.16)
 		pivot.add_child(leg)
+
+	var tail_pivot := Node3D.new()
+	tail_pivot.position = Vector3(-0.30, 0.45, 0.0)
+	pivot.add_child(tail_pivot)
 	var tail := MeshInstance3D.new()
 	var tail_mesh := CapsuleMesh.new()
-	tail_mesh.radius = 0.07
-	tail_mesh.height = 0.25
+	tail_mesh.radius = 0.085
+	tail_mesh.height = 0.30
 	tail.mesh = tail_mesh
 	tail.material_override = fur
-	tail.position = Vector3(-0.31, 0.47, 0.0)
+	tail.position = Vector3(-0.08, -0.015, 0.0)
 	tail.rotation_degrees.z = 55.0
-	pivot.add_child(tail)
-	wolf_tail_pivots.append(tail)
+	tail_pivot.add_child(tail)
+	wolf_tail_pivots.append(tail_pivot)
 
 func _material(color: Color) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()
