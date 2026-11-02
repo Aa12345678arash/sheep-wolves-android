@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1280" viewBox="0 0 720 1280">
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#101a3c"/><stop offset=".58" stop-color="#244e68"/><stop offset="1" stop-color="#315d40"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff0ae"/><stop offset="1" stop-color="#c17b22"/></linearGradient>
+</defs>
+<rect width="720" height="1280" fill="url(#bg)"/>
+<circle cx="550" cy="245" r="88" fill="#ffe8a0" opacity=".95"/>
+<path d="M0 760 Q150 650 300 740 T720 710 V1280 H0Z" fill="#47764d"/>
+<path d="M0 900 Q180 780 360 870 T720 840 V1280 H0Z" fill="#244d36"/>
+<path d="M70 1060 Q310 920 650 1025" fill="none" stroke="#d7b879" stroke-width="28" stroke-linecap="round"/>
+<text x="360" y="170" text-anchor="middle" fill="#fff2bd" font-family="sans-serif" font-size="34" font-weight="bold">THE SECRET OF THE GREEN MEADOW</text>
+<text x="360" y="360" text-anchor="middle" fill="url(#gold)" stroke="#442b16" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="82" font-weight="bold">گرگ و میش</text>
+<text x="360" y="425" text-anchor="middle" fill="#f7e7bc" font-family="sans-serif" font-size="30">راز دشت سبز</text>
+<g transform="translate(115 530) scale(1.45)">
+ <path d="M28 88 L5 5 L75 45 Q125 18 174 48 L235 12 L220 104 Q245 144 204 181 L183 232 L153 232 L148 185 Q103 204 63 180 L58 232 L27 232 L29 166 Q0 137 28 88Z" fill="#667887" stroke="#263746" stroke-width="10" stroke-linejoin="round"/>
+ <path d="M49 111 Q121 73 204 111 Q190 166 126 174 Q66 166 49 111Z" fill="#d9cdb8"/>
+ <circle cx="79" cy="99" r="12" fill="#ffd45c"/><circle cx="181" cy="99" r="12" fill="#ffd45c"/>
+</g>
+<g transform="translate(390 655) scale(1.45)">
+ <ellipse cx="94" cy="99" rx="90" ry="70" fill="#eeeede" stroke="#b7c1c0" stroke-width="5"/>
+ <g fill="#fffef5"><circle cx="40" cy="65" r="35"/><circle cx="81" cy="42" r="38"/><circle cx="124" cy="55" r="37"/><circle cx="157" cy="91" r="35"/><circle cx="132" cy="132" r="38"/><circle cx="81" cy="143" r="38"/><circle cx="37" cy="119" r="34"/></g>
+ <ellipse cx="12" cy="97" rx="36" ry="43" fill="#d9b49c"/>
+ <circle cx="1" cy="88" r="7" fill="#26323b"/><circle cx="26" cy="88" r="7" fill="#26323b"/>
+</g>
+<text x="360" y="1190" text-anchor="middle" fill="#fff0c6" font-family="sans-serif" font-size="28">در حال آماده‌سازی دشت...</text>
+</svg>
