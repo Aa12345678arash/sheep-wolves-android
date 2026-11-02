@@ -1,0 +1,34 @@
+name: WOLF-DUSK-007 rule checks
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-007-REBUILD
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/**'
+      - '.github/workflows/godot-007-rule-checks.yml'
+  pull_request:
+    branches:
+      - WOLF-DUSK-007-REBUILD
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.4.1
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+      - name: Import and parse 3D scene
+        run: |
+          timeout 45s godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
+          timeout 20s godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
+      - name: Run gameplay rule tests
+        run: timeout 45s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_rules.gd
