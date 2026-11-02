@@ -3,13 +3,15 @@ name: WOLF-DUSK-007 rule checks
 on:
   push:
     branches:
-      - WOLF-DUSK-007-REBUILD, WOLF-DUSK-008-FIX
+      - WOLF-DUSK-007-REBUILD
+      - WOLF-DUSK-008-FIX
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
   pull_request:
     branches:
-      - WOLF-DUSK-007-REBUILD, WOLF-DUSK-008-FIX
+      - WOLF-DUSK-007-REBUILD
+      - WOLF-DUSK-008-FIX
   workflow_dispatch:
 
 permissions:
