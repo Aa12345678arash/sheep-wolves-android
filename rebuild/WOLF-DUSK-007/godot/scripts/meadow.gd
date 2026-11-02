@@ -1245,11 +1245,11 @@ func _update_hud() -> void:
 		_update_chain_countdown()
 
 func _set_turn_view(side: int) -> void:
-	# Sheep and wolves see the same symmetric board from opposite ends.
-	if camera_view_turn == side:
-		return
+	# Keep one clear player-side view for both setup and sheep movement:
+	# sheep begin on row E (z positive), so the camera stays at z +22.
+	# Wolves are placed on the opposite half and remain visible across the board.
 	camera_view_turn = side
-	camera_target_position = Vector3(0.0, 20.0, -22.0) if side == -1 else Vector3(0.0, 20.0, 22.0)
+	camera_target_position = Vector3(0.0, 20.0, 22.0)
 
 func _legal_targets() -> Array[int]:
 	var targets: Array[int] = []
