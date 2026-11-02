@@ -1,19 +1,22 @@
+; Godot 4 project scaffold for WOLF-DUSK-004
 config_version=5
 
 [application]
-config/name="گرگ و میش؛ راز دشت سبز"
+config/name="گرگ و میش"
+config/icon="res://assets/icon.svg"
+config/description="راز دشت سبز - نسخه سه‌بعدی"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.3", "GL Compatibility")
 
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/size/window_width_override=1280
-window/size/window_height_override=720
-window/handheld/orientation=1
+window/handheld/orientation=0
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
 textures/default_filters/use_nearest_mipmap_filter=false
-environment/defaults/default_clear_color=Color(0.48, 0.72, 0.42, 1)
+environment/defaults/default_clear_color=Color(0.31, 0.48, 0.34, 1)
