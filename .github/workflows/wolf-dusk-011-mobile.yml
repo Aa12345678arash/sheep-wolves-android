@@ -7,6 +7,7 @@ on:
       - WOLF-DUSK-AI-015
       - WOLF-DUSK-AI-017-PLAYER-CONTROL
       - WOLF-DUSK-AI-018-AI-TURN-CAMERA
+      - WOLF-DUSK-UI-020-READABILITY
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-011-mobile.yml'
@@ -76,14 +77,15 @@ jobs:
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai.gd
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_player_control.gd
+          timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_ui_readability.gd
       - name: Export Android debug APK
         run: |
-          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
-          test -s "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-ui-020-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-ui-020-preview.apk"
       - name: Upload WOLF-DUSK-011 installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: wolf-dusk-011-android-preview
+          name: wolf-dusk-ui-020-android-preview
           path: wolf-dusk-011-preview.apk
           if-no-files-found: error
           retention-days: 14
