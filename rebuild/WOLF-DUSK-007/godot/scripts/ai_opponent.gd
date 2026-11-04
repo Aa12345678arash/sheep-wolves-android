@@ -163,20 +163,20 @@ static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> flo
 static func _wolf_move_score(state, from: int, to: int, is_capture: bool, difficulty: int) -> float:
 	# Score the position after the wolf has moved, not merely the destination.
 	var score := 100.0 if is_capture else _centrality(to) * 2.0
+	var captured_middle := -1
+	if is_capture:
+		for option in state.capture_options(from):
+			if int(option.to) == to:
+				captured_middle = int(option.middle)
+				break
 	if difficulty == 1:
 		if is_capture:
 			score += 12.0
 		else:
 			score += _count_capture_options_after(state, from, to, -1) * 4.0
-			score += _count_threatened_sheep_after(state, from, to) * 3.0
+		score += _count_threatened_sheep_after(state, from, to, captured_middle) * 3.0
 		return score
 	if difficulty >= 2:
-		var captured_middle := -1
-		if is_capture:
-			for option in state.capture_options(from):
-				if int(option.to) == to:
-					captured_middle = int(option.middle)
-					break
 		var follow_up_captures := _count_capture_options_after(state, from, to, captured_middle)
 		var mobility := _wolf_mobility_after(state, from, to)
 		score += float(follow_up_captures) * 24.0
