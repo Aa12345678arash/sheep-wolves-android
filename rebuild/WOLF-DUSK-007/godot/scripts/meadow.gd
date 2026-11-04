@@ -804,6 +804,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		screen_position = event.position
 		pressed = true
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		# Android can synthesize a mouse click for the same finger touch.
+		# Ignore that duplicate so one tap cannot select and then cancel a piece.
+		if OS.has_feature("mobile"):
+			return
 		screen_position = event.position
 		pressed = true
 	if not pressed or camera == null or not camera.is_inside_tree():
