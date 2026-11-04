@@ -457,7 +457,7 @@ func _build_board() -> void:
 		area.set_meta("board_node_index", index)
 		var collision := CollisionShape3D.new()
 		var sphere := SphereShape3D.new()
-		sphere.radius = 0.92
+		sphere.radius = 0.98
 		collision.shape = sphere
 		area.add_child(collision)
 		add_child(area)
@@ -905,8 +905,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			nearest_distance = distance
 			nearest_index = node_index
 	if nearest_index >= 0:
-		_select_node(nearest_index)
-		get_viewport().set_input_as_handled()
+		# Keep the fallback hit zone below half the nearest projected node spacing.
+		# Physics areas are also enlarged, but remain non-overlapping in world space.
+		var nearest_point := camera.unproject_position(node_areas[nearest_index].global_position)
+		var projected_spacing := INF
+		for other_index in range(node_areas.size()):
+			if other_index == nearest_index:
+				continue
+			var other_point := camera.unproject_position(node_areas[other_index].global_position)
+			projected_spacing = minf(projected_spacing, nearest_point.distance_to(other_point))
+		var safe_touch_radius := minf(54.0, projected_spacing * 0.42)
+		if nearest_distance <= safe_touch_radius:
+			_select_node(nearest_index)
+			get_viewport().set_input_as_handled()
 
 func _select_node(index: int) -> void:
 	var animated_from := -1
@@ -1145,8 +1156,8 @@ func _refresh_board() -> void:
 		var is_selected := index == selected_node
 		var is_capture := index in capture_targets
 		var is_legal := index in legal_targets
-		var marker_radius := 0.34 if (is_selected or is_legal) else 0.19
-		marker.mesh = _cached_cylinder(marker_radius, marker_radius, 0.035)
+		var marker_radius := 0.62 if (is_selected or is_legal) else 0.52
+		marker.mesh = _cached_cylinder(marker_radius, marker_radius, 0.05)
 		if is_selected:
 			marker.material_override = _cached_emissive_material(Color(1.0, 0.72, 0.08), Color(0.9, 0.48, 0.02))
 		elif is_capture:
@@ -1158,6 +1169,19 @@ func _refresh_board() -> void:
 			marker.material_override = _cached_material(Color(0.91, 0.78, 0.48))
 		marker.position.y = 0.045
 		visual.add_child(marker)
+		# The outer ring defines a generous but non-overlapping placement zone.
+		# It encloses the full sheep stack and the enlarged wolf silhouette.
+		var placement_ring := MeshInstance3D.new()
+		var placement_ring_mesh := TorusMesh.new()
+		placement_ring_mesh.inner_radius = 0.87
+		placement_ring_mesh.outer_radius = 0.96
+		placement_ring_mesh.rings = 8
+		placement_ring_mesh.ring_segments = 24
+		placement_ring.mesh = placement_ring_mesh
+		placement_ring.material_override = marker.material_override
+		placement_ring.position.y = 0.075
+		placement_ring.rotation.x = PI * 0.5
+		visual.add_child(placement_ring)
 		var node_name := Label3D.new()
 		node_name.text = BoardGraph.node_label(index)
 		node_name.font_size = 22
@@ -1186,8 +1210,8 @@ func _add_sheep_piece(parent: Node3D, node_index: int, count: int, highlight_one
 		pivot.add_to_group("animated_game_piece")
 		var column := i % 3
 		var row := int(i / 3)
-		pivot.position = Vector3((column - 1) * 0.34, 0.29, (row - 0.5) * 0.34)
-		pivot.scale = Vector3.ONE * (1.04 if highlight_one and i == visible_count - 1 else 0.92)
+		pivot.position = Vector3((column - 1) * 0.36, 0.29, (row - 0.5) * 0.36)
+		pivot.scale = Vector3.ONE * (1.08 if highlight_one and i == visible_count - 1 else 1.0)
 		pivot.rotation.y = _awareness_yaw(node_index, _sheep_attention_target(node_index))
 		parent.add_child(pivot)
 		if highlight_one and i == visible_count - 1:
@@ -1364,7 +1388,7 @@ func _add_wolf_piece(parent: Node3D, node_index: int) -> void:
 	# Stronger silhouette and amber eyes echo the wolf artwork on the new app icon.
 	var pivot := Node3D.new()
 	pivot.add_to_group("animated_game_piece")
-	pivot.scale = Vector3.ONE * 1.24
+	pivot.scale = Vector3.ONE * 1.36
 	pivot.rotation.y = _awareness_yaw(node_index, _wolf_attention_target(node_index))
 	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
