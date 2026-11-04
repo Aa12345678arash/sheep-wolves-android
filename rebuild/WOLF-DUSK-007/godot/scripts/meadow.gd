@@ -511,7 +511,7 @@ func _build_hud() -> void:
 	header.offset_left = 12.0
 	header.offset_top = 12.0
 	header.offset_right = -12.0
-	header.offset_bottom = 178.0
+	header.offset_bottom = 250.0
 	root.add_child(header)
 	var header_column := VBoxContainer.new()
 	header_column.add_theme_constant_override("separation", 5)
@@ -520,30 +520,30 @@ func _build_hud() -> void:
 	player_names_label = Label.new()
 	player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
 	player_names_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	player_names_label.add_theme_font_size_override("font_size", 21)
+	player_names_label.add_theme_font_size_override("font_size", 25)
 	header_column.add_child(player_names_label)
 
 	status_label = Label.new()
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.add_theme_font_size_override("font_size", 30)
+	status_label.add_theme_font_size_override("font_size", 34)
 	header_column.add_child(status_label)
 
 	capture_count_label = Label.new()
 	capture_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	capture_count_label.add_theme_font_size_override("font_size", 22)
+	capture_count_label.add_theme_font_size_override("font_size", 25)
 	capture_count_label.add_theme_color_override("font_color", Color(0.98, 0.72, 0.36))
 	header_column.add_child(capture_count_label)
 
 	detail_label = Label.new()
 	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.add_theme_font_size_override("font_size", 20)
+	detail_label.add_theme_font_size_override("font_size", 23)
 	header_column.add_child(detail_label)
 
 	message_label = Label.new()
 	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message_label.add_theme_font_size_override("font_size", 20)
+	message_label.add_theme_font_size_override("font_size", 23)
 	header_column.add_child(message_label)
 
 	# Bottom controls remain outside the board's central play area.
@@ -553,7 +553,7 @@ func _build_hud() -> void:
 	footer.anchor_right = 1.0
 	footer.anchor_bottom = 1.0
 	footer.offset_left = 12.0
-	footer.offset_top = -132.0
+	footer.offset_top = -238.0
 	footer.offset_right = -12.0
 	footer.offset_bottom = -12.0
 	root.add_child(footer)
@@ -561,15 +561,18 @@ func _build_hud() -> void:
 	footer_column.add_theme_constant_override("separation", 7)
 	footer.add_child(footer_column)
 
-	var controls := HBoxContainer.new()
+	var controls := GridContainer.new()
+	controls.columns = 2
+	controls.add_theme_constant_override("h_separation", 8)
+	controls.add_theme_constant_override("v_separation", 7)
 	controls.add_theme_constant_override("separation", 10)
 	footer_column.add_child(controls)
 
 	pass_button = Button.new()
 	pass_button.text = "پایان شکار دوم"
 	pass_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pass_button.custom_minimum_size = Vector2(0, 50)
-	pass_button.add_theme_font_size_override("font_size", 17)
+	pass_button.custom_minimum_size = Vector2(0, 56)
+	pass_button.add_theme_font_size_override("font_size", 20)
 	pass_button.visible = false
 	pass_button.pressed.connect(_decline_chain_capture)
 	controls.add_child(pass_button)
@@ -577,8 +580,8 @@ func _build_hud() -> void:
 	var reset_button := Button.new()
 	reset_button.text = "بازی تازه"
 	reset_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	reset_button.custom_minimum_size = Vector2(0, 50)
-	reset_button.add_theme_font_size_override("font_size", 17)
+	reset_button.custom_minimum_size = Vector2(0, 56)
+	reset_button.add_theme_font_size_override("font_size", 20)
 	reset_button.pressed.connect(_reset_game)
 	controls.add_child(reset_button)
 
@@ -587,31 +590,31 @@ func _build_hud() -> void:
 	music_button.toggle_mode = true
 	music_button.button_pressed = true
 	music_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	music_button.custom_minimum_size = Vector2(0, 50)
-	music_button.add_theme_font_size_override("font_size", 16)
+	music_button.custom_minimum_size = Vector2(0, 56)
+	music_button.add_theme_font_size_override("font_size", 19)
 	music_button.toggled.connect(_toggle_meadow_music)
 	controls.add_child(music_button)
 
 	var setup_button := Button.new()
 	setup_button.text = "تنظیم بازی"
 	setup_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	setup_button.custom_minimum_size = Vector2(0, 50)
-	setup_button.add_theme_font_size_override("font_size", 16)
+	setup_button.custom_minimum_size = Vector2(0, 56)
+	setup_button.add_theme_font_size_override("font_size", 19)
 	setup_button.pressed.connect(_show_setup_menu)
 	controls.add_child(setup_button)
 
 	var sound_test_button := Button.new()
 	sound_test_button.text = "آزمون صدا"
 	sound_test_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sound_test_button.custom_minimum_size = Vector2(0, 50)
-	sound_test_button.add_theme_font_size_override("font_size", 16)
+	sound_test_button.custom_minimum_size = Vector2(0, 56)
+	sound_test_button.add_theme_font_size_override("font_size", 19)
 	sound_test_button.pressed.connect(_play_audio_test)
 	controls.add_child(sound_test_button)
 
 	var credit := Label.new()
 	credit.text = "سازنده و معرفی‌کننده: آرش سلیمی"
 	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	credit.add_theme_font_size_override("font_size", 16)
+	credit.add_theme_font_size_override("font_size", 18)
 	footer_column.add_child(credit)
 
 func _show_setup_menu() -> void:
@@ -628,8 +631,8 @@ func _show_setup_menu() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	# Keep the settings panel inside the phone's visible area; long menus can scroll.
 	var panel_size := Vector2(
-		minf(660.0, maxf(300.0, viewport_size.x - 28.0)),
-		minf(620.0, maxf(360.0, viewport_size.y - 32.0))
+		minf(680.0, maxf(300.0, viewport_size.x - 24.0)),
+		minf(860.0, maxf(360.0, viewport_size.y - 32.0))
 	)
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = panel_size
@@ -641,10 +644,10 @@ func _show_setup_menu() -> void:
 	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
 	panel_style.set_border_width_all(3)
 	panel_style.set_corner_radius_all(22)
-	panel_style.content_margin_left = 22.0
-	panel_style.content_margin_right = 22.0
-	panel_style.content_margin_top = 20.0
-	panel_style.content_margin_bottom = 20.0
+	panel_style.content_margin_left = 28.0
+	panel_style.content_margin_right = 28.0
+	panel_style.content_margin_top = 26.0
+	panel_style.content_margin_bottom = 26.0
 	panel.add_theme_stylebox_override("panel", panel_style)
 	setup_layer.add_child(panel)
 	var scroll := ScrollContainer.new()
@@ -654,37 +657,37 @@ func _show_setup_menu() -> void:
 	panel.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", 9)
+	column.add_theme_constant_override("separation", 12)
 	column.add_theme_font_size_override("font_size", 24)
 	column.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86))
 	scroll.add_child(column)
 	var emblem := TextureRect.new()
 	emblem.texture = load("res://assets/title_emblem.svg")
-	emblem.custom_minimum_size = Vector2(0, clampf(viewport_size.y * 0.14, 64.0, 104.0))
+	emblem.custom_minimum_size = Vector2(0, clampf(viewport_size.y * 0.13, 76.0, 116.0))
 	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	column.add_child(emblem)
 	var heading := Label.new()
 	heading.text = "گرگ و میش | راز دشت سبز"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 27)
+	heading.add_theme_font_size_override("font_size", 32)
 	column.add_child(heading)
 	var subtitle := Label.new()
 	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 21)
+	subtitle.add_theme_font_size_override("font_size", 25)
 	column.add_child(subtitle)
 	var sheep_name := LineEdit.new()
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
-	sheep_name.custom_minimum_size = Vector2(0, 54)
-	sheep_name.add_theme_font_size_override("font_size", 21)
+	sheep_name.custom_minimum_size = Vector2(0, 64)
+	sheep_name.add_theme_font_size_override("font_size", 25)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
-	wolf_name.custom_minimum_size = Vector2(0, 54)
-	wolf_name.add_theme_font_size_override("font_size", 21)
+	wolf_name.custom_minimum_size = Vector2(0, 64)
+	wolf_name.add_theme_font_size_override("font_size", 25)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
@@ -698,25 +701,25 @@ func _show_setup_menu() -> void:
 	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
-	mode_picker.custom_minimum_size = Vector2(0, 54)
-	side_picker.custom_minimum_size = Vector2(0, 54)
-	difficulty_picker.custom_minimum_size = Vector2(0, 54)
+	mode_picker.custom_minimum_size = Vector2(0, 64)
+	side_picker.custom_minimum_size = Vector2(0, 64)
+	difficulty_picker.custom_minimum_size = Vector2(0, 64)
 	column.add_child(difficulty_picker)
-	mode_picker.add_theme_font_size_override("font_size", 19)
-	side_picker.add_theme_font_size_override("font_size", 19)
-	difficulty_picker.add_theme_font_size_override("font_size", 19)
+	mode_picker.add_theme_font_size_override("font_size", 23)
+	side_picker.add_theme_font_size_override("font_size", 23)
+	difficulty_picker.add_theme_font_size_override("font_size", 23)
 	setup_music_button = Button.new()
 	setup_music_button.text = "موسیقی دشت: روشن"
 	setup_music_button.toggle_mode = true
 	setup_music_button.button_pressed = true
-	setup_music_button.custom_minimum_size = Vector2(0, 54)
-	setup_music_button.add_theme_font_size_override("font_size", 21)
+	setup_music_button.custom_minimum_size = Vector2(0, 64)
+	setup_music_button.add_theme_font_size_override("font_size", 24)
 	setup_music_button.toggled.connect(_toggle_meadow_music)
 	column.add_child(setup_music_button)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
-	start_button.custom_minimum_size = Vector2(0, 62)
-	start_button.add_theme_font_size_override("font_size", 25)
+	start_button.custom_minimum_size = Vector2(0, 72)
+	start_button.add_theme_font_size_override("font_size", 29)
 	start_button.pressed.connect(func():
 		if is_instance_valid(celebration_layer):
 			celebration_layer.queue_free()
@@ -766,7 +769,7 @@ func _show_setup_menu() -> void:
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note.add_theme_font_size_override("font_size", 17)
+	note.add_theme_font_size_override("font_size", 20)
 	column.add_child(note)
 
 func _is_ai_turn() -> bool:
