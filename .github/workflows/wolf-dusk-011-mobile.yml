@@ -1,0 +1,75 @@
+name: WOLF-DUSK-011 Mobile validation and APK
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-011-MOBILE-PERFORMANCE
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/**'
+      - '.github/workflows/wolf-dusk-011-mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout isolated development branch
+        uses: actions/checkout@v4
+      - name: Verify Android export preset
+        run: |
+          test -f rebuild/WOLF-DUSK-007/godot/export_presets.cfg
+          grep -q 'name="Android"' rebuild/WOLF-DUSK-007/godot/export_presets.cfg
+      - name: Configure Godot Android export environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz -O /tmp/godot-templates.tpz
+          unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          JAVA_BIN="$(readlink -f "$(command -v java)")"
+          JAVA_HOME_DIR="$(dirname "$(dirname "$JAVA_BIN")")"
+          if [ -n "${ANDROID_HOME:-}" ]; then
+            ANDROID_SDK_DIR="$ANDROID_HOME"
+          elif [ -n "${ANDROID_SDK_ROOT:-}" ]; then
+            ANDROID_SDK_DIR="$ANDROID_SDK_ROOT"
+          else
+            ADB_BIN="$(find /opt /usr/local /usr/lib -type f -name adb 2>/dev/null | head -n 1)"
+            test -n "$ADB_BIN"
+            ANDROID_SDK_DIR="$(dirname "$(dirname "$ADB_BIN")")"
+          fi
+          SDKMANAGER="$(find "$ANDROID_SDK_DIR/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          test -n "$SDKMANAGER"
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_DIR" --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" < /dev/null
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME_DIR"
+          export/android/android_sdk_path = "$ANDROID_SDK_DIR"
+          EOF
+          keytool -genkeypair -v -keystore /tmp/wolf-dusk-debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+          test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
+          test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_release.apk"
+      - name: Import and validate Godot project
+        run: |
+          godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
+          godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
+          godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_board.gd
+          godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_rules.gd
+      - name: Export Android debug APK
+        run: |
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
+      - name: Upload WOLF-DUSK-011 installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wolf-dusk-011-android-preview
+          path: wolf-dusk-011-preview.apk
+          if-no-files-found: error
+          retention-days: 14
