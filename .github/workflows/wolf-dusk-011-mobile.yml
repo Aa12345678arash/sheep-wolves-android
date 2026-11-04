@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - WOLF-DUSK-011-MOBILE-PERFORMANCE
+      - WOLF-DUSK-AI-015
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-011-mobile.yml'
@@ -62,6 +63,7 @@ jobs:
           godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
           godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_board.gd
           godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_rules.gd
+          godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_ai.gd
       - name: Export Android debug APK
         run: |
           godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
