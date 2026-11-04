@@ -127,7 +127,9 @@ static func _wolf_pressure_on_sheep(state, sheep_node: int, vacated_from: int = 
 				continue
 			if int(landing / 5) - row != dr or landing % 5 - col != dc:
 				continue
-			var origin_frees := landing == vacated_from and state.sheep[vacated_from] == 1
+			var origin_frees: bool = false
+			if vacated_from >= 0:
+				origin_frees = landing == vacated_from and int(state.sheep[vacated_from]) == 1
 			if origin_frees or (not state.is_occupied(landing) and landing != vacated_from):
 				pressure += 1.0
 	return pressure
@@ -222,7 +224,7 @@ static func _count_threatened_sheep_after(state, wolf_from: int, wolf_to: int, c
 				continue
 			if int(landing / 5) - int(middle / 5) != dr or landing % 5 - middle % 5 != dc:
 				continue
-			var origin_frees := landing == wolf_from and state.sheep[wolf_from] == 0
+			var origin_frees: bool = landing == wolf_from and int(state.sheep[wolf_from]) == 0
 			if origin_frees or (not state.is_occupied(landing) and landing != wolf_from):
 				total += 1
 				break
