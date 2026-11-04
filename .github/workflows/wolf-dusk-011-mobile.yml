@@ -5,6 +5,7 @@ on:
     branches:
       - WOLF-DUSK-011-MOBILE-PERFORMANCE
       - WOLF-DUSK-AI-015
+      - WOLF-DUSK-AI-017-PLAYER-CONTROL
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-011-mobile.yml'
@@ -73,6 +74,7 @@ jobs:
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai.gd
+          timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_player_control.gd
       - name: Export Android debug APK
         run: |
           godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
