@@ -13,9 +13,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: wolf-dusk-011-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     container:
       image: barichello/godot-ci:4.4.1
     steps:
@@ -58,12 +63,16 @@ jobs:
           test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
           test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_release.apk"
       - name: Import and validate Godot project
+        shell: bash
         run: |
-          godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
-          godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
-          godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_board.gd
-          godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_rules.gd
-          godot --headless --path rebuild/WOLF-DUSK-007/godot --script tests/validate_ai.gd
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          # Bound each headless process so a stalled editor/import cannot hold the runner forever.
+          timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit --verbose
+          timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2 --verbose
+          timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
+          timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
+          timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai.gd
       - name: Export Android debug APK
         run: |
           godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-011-preview.apk"
