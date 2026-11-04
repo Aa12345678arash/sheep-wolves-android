@@ -31,7 +31,7 @@ static func edge_set(data: Dictionary) -> Dictionary:
 
 static func validate(data: Dictionary) -> bool:
 	var nodes := node_ids(data)
-	var edges := data.get("edges", [])
+	var edges: Array = data.get("edges", [])
 	if nodes.size() != 25 or edges.size() != 56:
 		return false
 	var known := {}
