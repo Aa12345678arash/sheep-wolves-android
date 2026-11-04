@@ -180,7 +180,7 @@ static func _wolf_move_score(state, from: int, to: int, is_capture: bool, diffic
 		var follow_up_captures := _count_capture_options_after(state, from, to, captured_middle)
 		var mobility := _wolf_mobility_after(state, from, to)
 		score += float(follow_up_captures) * 24.0
-		score += float(_count_threatened_sheep_after(state, from, to)) * 8.0
+		score += float(_count_threatened_sheep_after(state, from, to, captured_middle)) * 8.0
 		score += float(mobility) * 0.8
 		# Avoid moves that leave this wolf stranded when another wolf can cover the area.
 		if mobility == 0 and follow_up_captures == 0:
@@ -207,13 +207,13 @@ static func _count_capture_options_after(state, wolf_from: int, wolf_to: int, ca
 				total += 1
 	return total
 
-static func _count_threatened_sheep_after(state, wolf_from: int, wolf_to: int) -> int:
+static func _count_threatened_sheep_after(state, wolf_from: int, wolf_to: int, captured_middle: int = -1) -> int:
 	var total := 0
 	var adjacency := BoardGraph.adjacency()
 	var wolf_row := int(wolf_to / 5)
 	var wolf_col := wolf_to % 5
 	for middle in adjacency[wolf_to]:
-		if state.sheep[middle] <= 0:
+		if middle == captured_middle or state.sheep[middle] <= 0:
 			continue
 		var dr := int(middle / 5) - wolf_row
 		var dc := int(middle % 5) - wolf_col
