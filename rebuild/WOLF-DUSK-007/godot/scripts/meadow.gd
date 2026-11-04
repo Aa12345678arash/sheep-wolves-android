@@ -1491,9 +1491,7 @@ func _set_tactical_view(node_index: int) -> void:
 	if node_index < 0 or node_index >= node_areas.size():
 		return
 	camera_mode = "overview"
-	camera_target_look_at = Vector3.ZERO
-	camera_target_position = Vector3(0.0, 27.0, 9.0)
-	camera.fov = 48.0
+	_apply_camera_orbit()
 
 func _set_jump_view(from_index: int, to_index: int) -> int:
 	# Keep the full board in frame while the piece animation plays.
@@ -1501,9 +1499,7 @@ func _set_jump_view(from_index: int, to_index: int) -> int:
 	if from_index < 0 or to_index < 0 or from_index >= node_areas.size() or to_index >= node_areas.size():
 		return camera_mode_generation
 	camera_mode = "overview"
-	camera_target_look_at = Vector3.ZERO
-	camera_target_position = Vector3(0.0, 27.0, 9.0)
-	camera.fov = 48.0
+	_apply_camera_orbit()
 	return camera_mode_generation
 
 func _restore_overview_after_jump(generation: int) -> void:
