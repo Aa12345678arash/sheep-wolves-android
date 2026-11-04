@@ -1078,33 +1078,20 @@ func _refresh_board() -> void:
 		# Broad, low-profile destination pads remain visible around the feet of pieces.
 		# Selected and legal nodes use emissive colors so the next action is unmistakable.
 		var marker := MeshInstance3D.new()
-		var marker_mesh := CylinderMesh.new()
 		var is_selected := index == selected_node
 		var is_capture := index in capture_targets
 		var is_legal := index in legal_targets
-		marker_mesh.top_radius = 0.34 if (is_selected or is_legal) else 0.19
-		marker_mesh.bottom_radius = marker_mesh.top_radius
-		marker_mesh.height = 0.035
-		marker_mesh.radial_segments = 32
-		marker.mesh = marker_mesh
-		var marker_material := StandardMaterial3D.new()
-		marker_material.roughness = 0.55
+		var marker_radius := 0.34 if (is_selected or is_legal) else 0.19
+		marker.mesh = _cached_cylinder(marker_radius, marker_radius, 0.035)
 		if is_selected:
-			marker_material.albedo_color = Color(1.0, 0.72, 0.08)
-			marker_material.emission_enabled = true
-			marker_material.emission = Color(0.9, 0.48, 0.02)
+			marker.material_override = _cached_emissive_material(Color(1.0, 0.72, 0.08), Color(0.9, 0.48, 0.02))
 		elif is_capture:
 			# Amber distinguishes a legal wolf capture from an ordinary green move.
-			marker_material.albedo_color = Color(1.0, 0.48, 0.12)
-			marker_material.emission_enabled = true
-			marker_material.emission = Color(0.75, 0.19, 0.015)
+			marker.material_override = _cached_emissive_material(Color(1.0, 0.48, 0.12), Color(0.75, 0.19, 0.015))
 		elif is_legal:
-			marker_material.albedo_color = Color(0.18, 0.95, 0.38)
-			marker_material.emission_enabled = true
-			marker_material.emission = Color(0.04, 0.55, 0.12)
+			marker.material_override = _cached_emissive_material(Color(0.18, 0.95, 0.38), Color(0.04, 0.55, 0.12))
 		else:
-			marker_material.albedo_color = Color(0.91, 0.78, 0.48)
-		marker.material_override = marker_material
+			marker.material_override = _cached_material(Color(0.91, 0.78, 0.48))
 		marker.position.y = 0.045
 		visual.add_child(marker)
 		var node_name := Label3D.new()
@@ -1252,7 +1239,7 @@ func _cached_cylinder(top_radius: float, bottom_radius: float, height: float) ->
 		mesh.top_radius = top_radius
 		mesh.bottom_radius = bottom_radius
 		mesh.height = height
-		mesh.radial_segments = 8
+		mesh.radial_segments = 12
 		_shared_resources[key] = mesh
 	return _shared_resources[key] as CylinderMesh
 
@@ -1272,9 +1259,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	var eye_glint := _material(Color(1.0, 0.94, 0.68))
 
 	var torso := MeshInstance3D.new()
-	var torso_mesh := SphereMesh.new()
-	torso_mesh.radius = 0.29
-	torso_mesh.height = 0.49
+	var torso_mesh := _cached_sphere(0.29, 0.49)
 	torso.mesh = torso_mesh
 	torso.material_override = fur
 	torso.position = Vector3(-0.035, 0.39, 0.0)
@@ -1282,18 +1267,14 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	pivot.add_child(torso)
 
 	var chest := MeshInstance3D.new()
-	var chest_mesh := SphereMesh.new()
-	chest_mesh.radius = 0.18
-	chest_mesh.height = 0.34
+	var chest_mesh := _cached_sphere(0.18, 0.34)
 	chest.mesh = chest_mesh
 	chest.material_override = fur_light
 	chest.position = Vector3(0.15, 0.39, 0.0)
 	pivot.add_child(chest)
 
 	var neck := MeshInstance3D.new()
-	var neck_mesh := SphereMesh.new()
-	neck_mesh.radius = 0.17
-	neck_mesh.height = 0.30
+	var neck_mesh := _cached_sphere(0.17, 0.30)
 	neck.mesh = neck_mesh
 	neck.material_override = fur_light
 	neck.position = Vector3(0.16, 0.53, 0.0)
@@ -1301,9 +1282,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	pivot.add_child(neck)
 
 	var head := MeshInstance3D.new()
-	var head_mesh := SphereMesh.new()
-	head_mesh.radius = 0.19
-	head_mesh.height = 0.34
+	var head_mesh := _cached_sphere(0.19, 0.34)
 	head.mesh = head_mesh
 	head.material_override = fur
 	head.position = Vector3(0.235, 0.61, 0.0)
@@ -1313,10 +1292,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	# Pointed ears, visible even from the board overview.
 	for side in [-1.0, 1.0]:
 		var ear := MeshInstance3D.new()
-		var ear_mesh := CylinderMesh.new()
-		ear_mesh.top_radius = 0.0
-		ear_mesh.bottom_radius = 0.095
-		ear_mesh.height = 0.29
+		var ear_mesh := _cached_cylinder(0.0, 0.095, 0.29)
 		ear.mesh = ear_mesh
 		ear.material_override = fur
 		ear.position = Vector3(0.16, 0.83, side * 0.13)
@@ -1324,45 +1300,35 @@ func _add_wolf_piece(parent: Node3D) -> void:
 		pivot.add_child(ear)
 
 		var ear_center := MeshInstance3D.new()
-		var ear_center_mesh := SphereMesh.new()
-		ear_center_mesh.radius = 0.045
-		ear_center_mesh.height = 0.12
+		var ear_center_mesh := _cached_sphere(0.045, 0.12)
 		ear_center.mesh = ear_center_mesh
 		ear_center.material_override = ear_inner
 		ear_center.position = Vector3(0.19, 0.82, side * 0.13)
 		pivot.add_child(ear_center)
 
 		var eye := MeshInstance3D.new()
-		var eye_mesh := SphereMesh.new()
-		eye_mesh.radius = 0.041
-		eye_mesh.height = 0.072
+		var eye_mesh := _cached_sphere(0.041, 0.072)
 		eye.mesh = eye_mesh
 		eye.material_override = eye_amber
 		eye.position = Vector3(0.375, 0.655, side * 0.126)
 		pivot.add_child(eye)
 
 		var pupil := MeshInstance3D.new()
-		var pupil_mesh := SphereMesh.new()
-		pupil_mesh.radius = 0.019
-		pupil_mesh.height = 0.038
+		var pupil_mesh := _cached_sphere(0.019, 0.038)
 		pupil.mesh = pupil_mesh
 		pupil.material_override = dark
 		pupil.position = Vector3(0.401, 0.658, side * 0.139)
 		pivot.add_child(pupil)
 
 		var glint := MeshInstance3D.new()
-		var glint_mesh := SphereMesh.new()
-		glint_mesh.radius = 0.010
-		glint_mesh.height = 0.018
+		var glint_mesh := _cached_sphere(0.010, 0.018)
 		glint.mesh = glint_mesh
 		glint.material_override = eye_glint
 		glint.position = Vector3(0.414, 0.676, side * 0.142)
 		pivot.add_child(glint)
 
 	var snout := MeshInstance3D.new()
-	var snout_mesh := SphereMesh.new()
-	snout_mesh.radius = 0.11
-	snout_mesh.height = 0.17
+	var snout_mesh := _cached_sphere(0.11, 0.17)
 	snout.mesh = snout_mesh
 	snout.material_override = muzzle_mat
 	snout.position = Vector3(0.395, 0.525, 0.0)
@@ -1370,18 +1336,14 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	pivot.add_child(snout)
 
 	var nose := MeshInstance3D.new()
-	var nose_mesh := SphereMesh.new()
-	nose_mesh.radius = 0.045
-	nose_mesh.height = 0.065
+	var nose_mesh := _cached_sphere(0.045, 0.065)
 	nose.mesh = nose_mesh
 	nose.material_override = dark
 	nose.position = Vector3(0.49, 0.545, 0.0)
 	pivot.add_child(nose)
 
 	var jaw := MeshInstance3D.new()
-	var jaw_mesh := SphereMesh.new()
-	jaw_mesh.radius = 0.078
-	jaw_mesh.height = 0.10
+	var jaw_mesh := _cached_sphere(0.078, 0.10)
 	jaw.mesh = jaw_mesh
 	jaw.material_override = dark
 	jaw.position = Vector3(0.385, 0.445, 0.0)
@@ -1390,10 +1352,7 @@ func _add_wolf_piece(parent: Node3D) -> void:
 
 	for leg_index in range(4):
 		var leg := MeshInstance3D.new()
-		var leg_mesh := CylinderMesh.new()
-		leg_mesh.top_radius = 0.047
-		leg_mesh.bottom_radius = 0.058
-		leg_mesh.height = 0.25
+		var leg_mesh := _cached_cylinder(0.047, 0.058, 0.25)
 		leg.mesh = leg_mesh
 		leg.material_override = fur
 		leg.position = Vector3(-0.15 if leg_index < 2 else 0.15, 0.17, -0.16 if leg_index % 2 == 0 else 0.16)
@@ -1414,10 +1373,19 @@ func _add_wolf_piece(parent: Node3D) -> void:
 	wolf_tail_pivots.append(tail_pivot)
 
 func _material(color: Color) -> StandardMaterial3D:
-	var result := StandardMaterial3D.new()
-	result.albedo_color = color
-	result.roughness = 0.9
-	return result
+	# Reuse wolf and environment materials across board refreshes.
+	return _cached_material(color)
+
+func _cached_emissive_material(color: Color, emission: Color) -> StandardMaterial3D:
+	var key := "emissive_" + color.to_html(true) + "_" + emission.to_html(true)
+	if not _shared_resources.has(key):
+		var material := StandardMaterial3D.new()
+		material.albedo_color = color
+		material.roughness = 0.55
+		material.emission_enabled = true
+		material.emission = emission
+		_shared_resources[key] = material
+	return _shared_resources[key] as StandardMaterial3D
 
 func _update_chain_countdown() -> void:
 	detail_label.text = "شکار دوم با همان گرگ اختیاری است؛ زمان باقی‌مانده: %.1f ثانیه" % chain_time_left
