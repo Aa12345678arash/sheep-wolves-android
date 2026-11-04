@@ -1314,7 +1314,7 @@ func _wolf_attention_target(node_index: int) -> int:
 	if selected_node == node_index and game.turn == GameState.Turn.WOLVES:
 		var captures := game.capture_options(node_index)
 		if not captures.is_empty():
-			return int(captures[0]["sheep"])
+			return int(captures[0]["middle"])
 		var moves := game.wolf_moves(node_index)
 		if not moves.is_empty():
 			return int(moves[0])
