@@ -104,6 +104,8 @@ func _process(delta: float) -> void:
 			feedback_message = "مهلت شکار دوم تمام شد؛ نوبت گوسفندهاست."
 			_refresh_board()
 			_update_hud()
+			# Expiry completes the wolf turn; trigger the computer sheep immediately.
+			_schedule_ai_turn()
 		else:
 			_update_chain_countdown()
 
@@ -1662,10 +1664,13 @@ func _apply_camera_orbit() -> void:
 	camera.fov = 48.0
 
 func _set_turn_view(side: int, force_overview: bool = false) -> void:
-	# Present the board from the active side: sheep and wolves see opposite ends.
-	# Keep the same pitch and distance so the full board remains visible on phones.
+	# In computer matches keep the human player's viewpoint for the entire match.
+	# In local two-player mode, continue presenting the active side.
 	camera_view_turn = side
-	camera_orbit_yaw = 0.0 if side >= 0 else PI
+	if match_mode == "ai":
+		camera_orbit_yaw = 0.0 if human_side == "sheep" else PI
+	else:
+		camera_orbit_yaw = 0.0 if side >= 0 else PI
 	camera_mode = "overview"
 	if force_overview:
 		camera_mode_generation += 1
@@ -1732,3 +1737,5 @@ func _decline_chain_capture() -> void:
 	pass_button.visible = false
 	_refresh_board()
 	_update_hud()
+	# Declining the optional second capture also hands control to AI sheep.
+	_schedule_ai_turn()
