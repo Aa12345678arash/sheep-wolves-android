@@ -262,5 +262,27 @@ func _initialize() -> void:
 	assert(exposed_base > exposed_medium)
 	assert(exposed_medium > exposed_hard)
 
+	# WOLF-DUSK-012 tactical heuristics: a wolf move that creates a legal jump threat is recognized.
+	var threat_state = GameState.new()
+	for i in range(25):
+		threat_state.sheep[i] = 0
+		threat_state.wolves[i] = false
+	threat_state.wolves[0] = true
+	threat_state.wolves[1] = true
+	threat_state.wolves[2] = true
+	threat_state.sheep[6] = 1
+	assert(AI._count_threatened_sheep_after(threat_state, 0, 1) >= 1)
+	# A sheep stack with more than one animal does not falsely free its origin square.
+	var stacked_state = GameState.new()
+	for i in range(25):
+		stacked_state.sheep[i] = 0
+		stacked_state.wolves[i] = false
+	stacked_state.wolves[0] = true
+	stacked_state.wolves[1] = true
+	stacked_state.wolves[2] = true
+	stacked_state.sheep[12] = 2
+	assert(AI._sheep_safety_score(stacked_state, 6, 12) == 0.0)
+	assert(AI._sheep_escape_mobility(stacked_state, 12, 6) >= 0)
+
 	print("WOLF-DUSK-004 checks passed: graph, setup, legal/illegal moves, capture chain, win conditions and AI safety/direction.")
 	quit()
