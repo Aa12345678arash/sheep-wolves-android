@@ -10,6 +10,12 @@ func _run() -> void:
 	var meadow = Meadow.new()
 	root.add_child(meadow)
 	await process_frame
+	# WOLF-019: verify the board exposes enlarged, forgiving touch targets.
+	assert(meadow.node_areas.size() == 25, "All 25 board nodes must expose touch areas")
+	var first_collision := meadow.node_areas[0].get_child(0) as CollisionShape3D
+	assert(first_collision != null and first_collision.shape is SphereShape3D, "Board touch areas must use sphere collision shapes")
+	assert((first_collision.shape as SphereShape3D).radius >= 1.0, "Board touch radius must be enlarged for easier mobile selection")
+	assert(meadow.TOUCH_FALLBACK_RADIUS_PIXELS >= 68.0, "Screen-space fallback must tolerate normal mobile tap imprecision")
 	meadow.match_mode = "ai"
 	meadow.human_side = "wolves"
 	meadow.ai_difficulty = 0
@@ -57,5 +63,5 @@ func _run() -> void:
 	assert(is_equal_approx(meadow.camera_orbit_yaw, PI), "Camera must remain fixed on the human wolf side")
 
 	meadow.queue_free()
-	print("WOLF-DUSK-AI-017 checks passed: wolf-side camera, human wolf setup, automatic AI sheep response and turn handoff.")
+	print("WOLF-DUSK-AI-019 checks passed: enlarged touch targets, fixed AI camera and automatic AI sheep turn handoff.")
 	quit()
