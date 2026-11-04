@@ -244,3 +244,5 @@ static func _future_capture_potential(state, node: int) -> float:
 		if state.sheep[middle] > 0:
 			total += 1.0
 	return total
+
+# WOLF-DUSK-AI-015: trigger a fresh validation run for the typed occupancy fix.
