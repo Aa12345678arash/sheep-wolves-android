@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - WOLF-DUSK-012-VICTORY-AI
+      - WOLF-DUSK-014-BOARD-PIECES
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-012-validation.yml'
