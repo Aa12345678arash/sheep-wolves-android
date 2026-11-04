@@ -1166,11 +1166,11 @@ func _refresh_board() -> void:
 		node_name.position = Vector3(0.0, -0.08, 0.48)
 		visual.add_child(node_name)
 		if game.sheep[index] > 0:
-			_add_sheep_piece(visual, game.sheep[index], game.turn == GameState.Turn.SHEEP and selected_node == index)
+			_add_sheep_piece(visual, index, game.sheep[index], game.turn == GameState.Turn.SHEEP and selected_node == index)
 		if game.wolves[index]:
-			_add_wolf_piece(visual)
+			_add_wolf_piece(visual, index)
 
-func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -> void:
+func _add_sheep_piece(parent: Node3D, node_index: int, count: int, highlight_one: bool = false) -> void:
 	# Shared low-poly resources reduce allocation and draw preparation on mobile.
 	# Three fleece curls preserve the recognizable sheep silhouette with fewer parts.
 	var wool := _cached_material(Color(0.98, 0.96, 0.88))
@@ -1188,7 +1188,7 @@ func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -
 		var row := int(i / 3)
 		pivot.position = Vector3((column - 1) * 0.34, 0.29, (row - 0.5) * 0.34)
 		pivot.scale = Vector3.ONE * (1.04 if highlight_one and i == visible_count - 1 else 0.92)
-		pivot.rotation.y = PI * 0.5
+		pivot.rotation.y = _awareness_yaw(node_index, _sheep_attention_target(node_index))
 		parent.add_child(pivot)
 		if highlight_one and i == visible_count - 1:
 			var ring := MeshInstance3D.new()
@@ -1276,6 +1276,59 @@ func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -
 	count_label.position = Vector3(0, 0.98, 0)
 	parent.add_child(count_label)
 
+
+# Awareness is cosmetic only: it never changes legal moves, turns or capture rules.
+# Models face local +X, so this converts a board-space direction into a yaw.
+func _awareness_yaw(from_index: int, to_index: int) -> float:
+	if to_index < 0 or to_index >= BoardGraph.NODE_COUNT or from_index == to_index:
+		return PI * 0.5
+	var from_row := int(from_index / 5)
+	var from_col := from_index % 5
+	var to_row := int(to_index / 5)
+	var to_col := to_index % 5
+	var direction := Vector2(float(to_col - from_col), float(to_row - from_row))
+	if direction.length_squared() < 0.0001:
+		return PI * 0.5
+	return atan2(-direction.y, direction.x)
+
+func _sheep_attention_target(node_index: int) -> int:
+	if selected_node == node_index and game.turn == GameState.Turn.SHEEP:
+		var selected_moves := game.sheep_moves(node_index)
+		if not selected_moves.is_empty():
+			return int(selected_moves[0])
+	var moves := game.sheep_moves(node_index)
+	var best_target := -1
+	var best_safety := -INF
+	for destination in moves:
+		var safety := INF
+		for wolf_index in range(BoardGraph.NODE_COUNT):
+			if game.wolves[wolf_index]:
+				var distance := Vector2(float((destination % 5) - (wolf_index % 5)), float(int(destination / 5) - int(wolf_index / 5))).length_squared()
+				safety = minf(safety, distance)
+		if safety > best_safety:
+			best_safety = safety
+			best_target = int(destination)
+	return best_target
+
+func _wolf_attention_target(node_index: int) -> int:
+	if selected_node == node_index and game.turn == GameState.Turn.WOLVES:
+		var captures := game.capture_options(node_index)
+		if not captures.is_empty():
+			return int(captures[0]["sheep"])
+		var moves := game.wolf_moves(node_index)
+		if not moves.is_empty():
+			return int(moves[0])
+	var nearest_sheep := -1
+	var nearest_distance := INF
+	for sheep_index in range(BoardGraph.NODE_COUNT):
+		if game.sheep[sheep_index] <= 0:
+			continue
+		var distance := Vector2(float((sheep_index % 5) - (node_index % 5)), float(int(sheep_index / 5) - int(node_index / 5))).length_squared()
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_sheep = sheep_index
+	return nearest_sheep
+
 func _cached_material(color: Color) -> StandardMaterial3D:
 	var key := "mat_" + color.to_html(true)
 	if not _shared_resources.has(key):
@@ -1307,11 +1360,12 @@ func _cached_cylinder(top_radius: float, bottom_radius: float, height: float) ->
 		_shared_resources[key] = mesh
 	return _shared_resources[key] as CylinderMesh
 
-func _add_wolf_piece(parent: Node3D) -> void:
+func _add_wolf_piece(parent: Node3D, node_index: int) -> void:
 	# Stronger silhouette and amber eyes echo the wolf artwork on the new app icon.
 	var pivot := Node3D.new()
 	pivot.add_to_group("animated_game_piece")
 	pivot.scale = Vector3.ONE * 1.24
+	pivot.rotation.y = _awareness_yaw(node_index, _wolf_attention_target(node_index))
 	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
 	var fur := _material(Color(0.27, 0.32, 0.39))
