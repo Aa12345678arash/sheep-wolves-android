@@ -94,7 +94,43 @@ static func _sheep_move_score(state, from: int, to: int, difficulty: int) -> flo
 	if difficulty >= 1:
 		var safety_weight := 1.0 if difficulty == 1 else 2.5
 		score += _sheep_safety_score(state, to, from) * safety_weight
+	if difficulty >= 2:
+		# Prefer destinations with genuine escape routes, not just forward progress.
+		score += float(_sheep_escape_mobility(state, from, to)) * 0.65
+		# Penalize moves that leave the moved sheep directly exposed to a wolf.
+		score += _wolf_pressure_on_sheep(state, to, from) * -1.5
 	return score
+
+static func _sheep_escape_mobility(state, from: int, to: int) -> int:
+	var total := 0
+	for next_node in BoardGraph.adjacency()[to]:
+		if next_node == from:
+			# The origin is only empty if this was the last sheep in its stack.
+			if state.sheep[from] == 1 and not state.wolves[next_node]:
+				total += 1
+		elif not state.is_occupied(next_node):
+			total += 1
+	return total
+
+static func _wolf_pressure_on_sheep(state, sheep_node: int, vacated_from: int = -1) -> float:
+	var pressure := 0.0
+	var adjacency := BoardGraph.adjacency()
+	var row := int(sheep_node / 5)
+	var col := sheep_node % 5
+	for wolf_node in range(BoardGraph.NODE_COUNT):
+		if not state.wolves[wolf_node] or sheep_node not in adjacency[wolf_node]:
+			continue
+		var dr := row - int(wolf_node / 5)
+		var dc := col - wolf_node % 5
+		for landing in adjacency[sheep_node]:
+			if landing == wolf_node:
+				continue
+			if int(landing / 5) - row != dr or landing % 5 - col != dc:
+				continue
+			var origin_frees := landing == vacated_from and state.sheep[vacated_from] == 1
+			if origin_frees or (not state.is_occupied(landing) and landing != vacated_from):
+				pressure += 1.0
+	return pressure
 
 static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> float:
 	# Evaluate the proposed destination as if the sheep had already moved there.
@@ -119,7 +155,8 @@ static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> flo
 			var landing_col: int = landing % 5
 			if landing_row - node_row != dr or landing_col - node_col != dc:
 				continue
-			if landing == vacated_from or not state.is_occupied(landing):
+			var origin_frees := landing == vacated_from and state.sheep[vacated_from] == 1
+			if origin_frees or (not state.is_occupied(landing) and landing != vacated_from):
 				danger += 3.0
 	return -danger
 
@@ -131,6 +168,7 @@ static func _wolf_move_score(state, from: int, to: int, is_capture: bool, diffic
 			score += 12.0
 		else:
 			score += _count_capture_options_after(state, from, to, -1) * 4.0
+			score += _count_threatened_sheep_after(state, from, to) * 3.0
 		return score
 	if difficulty >= 2:
 		var captured_middle := -1
@@ -142,6 +180,7 @@ static func _wolf_move_score(state, from: int, to: int, is_capture: bool, diffic
 		var follow_up_captures := _count_capture_options_after(state, from, to, captured_middle)
 		var mobility := _wolf_mobility_after(state, from, to)
 		score += float(follow_up_captures) * 24.0
+		score += float(_count_threatened_sheep_after(state, from, to)) * 8.0
 		score += float(mobility) * 0.8
 		# Avoid moves that leave this wolf stranded when another wolf can cover the area.
 		if mobility == 0 and follow_up_captures == 0:
@@ -166,6 +205,27 @@ static func _count_capture_options_after(state, wolf_from: int, wolf_to: int, ca
 			# The wolf's previous node becomes empty after the simulated move.
 			if landing == wolf_from or not state.is_occupied(landing):
 				total += 1
+	return total
+
+static func _count_threatened_sheep_after(state, wolf_from: int, wolf_to: int) -> int:
+	var total := 0
+	var adjacency := BoardGraph.adjacency()
+	var wolf_row := int(wolf_to / 5)
+	var wolf_col := wolf_to % 5
+	for middle in adjacency[wolf_to]:
+		if state.sheep[middle] <= 0:
+			continue
+		var dr := int(middle / 5) - wolf_row
+		var dc := int(middle % 5) - wolf_col
+		for landing in adjacency[middle]:
+			if landing == wolf_to:
+				continue
+			if int(landing / 5) - int(middle / 5) != dr or landing % 5 - middle % 5 != dc:
+				continue
+			var origin_frees := landing == wolf_from and state.sheep[wolf_from] == 0
+			if origin_frees or (not state.is_occupied(landing) and landing != wolf_from):
+				total += 1
+				break
 	return total
 
 static func _wolf_mobility_after(state, wolf_from: int, wolf_to: int) -> int:
