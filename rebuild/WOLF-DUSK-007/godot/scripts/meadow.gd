@@ -2,6 +2,10 @@ extends Node3D
 
 const GRID_SIZE := 5
 const SPACING := 2.2
+const BOARD_TOUCH_RADIUS := 1.02
+const TOUCH_FALLBACK_RADIUS_PIXELS := 70.0
+const NODE_MARKER_SELECTED_RADIUS := 0.44
+const NODE_MARKER_IDLE_RADIUS := 0.25
 const BoardGraph = preload("res://scripts/board_graph.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
@@ -459,7 +463,7 @@ func _build_board() -> void:
 		area.set_meta("board_node_index", index)
 		var collision := CollisionShape3D.new()
 		var sphere := SphereShape3D.new()
-		sphere.radius = 1.02
+		sphere.radius = BOARD_TOUCH_RADIUS
 		collision.shape = sphere
 		area.add_child(collision)
 		add_child(area)
@@ -909,7 +913,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Touch fallback: choose the closest projected board point when physics picking misses.
 	# This makes small Android touch targets forgiving without allowing taps on distant cells.
 	var nearest_index := -1
-	var nearest_distance := 70.0
+	var nearest_distance := TOUCH_FALLBACK_RADIUS_PIXELS
 	for node_index in range(node_areas.size()):
 		var point_on_screen := camera.unproject_position(node_areas[node_index].global_position)
 		var distance := point_on_screen.distance_to(screen_position)
@@ -1160,7 +1164,7 @@ func _refresh_board() -> void:
 		var is_selected := index == selected_node
 		var is_capture := index in capture_targets
 		var is_legal := index in legal_targets
-		var marker_radius := 0.44 if (is_selected or is_legal) else 0.25
+		var marker_radius := NODE_MARKER_SELECTED_RADIUS if (is_selected or is_legal) else NODE_MARKER_IDLE_RADIUS
 		marker.mesh = _cached_cylinder(marker_radius, marker_radius, 0.035)
 		if is_selected:
 			marker.material_override = _cached_emissive_material(Color(1.0, 0.72, 0.08), Color(0.9, 0.48, 0.02))
