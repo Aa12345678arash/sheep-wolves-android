@@ -46,6 +46,7 @@ var music_audio: AudioStreamPlayer
 var music_button: Button
 var setup_music_button: Button
 var announced_winner: String = ""
+var celebration_layer: CanvasLayer
 # Two-finger camera gestures are deliberately separate from one-finger board taps.
 var camera_orbit_yaw: float = 0.0
 var camera_orbit_pitch: float = 1.249
@@ -60,9 +61,10 @@ func _ready() -> void:
 	_build_camera()
 	_build_light()
 	_build_hud()
-	# Start directly in the playable match; no blocking setup overlay.
 	_refresh_board()
 	_update_hud()
+	# Expose match mode and AI difficulty on first launch.
+	_show_setup_menu()
 
 func _process(delta: float) -> void:
 	sheep_anim_clock += delta
@@ -581,6 +583,14 @@ func _build_hud() -> void:
 	music_button.toggled.connect(_toggle_meadow_music)
 	controls.add_child(music_button)
 
+	var setup_button := Button.new()
+	setup_button.text = "تنظیم بازی"
+	setup_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	setup_button.custom_minimum_size = Vector2(0, 44)
+	setup_button.add_theme_font_size_override("font_size", 14)
+	setup_button.pressed.connect(_show_setup_menu)
+	controls.add_child(setup_button)
+
 	var sound_test_button := Button.new()
 	sound_test_button.text = "آزمون صدا"
 	sound_test_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -596,8 +606,10 @@ func _build_hud() -> void:
 	footer_column.add_child(credit)
 
 func _show_setup_menu() -> void:
+	if is_instance_valid(setup_layer):
+		setup_layer.queue_free()
 	setup_layer = CanvasLayer.new()
-	setup_layer.layer = 5
+	setup_layer.layer = 30
 	add_child(setup_layer)
 	var shade := ColorRect.new()
 	# Keep the meadow visible but prevent the HUD behind the setup screen from competing.
@@ -681,6 +693,17 @@ func _show_setup_menu() -> void:
 	start_button.custom_minimum_size = Vector2(0, 56)
 	start_button.add_theme_font_size_override("font_size", 24)
 	start_button.pressed.connect(func():
+		if is_instance_valid(celebration_layer):
+			celebration_layer.queue_free()
+			celebration_layer = null
+		game.reset()
+		ai_turn_generation += 1
+		ai_busy = false
+		selected_node = -1
+		chain_time_left = 0.0
+		pass_button.visible = false
+		announced_winner = ""
+		_refresh_board()
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
 		if player_one_name.is_empty():
@@ -697,6 +720,7 @@ func _show_setup_menu() -> void:
 				player_one_name = "رایانه (گوسفندها)"
 		player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
 		setup_layer.queue_free()
+		setup_layer = null
 		feedback_message = "مسابقه آغاز شد؛ گوسفندها شروع می‌کنند."
 		_update_hud()
 		_schedule_ai_turn()
@@ -1030,6 +1054,9 @@ func _animate_piece_arrival(from_index: int, to_index: int, piece_kind: String) 
 
 
 func _reset_game() -> void:
+	if is_instance_valid(celebration_layer):
+		celebration_layer.queue_free()
+		celebration_layer = null
 	game.reset()
 	announced_winner = ""
 	ai_turn_generation += 1
@@ -1432,6 +1459,7 @@ func _update_hud() -> void:
 		announced_winner = game.winner
 		if victory_audio != null:
 			victory_audio.play()
+		call_deferred("_show_victory_celebration")
 	if game.turn == GameState.Turn.PLACE_WOLVES:
 		_set_turn_view(-1)
 		status_label.text = "گرگ و میش | چیدمان گرگ‌ها"
@@ -1456,6 +1484,96 @@ func _update_hud() -> void:
 	message_label.text = feedback_message
 	if chain_time_left > 0.0:
 		_update_chain_countdown()
+
+
+func _show_victory_celebration() -> void:
+	if is_instance_valid(celebration_layer) or game.winner == "":
+		return
+	celebration_layer = CanvasLayer.new()
+	celebration_layer.layer = 20
+	add_child(celebration_layer)
+	var shade := ColorRect.new()
+	shade.color = Color(0.015, 0.025, 0.045, 0.82)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	celebration_layer.add_child(shade)
+
+	# Lightweight 2D confetti: short-lived UI shapes, independent of 3D physics.
+	var palette := [Color(1.0, 0.72, 0.16), Color(0.25, 0.86, 0.48), Color(0.35, 0.72, 1.0), Color(1.0, 0.42, 0.48), Color(0.92, 0.82, 1.0)]
+	var viewport_size := get_viewport().get_visible_rect().size
+	for i in range(28):
+		var confetti := ColorRect.new()
+		confetti.color = palette[i % palette.size()]
+		confetti.size = Vector2(7.0 + float(i % 3) * 3.0, 13.0)
+		confetti.position = Vector2(randf_range(12.0, maxf(13.0, viewport_size.x - 20.0)), -24.0 - float(i % 7) * 18.0)
+		confetti.rotation = randf_range(-0.7, 0.7)
+		celebration_layer.add_child(confetti)
+		var fall := create_tween()
+		fall.tween_property(confetti, "position", Vector2(confetti.position.x + randf_range(-65.0, 65.0), viewport_size.y + 30.0), randf_range(1.8, 3.0)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		fall.parallel().tween_property(confetti, "rotation", randf_range(-4.0, 4.0), 2.2)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.08
+	panel.anchor_right = 0.92
+	panel.anchor_top = 0.34
+	panel.anchor_bottom = 0.66
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.075, 0.14, 0.105, 0.98)
+	style.border_color = Color(0.96, 0.75, 0.28, 1.0)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(24)
+	style.content_margin_left = 20.0
+	style.content_margin_right = 20.0
+	style.content_margin_top = 18.0
+	style.content_margin_bottom = 18.0
+	panel.add_theme_stylebox_override("panel", style)
+	celebration_layer.add_child(panel)
+	var column := VBoxContainer.new()
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_theme_constant_override("separation", 12)
+	panel.add_child(column)
+
+	var title := Label.new()
+	title.text = "جشن پیروزی!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_color_override("font_color", Color(1.0, 0.83, 0.36))
+	column.add_child(title)
+	var winner_label := Label.new()
+	winner_label.text = "برنده: %s" % (player_one_name if game.winner == "sheep" else player_two_name)
+	winner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	winner_label.add_theme_font_size_override("font_size", 27)
+	column.add_child(winner_label)
+	var reason := Label.new()
+	reason.text = "گوسفندان پیروز شدند؛ هر سه گرگ محاصره شدند." if game.winner == "sheep" else "گرگ‌ها پیروز شدند؛ تعداد گوسفندان به ۸ رسید."
+	reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reason.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reason.add_theme_font_size_override("font_size", 19)
+	column.add_child(reason)
+	var score := Label.new()
+	score.text = "گوسفندان باقی‌مانده: %d از ۲۵" % game.sheep_total()
+	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	score.add_theme_font_size_override("font_size", 18)
+	column.add_child(score)
+	var replay := Button.new()
+	replay.text = "بازی دوباره"
+	replay.custom_minimum_size = Vector2(0, 52)
+	replay.add_theme_font_size_override("font_size", 22)
+	replay.pressed.connect(func():
+		celebration_layer.queue_free()
+		celebration_layer = null
+		_reset_game()
+	)
+	column.add_child(replay)
+	var settings := Button.new()
+	settings.text = "تنظیم مسابقه / تغییر حریف"
+	settings.custom_minimum_size = Vector2(0, 46)
+	settings.add_theme_font_size_override("font_size", 18)
+	settings.pressed.connect(func():
+		celebration_layer.queue_free()
+		celebration_layer = null
+		_show_setup_menu()
+	)
+	column.add_child(settings)
 
 func _current_pinch_distance() -> float:
 	if touch_points.size() < 2:
