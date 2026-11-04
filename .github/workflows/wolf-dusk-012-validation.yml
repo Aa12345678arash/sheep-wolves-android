@@ -3,10 +3,10 @@ name: WOLF-DUSK-012 Mobile validation and APK
 on:
   push:
     branches:
-      - WOLF-DUSK-012-MOBILE-PERFORMANCE
+      - WOLF-DUSK-012-VICTORY-AI
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
-      - '.github/workflows/wolf-dusk-012-mobile.yml'
+      - '.github/workflows/wolf-dusk-012-validation.yml'
   workflow_dispatch:
 
 permissions:
