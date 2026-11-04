@@ -71,7 +71,9 @@ func _process(delta: float) -> void:
 		if is_instance_valid(tail_pivot):
 			tail_pivot.rotation.z = 0.96 + sin(sheep_anim_clock * 2.3 + float(i)) * 0.12
 	if camera != null and camera.is_inside_tree():
-		camera.position = camera.position.lerp(camera_target_position, minf(delta * 7.5, 1.0))
+		# Frame-rate-independent exponential damping for consistent motion on phones.
+		var camera_smooth := 1.0 - exp(-4.5 * delta)
+		camera.position = camera.position.lerp(camera_target_position, camera_smooth)
 		if camera_shake_time > 0.0:
 			camera_shake_time = maxf(0.0, camera_shake_time - delta)
 			var shake_phase := sheep_anim_clock * 58.0
@@ -1444,37 +1446,34 @@ func _update_hud() -> void:
 		_update_chain_countdown()
 
 func _set_turn_view(side: int, force_overview: bool = false) -> void:
-	# A stable overview is the default on phones: all 25 nodes and their
-	# connections remain visible with margins in every turn.
-	if side != camera_view_turn or force_overview:
-		camera_view_turn = side
-		camera_mode = "overview"
+	# Keep one consistent camera side for both players. Reversing the Z side
+	# caused a near-180-degree orbit across the board on every turn change.
+	camera_view_turn = side
+	camera_mode = "overview"
+	if force_overview:
 		camera_mode_generation += 1
-		var view_sign := 1.0 if side >= 0 else -1.0
-		camera_target_look_at = Vector3.ZERO
-		camera_target_position = Vector3(0.0, 27.0, 9.0 * view_sign)
-		camera.fov = 48.0
+	camera_target_look_at = Vector3.ZERO
+	camera_target_position = Vector3(0.0, 27.0, 9.0)
+	camera.fov = 48.0
 
 func _set_tactical_view(node_index: int) -> void:
 	# Selection is communicated by the gold ring and legal-destination pads.
-	# Do not pan/zoom toward one node: that used to hide the rest of the board.
+	# Keep the same stable full-board camera for both players.
 	if node_index < 0 or node_index >= node_areas.size():
 		return
 	camera_mode = "overview"
 	camera_target_look_at = Vector3.ZERO
-	var view_sign := 1.0 if camera_view_turn >= 0 else -1.0
-	camera_target_position = Vector3(0.0, 27.0, 9.0 * view_sign)
+	camera_target_position = Vector3(0.0, 27.0, 9.0)
 	camera.fov = 48.0
 
 func _set_jump_view(from_index: int, to_index: int) -> int:
 	# Keep the full board in frame while the piece animation plays.
-	# The movement itself provides feedback; camera zoom is intentionally disabled.
+	# No camera orbit or zoom during a move.
 	if from_index < 0 or to_index < 0 or from_index >= node_areas.size() or to_index >= node_areas.size():
 		return camera_mode_generation
 	camera_mode = "overview"
 	camera_target_look_at = Vector3.ZERO
-	var view_sign := 1.0 if camera_view_turn >= 0 else -1.0
-	camera_target_position = Vector3(0.0, 27.0, 9.0 * view_sign)
+	camera_target_position = Vector3(0.0, 27.0, 9.0)
 	camera.fov = 48.0
 	return camera_mode_generation
 
