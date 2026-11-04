@@ -628,16 +628,16 @@ func _show_setup_menu() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var viewport_size := get_viewport().get_visible_rect().size
-	# Keep the settings panel inside the phone's visible area; long menus can scroll.
-	var panel_size := Vector2(
-		minf(680.0, maxf(300.0, viewport_size.x - 24.0)),
-		minf(860.0, maxf(360.0, viewport_size.y - 32.0))
-	)
+	# Use almost the full available phone height so every setting is easy to reach.
+	# Keep a centered maximum width on tablets while preserving a 12 px safe margin.
+	var horizontal_margin := maxf(12.0, (viewport_size.x - 680.0) * 0.5)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = panel_size
-	panel.size = panel_size
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.position = -panel_size * 0.5
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = horizontal_margin
+	panel.offset_right = -horizontal_margin
+	panel.offset_top = 12.0
+	panel.offset_bottom = -12.0
+	panel.custom_minimum_size = Vector2(300.0, 0.0)
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.075, 0.12, 0.095, 0.98)
 	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
