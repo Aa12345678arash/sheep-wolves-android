@@ -453,8 +453,9 @@ func _build_board() -> void:
 
 func _build_camera() -> void:
 	camera = Camera3D.new()
-	# Portrait framing: a slightly elevated, centered view keeps the full 5x5 board visible.
-	camera.position = Vector3(0.0, 22.0, 8.0)
+	# Phone-first overview: leave generous margins around the complete board.
+	# Tactical selection and piece animation must never zoom past the playable area.
+	camera.position = Vector3(0.0, 27.0, 9.0)
 	camera.current = true
 	camera.fov = 48.0
 	add_child(camera)
@@ -1443,40 +1444,39 @@ func _update_hud() -> void:
 		_update_chain_countdown()
 
 func _set_turn_view(side: int, force_overview: bool = false) -> void:
-	# Overview: show the entire board from a high, readable tactical angle.
-	# Keep the established hot-seat orientation when the active side changes.
+	# A stable overview is the default on phones: all 25 nodes and their
+	# connections remain visible with margins in every turn.
 	if side != camera_view_turn or force_overview:
 		camera_view_turn = side
 		camera_mode = "overview"
 		camera_mode_generation += 1
 		var view_sign := 1.0 if side >= 0 else -1.0
 		camera_target_look_at = Vector3.ZERO
-		camera_target_position = Vector3(0.0, 22.0, 8.0 * view_sign)
+		camera_target_position = Vector3(0.0, 27.0, 9.0 * view_sign)
 		camera.fov = 48.0
 
 func _set_tactical_view(node_index: int) -> void:
+	# Selection is communicated by the gold ring and legal-destination pads.
+	# Do not pan/zoom toward one node: that used to hide the rest of the board.
 	if node_index < 0 or node_index >= node_areas.size():
 		return
-	camera_mode = "tactical"
-	camera_mode_generation += 1
-	var focus: Vector3 = node_areas[node_index].global_position
+	camera_mode = "overview"
+	camera_target_look_at = Vector3.ZERO
 	var view_sign := 1.0 if camera_view_turn >= 0 else -1.0
-	camera_target_look_at = focus + Vector3(0.0, 0.25, 0.0)
-	camera_target_position = focus + Vector3(0.0, 12.5, 8.5 * view_sign)
-	camera.fov = 42.0
+	camera_target_position = Vector3(0.0, 27.0, 9.0 * view_sign)
+	camera.fov = 48.0
 
 func _set_jump_view(from_index: int, to_index: int) -> int:
+	# Keep the full board in frame while the piece animation plays.
+	# The movement itself provides feedback; camera zoom is intentionally disabled.
 	if from_index < 0 or to_index < 0 or from_index >= node_areas.size() or to_index >= node_areas.size():
 		return camera_mode_generation
-	camera_mode = "jump"
-	camera_mode_generation += 1
-	var generation := camera_mode_generation
-	var midpoint: Vector3 = (node_areas[from_index].global_position + node_areas[to_index].global_position) * 0.5
+	camera_mode = "overview"
+	camera_target_look_at = Vector3.ZERO
 	var view_sign := 1.0 if camera_view_turn >= 0 else -1.0
-	camera_target_look_at = midpoint + Vector3(0.0, 0.35, 0.0)
-	camera_target_position = midpoint + Vector3(0.0, 9.5, 7.0 * view_sign)
-	camera.fov = 36.0
-	return generation
+	camera_target_position = Vector3(0.0, 27.0, 9.0 * view_sign)
+	camera.fov = 48.0
+	return camera_mode_generation
 
 func _restore_overview_after_jump(generation: int) -> void:
 	await get_tree().create_timer(0.72).timeout
