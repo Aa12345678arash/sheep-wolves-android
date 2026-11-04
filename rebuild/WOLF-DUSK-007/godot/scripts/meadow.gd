@@ -1514,8 +1514,8 @@ func _show_victory_celebration() -> void:
 	var panel := PanelContainer.new()
 	panel.anchor_left = 0.08
 	panel.anchor_right = 0.92
-	panel.anchor_top = 0.34
-	panel.anchor_bottom = 0.66
+	panel.anchor_top = 0.28
+	panel.anchor_bottom = 0.72
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.075, 0.14, 0.105, 0.98)
 	style.border_color = Color(0.96, 0.75, 0.28, 1.0)
