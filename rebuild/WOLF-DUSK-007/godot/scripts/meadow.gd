@@ -7,6 +7,7 @@ const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
 
 var game = GameState.new()
+var _shared_resources: Dictionary = {}
 var camera: Camera3D
 var camera_target_position: Vector3 = Vector3(0.0, 22.0, 8.0)
 var camera_target_look_at: Vector3 = Vector3.ZERO
@@ -71,17 +72,21 @@ func _process(delta: float) -> void:
 		if is_instance_valid(tail_pivot):
 			tail_pivot.rotation.z = 0.96 + sin(sheep_anim_clock * 2.3 + float(i)) * 0.12
 	if camera != null and camera.is_inside_tree():
-		# Frame-rate-independent exponential damping for consistent motion on phones.
-		var camera_smooth := 1.0 - exp(-4.5 * delta)
-		camera.position = camera.position.lerp(camera_target_position, camera_smooth)
-		if camera_shake_time > 0.0:
-			camera_shake_time = maxf(0.0, camera_shake_time - delta)
-			var shake_phase := sheep_anim_clock * 58.0
-			var shake_fade := camera_shake_time / 0.24
-			camera.position += Vector3(sin(shake_phase) * camera_shake_strength, cos(shake_phase * 1.31) * camera_shake_strength * 0.45, sin(shake_phase * 0.77) * camera_shake_strength * 0.55) * shake_fade
-		else:
-			camera_shake_strength = 0.0
-		camera.look_at(camera_target_look_at, Vector3.UP)
+		# The phone camera is normally locked. Skip transforms and look_at every frame
+		# unless a real camera transition or a short shake is active.
+		var camera_moving := camera.position.distance_squared_to(camera_target_position) > 0.0001
+		if camera_moving or camera_shake_time > 0.0:
+			if camera_moving:
+				var camera_smooth := 1.0 - exp(-6.0 * delta)
+				camera.position = camera.position.lerp(camera_target_position, camera_smooth)
+			if camera_shake_time > 0.0:
+				camera_shake_time = maxf(0.0, camera_shake_time - delta)
+				var shake_phase := sheep_anim_clock * 58.0
+				var shake_fade := camera_shake_time / 0.24
+				camera.position += Vector3(sin(shake_phase) * camera_shake_strength, cos(shake_phase * 1.31) * camera_shake_strength * 0.45, sin(shake_phase * 0.77) * camera_shake_strength * 0.55) * shake_fade
+			else:
+				camera_shake_strength = 0.0
+			camera.look_at(camera_target_look_at, Vector3.UP)
 	if chain_time_left > 0.0:
 		chain_time_left = maxf(0.0, chain_time_left - delta)
 		if chain_time_left <= 0.0:
@@ -1063,6 +1068,9 @@ func _refresh_board() -> void:
 	sheep_idle_pivots.clear()
 	wolf_idle_pivots.clear()
 	wolf_tail_pivots.clear()
+	# Compute move hints once per refresh instead of recalculating them for all 25 nodes.
+	var legal_targets := _legal_targets()
+	var capture_targets := _capture_targets()
 	for index in range(BoardGraph.NODE_COUNT):
 		var visual := node_visuals[index]
 		for child in visual.get_children():
@@ -1072,8 +1080,8 @@ func _refresh_board() -> void:
 		var marker := MeshInstance3D.new()
 		var marker_mesh := CylinderMesh.new()
 		var is_selected := index == selected_node
-		var is_capture := index in _capture_targets()
-		var is_legal := index in _legal_targets()
+		var is_capture := index in capture_targets
+		var is_legal := index in legal_targets
 		marker_mesh.top_radius = 0.34 if (is_selected or is_legal) else 0.19
 		marker_mesh.bottom_radius = marker_mesh.top_radius
 		marker_mesh.height = 0.035
@@ -1112,15 +1120,15 @@ func _refresh_board() -> void:
 			_add_wolf_piece(visual)
 
 func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -> void:
-	# Stylized premium sheep: layered wool curls, expressive face, ears and four small legs.
-	# Five pieces remain individually readable at each starting node on mobile screens.
-	var wool := _material(Color(0.98, 0.96, 0.88))
-	var wool_light := _material(Color(1.0, 0.99, 0.94))
-	var face := _material(Color(0.72, 0.53, 0.43))
-	var inner_ear := _material(Color(0.91, 0.63, 0.58))
-	var hoof := _material(Color(0.20, 0.17, 0.16))
-	var eye := _material(Color(0.055, 0.045, 0.04))
-	var shine := _material(Color(1.0, 1.0, 0.94))
+	# Shared low-poly resources reduce allocation and draw preparation on mobile.
+	# Three fleece curls preserve the recognizable sheep silhouette with fewer parts.
+	var wool := _cached_material(Color(0.98, 0.96, 0.88))
+	var wool_light := _cached_material(Color(1.0, 0.99, 0.94))
+	var face := _cached_material(Color(0.72, 0.53, 0.43))
+	var inner_ear := _cached_material(Color(0.91, 0.63, 0.58))
+	var hoof := _cached_material(Color(0.20, 0.17, 0.16))
+	var eye := _cached_material(Color(0.055, 0.045, 0.04))
+	var shine := _cached_material(Color(1.0, 1.0, 0.94))
 	var visible_count: int = mini(count, 5)
 	for i in range(visible_count):
 		var pivot := Node3D.new()
@@ -1132,72 +1140,53 @@ func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -
 		pivot.rotation.y = PI * 0.5
 		parent.add_child(pivot)
 		if highlight_one and i == visible_count - 1:
-			# Gold ground ring identifies exactly one sheep from the five-piece stack.
-			var selected_ring := MeshInstance3D.new()
+			var ring := MeshInstance3D.new()
 			var ring_mesh := TorusMesh.new()
 			ring_mesh.inner_radius = 0.235
 			ring_mesh.outer_radius = 0.285
-			ring_mesh.rings = 20
-			ring_mesh.ring_segments = 12
-			selected_ring.mesh = ring_mesh
-			selected_ring.material_override = _material(Color(1.0, 0.72, 0.08))
-			selected_ring.position = Vector3(0.0, 0.045, 0.0)
-			selected_ring.rotation.x = PI * 0.5
-			pivot.add_child(selected_ring)
+			ring_mesh.rings = 12
+			ring_mesh.ring_segments = 8
+			ring.mesh = ring_mesh
+			ring.material_override = _cached_material(Color(1.0, 0.72, 0.08))
+			ring.position = Vector3(0.0, 0.045, 0.0)
+			ring.rotation.x = PI * 0.5
+			pivot.add_child(ring)
 
 		var body := MeshInstance3D.new()
-		var body_mesh := SphereMesh.new()
-		body_mesh.radius = 0.205
-		body_mesh.height = 0.37
-		body.mesh = body_mesh
+		body.mesh = _cached_sphere(0.205, 0.37)
 		body.material_override = wool
 		body.position = Vector3(-0.015, 0.36, 0.0)
 		body.scale = Vector3(1.12, 0.94, 0.92)
 		pivot.add_child(body)
 
-		# Puffy curls form a recognizable fleece silhouette instead of a plain sphere.
 		var curl_positions := [
-			Vector3(-0.13, 0.43, -0.12), Vector3(-0.02, 0.51, -0.13),
-			Vector3(0.10, 0.45, -0.12), Vector3(-0.15, 0.48, 0.0),
-			Vector3(0.00, 0.55, 0.0), Vector3(0.14, 0.48, 0.0),
-			Vector3(-0.12, 0.43, 0.12), Vector3(0.02, 0.50, 0.13),
-			Vector3(0.13, 0.42, 0.12)
+			Vector3(-0.11, 0.47, -0.105),
+			Vector3(0.015, 0.535, 0.0),
+			Vector3(0.105, 0.46, 0.105)
 		]
 		for curl_index in range(curl_positions.size()):
 			var curl := MeshInstance3D.new()
-			var curl_mesh := SphereMesh.new()
-			curl_mesh.radius = 0.092 if curl_index != 4 else 0.105
-			curl_mesh.height = curl_mesh.radius * 2.0
-			curl.mesh = curl_mesh
-			curl.material_override = wool_light if curl_index % 3 == 0 else wool
+			curl.mesh = _cached_sphere(0.092 if curl_index != 1 else 0.105, 0.20)
+			curl.material_override = wool_light if curl_index == 1 else wool
 			curl.position = curl_positions[curl_index]
 			pivot.add_child(curl)
 
 		var head := MeshInstance3D.new()
-		var head_mesh := SphereMesh.new()
-		head_mesh.radius = 0.125
-		head_mesh.height = 0.23
-		head.mesh = head_mesh
+		head.mesh = _cached_sphere(0.125, 0.23)
 		head.material_override = face
 		head.position = Vector3(0.205, 0.405, 0.0)
 		head.scale = Vector3(1.0, 1.05, 0.88)
 		pivot.add_child(head)
 
 		var muzzle := MeshInstance3D.new()
-		var muzzle_mesh := SphereMesh.new()
-		muzzle_mesh.radius = 0.068
-		muzzle_mesh.height = 0.105
-		muzzle.mesh = muzzle_mesh
+		muzzle.mesh = _cached_sphere(0.068, 0.105)
 		muzzle.material_override = inner_ear
 		muzzle.position = Vector3(0.292, 0.365, 0.0)
 		pivot.add_child(muzzle)
 
 		for side in [-1.0, 1.0]:
 			var ear := MeshInstance3D.new()
-			var ear_mesh := SphereMesh.new()
-			ear_mesh.radius = 0.052
-			ear_mesh.height = 0.15
-			ear.mesh = ear_mesh
+			ear.mesh = _cached_sphere(0.052, 0.15)
 			ear.material_override = face
 			ear.position = Vector3(0.16, 0.47, side * 0.125)
 			ear.rotation.z = -0.38
@@ -1205,39 +1194,26 @@ func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -
 			pivot.add_child(ear)
 
 			var eye_white := MeshInstance3D.new()
-			var eye_white_mesh := SphereMesh.new()
-			eye_white_mesh.radius = 0.033
-			eye_white_mesh.height = 0.055
-			eye_white.mesh = eye_white_mesh
+			eye_white.mesh = _cached_sphere(0.033, 0.055)
 			eye_white.material_override = shine
 			eye_white.position = Vector3(0.286, 0.445, side * 0.066)
 			pivot.add_child(eye_white)
 
 			var pupil := MeshInstance3D.new()
-			var pupil_mesh := SphereMesh.new()
-			pupil_mesh.radius = 0.018
-			pupil_mesh.height = 0.034
-			pupil.mesh = pupil_mesh
+			pupil.mesh = _cached_sphere(0.018, 0.034)
 			pupil.material_override = eye
 			pupil.position = Vector3(0.309, 0.447, side * 0.071)
 			pivot.add_child(pupil)
 
 		var nose := MeshInstance3D.new()
-		var nose_mesh := SphereMesh.new()
-		nose_mesh.radius = 0.022
-		nose_mesh.height = 0.035
-		nose.mesh = nose_mesh
+		nose.mesh = _cached_sphere(0.022, 0.035)
 		nose.material_override = hoof
 		nose.position = Vector3(0.354, 0.366, 0.0)
 		pivot.add_child(nose)
 
 		for leg_index in range(4):
 			var leg := MeshInstance3D.new()
-			var leg_mesh := CylinderMesh.new()
-			leg_mesh.top_radius = 0.027
-			leg_mesh.bottom_radius = 0.034
-			leg_mesh.height = 0.17
-			leg.mesh = leg_mesh
+			leg.mesh = _cached_cylinder(0.027, 0.034, 0.17)
 			leg.material_override = hoof
 			leg.position = Vector3(-0.105 if leg_index < 2 else 0.12, 0.18, -0.115 if leg_index % 2 == 0 else 0.115)
 			pivot.add_child(leg)
@@ -1248,6 +1224,37 @@ func _add_sheep_piece(parent: Node3D, count: int, highlight_one: bool = false) -
 	count_label.outline_size = 6
 	count_label.position = Vector3(0, 0.98, 0)
 	parent.add_child(count_label)
+
+func _cached_material(color: Color) -> StandardMaterial3D:
+	var key := "mat_" + color.to_html(true)
+	if not _shared_resources.has(key):
+		var material := StandardMaterial3D.new()
+		material.albedo_color = color
+		material.roughness = 0.9
+		_shared_resources[key] = material
+	return _shared_resources[key] as StandardMaterial3D
+
+func _cached_sphere(radius: float, height: float) -> SphereMesh:
+	var key := "sphere_%.3f_%.3f" % [radius, height]
+	if not _shared_resources.has(key):
+		var mesh := SphereMesh.new()
+		mesh.radius = radius
+		mesh.height = height
+		mesh.radial_segments = 12
+		mesh.rings = 6
+		_shared_resources[key] = mesh
+	return _shared_resources[key] as SphereMesh
+
+func _cached_cylinder(top_radius: float, bottom_radius: float, height: float) -> CylinderMesh:
+	var key := "cylinder_%.3f_%.3f_%.3f" % [top_radius, bottom_radius, height]
+	if not _shared_resources.has(key):
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = top_radius
+		mesh.bottom_radius = bottom_radius
+		mesh.height = height
+		mesh.radial_segments = 8
+		_shared_resources[key] = mesh
+	return _shared_resources[key] as CylinderMesh
 
 func _add_wolf_piece(parent: Node3D) -> void:
 	# Stronger silhouette and amber eyes echo the wolf artwork on the new app icon.
