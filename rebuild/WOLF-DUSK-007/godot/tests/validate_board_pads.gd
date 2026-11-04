@@ -12,6 +12,7 @@ func _run() -> void:
 	await process_frame
 
 	assert(meadow.node_visuals.size() == 25, "All 25 board nodes must have a visual platform")
+	assert(Meadow.NODE_PAD_RADIUS * 2.0 < Meadow.SPACING, "Neighboring platforms must leave a visible path gap")
 	for index in range(25):
 		var visual: Node3D = meadow.node_visuals[index]
 		var platform := visual.get_node_or_null("NodePlatform") as MeshInstance3D
@@ -31,8 +32,11 @@ func _run() -> void:
 			slots.append(child)
 	assert(slots.size() == 5, "A start node must visibly accommodate all five sheep")
 	for slot in slots:
-		var radial_distance := Vector2(slot.position.x, slot.position.z).length()
-		assert(radial_distance < Meadow.NODE_PAD_RADIUS, "Each sheep slot must stay inside the enlarged platform")
+		# Approximate the visible sheep footprint (forward nose/head and outer wool width), not only its pivot.
+		var footprint_x := absf(slot.position.x) + 0.38
+		var footprint_z := absf(slot.position.z) + 0.20
+		var footprint_radius := Vector2(footprint_x, footprint_z).length()
+		assert(footprint_radius < Meadow.NODE_PAD_RADIUS, "The complete sheep footprint must stay inside the enlarged platform")
 
 	# The enlarged platforms must not change the canonical graph or gameplay setup.
 	assert(meadow.game.sheep.size() == 25, "Sheep state must remain mapped to 25 board nodes")
