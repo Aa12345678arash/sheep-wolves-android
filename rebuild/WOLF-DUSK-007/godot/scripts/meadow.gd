@@ -553,7 +553,7 @@ func _build_hud() -> void:
 	footer.anchor_right = 1.0
 	footer.anchor_bottom = 1.0
 	footer.offset_left = 12.0
-	footer.offset_top = -238.0
+	footer.offset_top = -250.0
 	footer.offset_right = -12.0
 	footer.offset_bottom = -12.0
 	root.add_child(footer)
@@ -565,7 +565,6 @@ func _build_hud() -> void:
 	controls.columns = 2
 	controls.add_theme_constant_override("h_separation", 8)
 	controls.add_theme_constant_override("v_separation", 7)
-	controls.add_theme_constant_override("separation", 10)
 	footer_column.add_child(controls)
 
 	pass_button = Button.new()
