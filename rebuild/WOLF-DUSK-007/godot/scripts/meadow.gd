@@ -805,19 +805,29 @@ func _run_ai_turn(generation: int) -> void:
 			elif result == "moved":
 				_play_move_sound()
 			if result == "captured_chain_available":
-				var followups := game.capture_options(game.chain_wolf)
-				if not followups.is_empty():
-					var chain_from: int = game.chain_wolf
-					var chain_to := int(followups[0].to)
-					var chain_capture_node := int(followups[0].middle)
-					game.move_wolf(chain_from, chain_to)
-					ai_anim_from = chain_from
-					ai_anim_to = chain_to
-					ai_anim_kind = "wolf"
-					_play_capture_effect(chain_capture_node)
+				# Let the selected difficulty evaluate the optional second capture.
+				# The rules permit only the same wolf to continue the chain.
+				var chain_move: Dictionary = AI.choose_wolf_move(game, ai_difficulty)
+				if not chain_move.is_empty():
+					var chain_from := int(chain_move.from)
+					var chain_to := int(chain_move.to)
+					var chain_capture_node := -1
+					for option in game.capture_options(chain_from):
+						if int(option.to) == chain_to:
+							chain_capture_node = int(option.middle)
+							break
+					var chain_result: String = game.move_wolf(chain_from, chain_to)
+					if chain_result in ["captured", "won"]:
+						ai_anim_to = chain_to
+						ai_anim_kind = "wolf"
+						if chain_capture_node >= 0:
+							_play_capture_effect(chain_capture_node)
+					elif chain_result == "captured_chain_available":
+						# The current rules cap a chain at two captures; fail closed.
+						game.finish_wolf_turn()
 				else:
 					game.finish_wolf_turn()
-				feedback_message = "رایانه حرکت شکار را انجام داد."
+				feedback_message = "رایانه با ارزیابی تاکتیکی، شکار زنجیره‌ای را انجام داد."
 			else:
 				feedback_message = "رایانه گرگ‌ها را حرکت داد."
 		else:
