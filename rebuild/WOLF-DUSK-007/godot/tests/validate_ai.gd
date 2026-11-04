@@ -42,5 +42,29 @@ func _run() -> void:
 		AI.choose_wolf_move(state, difficulty)
 		assert(state.sheep == sheep_before and state.wolves == wolves_before, "AI search mutated game state")
 
+	# During an optional chain, every difficulty must keep the same wolf and choose
+	# the only legal second capture. Selection itself must not mutate the board.
+	for difficulty in range(3):
+		var chain_state = GameState.new()
+		for node in range(25):
+			chain_state.sheep[node] = 0
+			chain_state.wolves[node] = false
+		chain_state.wolves[1] = true
+		chain_state.wolves[2] = true
+		chain_state.wolves[12] = true
+		chain_state.sheep[18] = 1
+		chain_state.sheep[20] = 5
+		chain_state.sheep[21] = 5
+		chain_state.turn = GameState.Turn.WOLVES
+		chain_state.chain_wolf = 12
+		chain_state.chain_capture_count = 1
+		var sheep_before: Array = chain_state.sheep.duplicate()
+		var wolves_before: Array = chain_state.wolves.duplicate()
+		var chain_action: Dictionary = AI.choose_wolf_move(chain_state, difficulty)
+		assert(int(chain_action.from) == 12, "AI switched wolves during a chain capture")
+		assert(int(chain_action.to) == 24 and bool(chain_action.capture), "AI missed the only legal second capture")
+		assert(chain_state.sheep == sheep_before and chain_state.wolves == wolves_before, "Chain selection mutated game state")
+		assert(chain_state.move_wolf(int(chain_action.from), int(chain_action.to)) == "captured", "Rules rejected AI second capture")
+		assert(chain_state.turn == GameState.Turn.SHEEP, "Second capture must finish the wolf turn")
 	print("WOLF-DUSK-AI-015 checks passed: all difficulty levels choose legal placements, sheep moves and wolf moves without mutating state.")
 	quit()
