@@ -853,6 +853,7 @@ func _select_node(index: int) -> void:
 	if game.turn == GameState.Turn.PLACE_WOLVES:
 		if game.place_wolf(index):
 			selected_node = -1
+			_set_tactical_view(index)
 			feedback_message = "گرگ %d از ۳ در جای خود قرار گرفت." % game.wolf_total()
 		else:
 			feedback_message = "این نقطه خالی نیست؛ برای گرگ یک نقطهٔ خالی انتخاب کنید."
