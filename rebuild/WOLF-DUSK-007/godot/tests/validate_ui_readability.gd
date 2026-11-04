@@ -53,5 +53,5 @@ func _run() -> void:
 	assert(config.contains("boot_splash/show_image=false"), "Godot boot splash must be hidden for direct game launch")
 
 	meadow.queue_free()
-	print("WOLF-DUSK-UI-020 checks passed: readable HUD, responsive settings panel, scrolling content and larger touch targets.")
+	print("WOLF-DUSK-022 checks passed: direct game launch, larger readable HUD, two-column controls, responsive settings and larger touch targets.")
 	quit()
