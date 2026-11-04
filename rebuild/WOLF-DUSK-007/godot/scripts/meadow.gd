@@ -46,6 +46,12 @@ var music_audio: AudioStreamPlayer
 var music_button: Button
 var setup_music_button: Button
 var announced_winner: String = ""
+# Two-finger camera gestures are deliberately separate from one-finger board taps.
+var camera_orbit_yaw: float = 0.0
+var camera_orbit_pitch: float = 1.249
+var camera_orbit_distance: float = 28.46
+var touch_points: Dictionary = {}
+var last_pinch_distance: float = 0.0
 
 func _ready() -> void:
 	_build_audio()
@@ -803,6 +809,37 @@ func _run_ai_turn(generation: int) -> void:
 	_schedule_ai_turn()
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Two-finger gestures orbit and zoom the camera; a normal one-finger tap
+	# remains dedicated to selecting board nodes.
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed:
+			if touch_points.size() >= 1:
+				touch_points[touch.index] = touch.position
+				last_pinch_distance = _current_pinch_distance()
+				get_viewport().set_input_as_handled()
+				return
+			touch_points[touch.index] = touch.position
+		else:
+			touch_points.erase(touch.index)
+			if touch_points.size() < 2:
+				last_pinch_distance = 0.0
+			return
+	elif event is InputEventScreenDrag:
+		var drag := event as InputEventScreenDrag
+		if touch_points.has(drag.index):
+			touch_points[drag.index] = drag.position
+		if touch_points.size() >= 2:
+			camera_orbit_yaw -= drag.relative.x * 0.006
+			camera_orbit_pitch = clampf(camera_orbit_pitch + drag.relative.y * 0.004, 0.88, 1.35)
+			var pinch_distance := _current_pinch_distance()
+			if last_pinch_distance > 1.0 and pinch_distance > 1.0:
+				camera_orbit_distance = clampf(camera_orbit_distance * last_pinch_distance / pinch_distance, 22.0, 38.0)
+			last_pinch_distance = pinch_distance
+			_apply_camera_orbit()
+			get_viewport().set_input_as_handled()
+		return
+
 	# Reliable mobile input: ray-pick board areas directly from the screen touch.
 	# This avoids depending on Area3D.input_event delivery, which can be swallowed
 	# by the viewport/UI on some Android devices.
@@ -1420,6 +1457,25 @@ func _update_hud() -> void:
 	if chain_time_left > 0.0:
 		_update_chain_countdown()
 
+func _current_pinch_distance() -> float:
+	if touch_points.size() < 2:
+		return 0.0
+	var points: Array = touch_points.values()
+	return (points[0] as Vector2).distance_to(points[1] as Vector2)
+
+func _apply_camera_orbit() -> void:
+	if camera == null:
+		return
+	var horizontal_radius := camera_orbit_distance * cos(camera_orbit_pitch)
+	var offset := Vector3(
+		sin(camera_orbit_yaw) * horizontal_radius,
+		camera_orbit_distance * sin(camera_orbit_pitch),
+		cos(camera_orbit_yaw) * horizontal_radius
+	)
+	camera_target_look_at = Vector3.ZERO
+	camera_target_position = camera_target_look_at + offset
+	camera.fov = 48.0
+
 func _set_turn_view(side: int, force_overview: bool = false) -> void:
 	# Keep one consistent camera side for both players. Reversing the Z side
 	# caused a near-180-degree orbit across the board on every turn change.
@@ -1427,9 +1483,7 @@ func _set_turn_view(side: int, force_overview: bool = false) -> void:
 	camera_mode = "overview"
 	if force_overview:
 		camera_mode_generation += 1
-	camera_target_look_at = Vector3.ZERO
-	camera_target_position = Vector3(0.0, 27.0, 9.0)
-	camera.fov = 48.0
+	_apply_camera_orbit()
 
 func _set_tactical_view(node_index: int) -> void:
 	# Selection is communicated by the gold ring and legal-destination pads.
