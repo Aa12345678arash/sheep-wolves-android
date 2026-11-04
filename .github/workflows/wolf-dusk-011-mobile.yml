@@ -7,6 +7,7 @@ on:
       - WOLF-DUSK-AI-015
       - WOLF-DUSK-AI-017-PLAYER-CONTROL
       - WOLF-DUSK-AI-018-AI-TURN-CAMERA
+      - WOLF-DUSK-AI-019-TOUCH-TARGETS
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-011-mobile.yml'
