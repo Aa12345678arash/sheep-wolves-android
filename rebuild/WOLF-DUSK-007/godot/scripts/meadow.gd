@@ -938,6 +938,9 @@ func _select_node(index: int) -> void:
 			feedback_message = "این نقطه خالی نیست؛ برای گرگ یک نقطهٔ خالی انتخاب کنید."
 		_refresh_board()
 		_update_hud()
+		# Once the human wolf player places the third wolf, the sheep turn
+		# belongs to the AI. Schedule it here before returning from setup input.
+		_schedule_ai_turn()
 		return
 
 	if selected_node == -1:
@@ -1659,9 +1662,10 @@ func _apply_camera_orbit() -> void:
 	camera.fov = 48.0
 
 func _set_turn_view(side: int, force_overview: bool = false) -> void:
-	# Keep one consistent camera side for both players. Reversing the Z side
-	# caused a near-180-degree orbit across the board on every turn change.
+	# Present the board from the active side: sheep and wolves see opposite ends.
+	# Keep the same pitch and distance so the full board remains visible on phones.
 	camera_view_turn = side
+	camera_orbit_yaw = 0.0 if side >= 0 else PI
 	camera_mode = "overview"
 	if force_overview:
 		camera_mode_generation += 1
