@@ -278,8 +278,6 @@ func _initialize() -> void:
 		stacked_state.sheep[i] = 0
 		stacked_state.wolves[i] = false
 	stacked_state.wolves[0] = true
-	stacked_state.wolves[1] = true
-	stacked_state.wolves[2] = true
 	stacked_state.sheep[12] = 2
 	assert(AI._sheep_safety_score(stacked_state, 6, 12) == 0.0)
 	assert(AI._sheep_escape_mobility(stacked_state, 12, 6) >= 0)
