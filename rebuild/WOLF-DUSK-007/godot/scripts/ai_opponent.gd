@@ -157,7 +157,9 @@ static func _sheep_safety_score(state, node: int, vacated_from: int = -1) -> flo
 			var landing_col: int = landing % 5
 			if landing_row - node_row != dr or landing_col - node_col != dc:
 				continue
-			var origin_frees := landing == vacated_from and state.sheep[vacated_from] == 1
+			var origin_frees: bool = false
+			if vacated_from >= 0:
+				origin_frees = landing == vacated_from and int(state.sheep[vacated_from]) == 1
 			if origin_frees or (not state.is_occupied(landing) and landing != vacated_from):
 				danger += 3.0
 	return -danger
