@@ -1,5 +1,7 @@
 extends Node3D
 
+# WOLF-DUSK-030: enlarged, gold-trimmed start pads keep five sheep compact and readable.
+
 const GRID_SIZE := 5
 const SPACING := 2.2
 const BOARD_TOUCH_RADIUS := 1.08
