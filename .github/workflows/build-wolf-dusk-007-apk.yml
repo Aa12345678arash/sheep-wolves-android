@@ -10,6 +10,7 @@ on:
       - WOLF-DUSK-033-ICON-CLEANUP
       - WOLF-DUSK-034-ICON-REDESIGN
       - WOLF-DUSK-035-CINEMATIC-REDESIGN
+      - WOLF-DUSK-040-AI-LEVEL-AUDIT
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/build-wolf-dusk-007-apk.yml'
