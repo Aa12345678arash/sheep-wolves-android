@@ -7,6 +7,12 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	# Confirm the five menu levels map to distinct AI behavior classes and
+	# that the search tiers receive strictly increasing depth and mobile budgets.
+	assert(AI._search_depth(2) == 4, "Medium must use a four-ply search")
+	assert(AI._search_depth(3) == 6, "Hard must use a six-ply search")
+	assert(AI._search_depth(4) == 8, "Expert must use an eight-ply search")
+	assert(AI._search_depth(2) < AI._search_depth(3) and AI._search_depth(3) < AI._search_depth(4), "Search tiers must increase in depth")
 	for difficulty in range(5):
 		var state = GameState.new()
 		var placed: Array[int] = []
