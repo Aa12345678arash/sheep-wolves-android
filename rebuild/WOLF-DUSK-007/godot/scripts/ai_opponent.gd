@@ -277,7 +277,12 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
-	var context := {"nodes": 0, "node_limit": 24000 if depth <= 4 else 36000, "start": Time.get_ticks_usec(), "time_limit": 240000}
+	# WOLF-DUSK-040: give the three search-based tiers genuinely different
+	# mobile budgets. Medium stays responsive; Hard searches deeper; Expert
+	# receives the largest node/time allowance without blocking the UI indefinitely.
+	var node_limit := 7000 if depth <= 4 else (16000 if depth <= 6 else 30000)
+	var time_limit := 70000 if depth <= 4 else (150000 if depth <= 6 else 240000)
+	var context := {"nodes": 0, "node_limit": node_limit, "start": Time.get_ticks_usec(), "time_limit": time_limit}
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
