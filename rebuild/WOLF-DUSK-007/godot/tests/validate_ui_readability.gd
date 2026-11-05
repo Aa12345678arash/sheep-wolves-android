@@ -28,6 +28,15 @@ func _run() -> void:
 	assert(panel.size.y >= viewport_size.y - 40.0, "Settings panel should use most of the available screen for easier access")
 	assert(is_zero_approx(panel.offset_top) and is_zero_approx(panel.offset_bottom), "Startup settings panel must extend to the top and bottom viewport edges")
 	assert(panel.get_child_count() == 1 and panel.get_child(0) is ScrollContainer, "Settings content must scroll on smaller screens")
+	var scroll := panel.get_child(0) as ScrollContainer
+	var column := scroll.get_child(0) as VBoxContainer
+	assert(column != null, "Startup menu must use a vertical content column")
+	assert(column.custom_minimum_size.y >= viewport_size.y - 60.0, "Startup content column must occupy the usable screen height")
+	var top_spacers := column.find_children("StartScreenTopSpacer", "Control", true, false)
+	var bottom_spacers := column.find_children("StartScreenBottomSpacer", "Control", true, false)
+	assert(top_spacers.size() == 1 and bottom_spacers.size() == 1, "Startup menu must balance content with top and bottom flexible spacing")
+	assert((top_spacers[0] as Control).size_flags_vertical == Control.SIZE_EXPAND_FILL, "Top spacer must expand to balance the menu")
+	assert((bottom_spacers[0] as Control).size_flags_vertical == Control.SIZE_EXPAND_FILL, "Bottom spacer must expand to balance the menu")
 
 	var option_buttons := panel.find_children("*", "OptionButton", true, false)
 	assert(option_buttons.size() == 3, "Mode, side and difficulty selectors must all be present")
@@ -70,5 +79,5 @@ func _run() -> void:
 	assert(config.contains("boot_splash/show_image=false"), "Godot boot splash must be hidden for direct game launch")
 
 	meadow.queue_free()
-	print("WOLF-DUSK-025 checks passed: edge-to-edge startup panel, compact-phone HUD spacing, direct launch and readable controls.")
+	print("WOLF-DUSK-026 checks passed: full-height vertically balanced startup menu, compact-phone HUD spacing, direct launch and readable controls.")
 	quit()
