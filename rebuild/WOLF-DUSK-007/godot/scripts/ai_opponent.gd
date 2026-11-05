@@ -92,13 +92,17 @@ static func _sheep_position_score(state, from: int, to: int) -> float:
 static func _sheep_move_score(state, from: int, to: int, difficulty: int) -> float:
 	var score := _sheep_position_score(state, from, to)
 	if difficulty >= 1:
-		var safety_weight := 1.0 if difficulty == 1 else 2.5
+		var safety_weight := 1.0 if difficulty == 1 else (2.5 if difficulty == 2 else (3.4 if difficulty == 3 else 4.6))
 		score += _sheep_safety_score(state, to, from) * safety_weight
 	if difficulty >= 2:
 		# Prefer destinations with genuine escape routes, not just forward progress.
-		score += float(_sheep_escape_mobility(state, from, to)) * 0.65
+		var mobility_weight := 0.65 if difficulty == 2 else (1.0 if difficulty == 3 else 1.35)
+		score += float(_sheep_escape_mobility(state, from, to)) * mobility_weight
 		# Penalize moves that leave the moved sheep directly exposed to a wolf.
-		score += _wolf_pressure_on_sheep(state, to, from) * -1.5
+		var pressure_weight := 1.5 if difficulty == 2 else (2.1 if difficulty == 3 else 2.8)
+		score += _wolf_pressure_on_sheep(state, to, from) * -pressure_weight
+		if difficulty >= 4 and _sheep_escape_mobility(state, from, to) <= 1:
+			score -= 2.0
 	return score
 
 static func _sheep_escape_mobility(state, from: int, to: int) -> int:
@@ -183,12 +187,17 @@ static func _wolf_move_score(state, from: int, to: int, is_capture: bool, diffic
 	if difficulty >= 2:
 		var follow_up_captures := _count_capture_options_after(state, from, to, captured_middle)
 		var mobility := _wolf_mobility_after(state, from, to)
-		score += float(follow_up_captures) * 24.0
-		score += float(_count_threatened_sheep_after(state, from, to, captured_middle)) * 8.0
-		score += float(mobility) * 0.8
-		# Avoid moves that leave this wolf stranded when another wolf can cover the area.
+		var follow_up_weight := 24.0 if difficulty == 2 else (31.0 if difficulty == 3 else 42.0)
+		var threat_weight := 8.0 if difficulty == 2 else (12.0 if difficulty == 3 else 18.0)
+		var mobility_weight := 0.8 if difficulty == 2 else (1.15 if difficulty == 3 else 1.6)
+		score += float(follow_up_captures) * follow_up_weight
+		score += float(_count_threatened_sheep_after(state, from, to, captured_middle)) * threat_weight
+		score += float(mobility) * mobility_weight
+		# Higher tiers avoid isolated wolves and favor coordinated hunting lanes.
 		if mobility == 0 and follow_up_captures == 0:
-			score -= 5.0
+			score -= 5.0 if difficulty == 2 else (9.0 if difficulty == 3 else 15.0)
+		if difficulty >= 4 and mobility <= 1 and follow_up_captures == 0:
+			score -= 4.0
 	return score
 
 static func _count_capture_options_after(state, wolf_from: int, wolf_to: int, captured_middle: int) -> int:
