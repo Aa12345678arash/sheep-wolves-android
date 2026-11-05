@@ -3,6 +3,7 @@ class_name WolfDuskAI
 
 # Deterministic, rule-respecting move selector. Difficulty: 0 easy, 1 medium, 2 hard.
 const BoardGraph = preload("res://scripts/board_graph.gd")
+const GameState = preload("res://scripts/game_state.gd")
 
 static func choose_wolf_placement(state, difficulty: int) -> int:
 	var candidates: Array[int] = []
@@ -35,6 +36,8 @@ static func choose_sheep_move(state, difficulty: int) -> Dictionary:
 		return {}
 	if difficulty == 0:
 		return moves[randi() % moves.size()]
+	if difficulty >= 2:
+		return _search_best_move(state, true, _search_depth(difficulty))
 	var best: Dictionary = moves[0]
 	var best_score := -INF
 	for move in moves:
@@ -62,6 +65,8 @@ static func choose_wolf_move(state, difficulty: int) -> Dictionary:
 		return {}
 	if difficulty == 0:
 		return moves[randi() % moves.size()]
+	if difficulty >= 2:
+		return _search_best_move(state, false, _search_depth(difficulty))
 	var best: Dictionary = moves[0]
 	var best_score := -INF
 	for move in moves:
@@ -257,3 +262,118 @@ static func _future_capture_potential(state, node: int) -> float:
 	return total
 
 # WOLF-DUSK-AI-015: trigger a fresh validation run for the typed occupancy fix.
+
+# WOLF-DUSK-038: turn-based alpha-beta search for levels 2-4.
+static func _search_depth(difficulty: int) -> int:
+	return 2 if difficulty == 2 else (3 if difficulty == 3 else 4)
+
+static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionary:
+	var moves := _legal_search_moves(state, false)
+	if moves.is_empty():
+		return {}
+	var best_move: Dictionary = moves[0]
+	var best_score := -INF
+	var alpha := -INF
+	var beta := INF
+	var context := {"nodes": 0, "node_limit": 4500 if depth == 3 else 8500, "start": Time.get_ticks_usec(), "time_limit": 90000}
+	for move in moves:
+		var child = _copy_state(state)
+		_apply_search_move(child, move)
+		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context)
+		if score > best_score:
+			best_score = score
+			best_move = move
+		alpha = maxf(alpha, best_score)
+		if _search_stopped(context):
+			break
+	return best_move
+
+static func _search_stopped(context: Dictionary) -> bool:
+	return int(context.nodes) >= int(context.node_limit) or Time.get_ticks_usec() - int(context.start) >= int(context.time_limit)
+
+static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary) -> float:
+	context.nodes = int(context.nodes) + 1
+	if state.turn == GameState.Turn.FINISHED or depth <= 0 or _search_stopped(context):
+		return _evaluate_position(state, ai_is_sheep)
+	var moves := _legal_search_moves(state, true)
+	if moves.is_empty():
+		return _evaluate_position(state, ai_is_sheep)
+	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
+	var value := -INF if maximizing else INF
+	for move in moves:
+		var child = _copy_state(state)
+		_apply_search_move(child, move)
+		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context)
+		if maximizing:
+			value = maxf(value, score)
+			alpha = maxf(alpha, value)
+		else:
+			value = minf(value, score)
+			beta = minf(beta, value)
+		if beta <= alpha or _search_stopped(context):
+			break
+	return value
+
+static func _legal_search_moves(state, include_chain_decline: bool) -> Array[Dictionary]:
+	var moves: Array[Dictionary] = []
+	if state.turn == GameState.Turn.SHEEP:
+		for from in range(BoardGraph.NODE_COUNT):
+			for to in state.sheep_moves(from):
+				moves.append({"side": "sheep", "from": from, "to": to})
+	elif state.turn == GameState.Turn.WOLVES:
+		if state.chain_wolf != -1 and include_chain_decline:
+			moves.append({"side": "decline_chain"})
+		var first_wolf: int = state.chain_wolf if state.chain_wolf != -1 else 0
+		var last_wolf: int = state.chain_wolf + 1 if state.chain_wolf != -1 else BoardGraph.NODE_COUNT
+		for from in range(first_wolf, last_wolf):
+			if not state.wolves[from]:
+				continue
+			for capture in state.capture_options(from):
+				moves.append({"side": "wolf", "from": from, "to": int(capture.to), "capture": true})
+			if state.chain_wolf == -1:
+				for to in state.wolf_moves(from):
+					moves.append({"side": "wolf", "from": from, "to": to, "capture": false})
+	return moves
+
+static func _copy_state(source):
+	var copy = GameState.new()
+	copy.sheep = source.sheep.duplicate()
+	copy.wolves = source.wolves.duplicate()
+	copy.turn = source.turn
+	copy.chain_wolf = source.chain_wolf
+	copy.chain_capture_count = source.chain_capture_count
+	copy.winner = source.winner
+	return copy
+
+static func _apply_search_move(state, move: Dictionary) -> void:
+	if move.side == "decline_chain":
+		state.finish_wolf_turn()
+	elif move.side == "sheep":
+		state.move_sheep(int(move.from), int(move.to))
+	else:
+		state.move_wolf(int(move.from), int(move.to))
+
+static func _evaluate_position(state, ai_is_sheep: bool) -> float:
+	if state.winner == "wolves":
+		return -100000.0 if ai_is_sheep else 100000.0
+	if state.winner == "sheep":
+		return 100000.0 if ai_is_sheep else -100000.0
+	var sheep_count := float(state.sheep_total())
+	var sheep_mobility := 0.0
+	var wolf_mobility := 0.0
+	var capture_threats := 0.0
+	var blocked_wolves := 0.0
+	for node in range(BoardGraph.NODE_COUNT):
+		if state.sheep[node] > 0:
+			sheep_mobility += float(state.sheep_moves(node).size()) * float(state.sheep[node])
+		if state.wolves[node]:
+			var wm := state.wolf_moves(node).size()
+			var captures := state.capture_options(node).size()
+			wolf_mobility += float(wm)
+			capture_threats += float(captures)
+			if wm == 0 and captures == 0:
+				blocked_wolves += 1.0
+	var sheep_score := sheep_count * 7.0 + sheep_mobility * 0.7 + blocked_wolves * 34.0
+	var wolf_score := (25.0 - sheep_count) * 11.0 + capture_threats * 9.0 + wolf_mobility * 1.2
+	var score := sheep_score - wolf_score
+	return score if ai_is_sheep else -score
