@@ -92,6 +92,19 @@ func _initialize() -> void:
 			invalid_landing_found = true
 	assert(not invalid_landing_found)
 	assert(non_collinear_state.move_wolf(0, 11) == "invalid")
+
+	# A wolf must not jump over a stack of two or more sheep.
+	for stack_size in [2, 3, 5]:
+		var stacked_capture_state = GameState.new()
+		for node in range(25):
+			stacked_capture_state.sheep[node] = 0
+			stacked_capture_state.wolves[node] = false
+		stacked_capture_state.wolves[0] = true
+		stacked_capture_state.sheep[6] = stack_size
+		stacked_capture_state.turn = GameState.Turn.WOLVES
+		assert(stacked_capture_state.capture_options(0).is_empty(), "A stack must not be capturable as a jump")
+		assert(stacked_capture_state.move_wolf(0, 12) == "invalid", "A wolf cannot jump over multiple sheep")
+		assert(stacked_capture_state.sheep[6] == stack_size and stacked_capture_state.wolves[0], "Illegal jump changed state")
 	assert(non_collinear_state.wolves[0] and not non_collinear_state.wolves[11])
 	assert(non_collinear_state.sheep[6] == 1)
 
@@ -211,7 +224,7 @@ func _initialize() -> void:
 
 	# AI must always return actions accepted by the same authoritative rules.
 	var ai_state = GameState.new()
-	for difficulty in range(3):
+	for difficulty in range(5):
 		var placement: int = AI.choose_wolf_placement(ai_state, difficulty)
 		assert(placement >= 0 and placement < BoardGraph.NODE_COUNT)
 		assert(ai_state.place_wolf(placement))
