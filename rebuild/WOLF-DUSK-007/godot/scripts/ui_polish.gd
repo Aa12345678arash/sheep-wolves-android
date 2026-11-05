@@ -27,18 +27,26 @@ func _polish_hud() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var viewport := get_viewport().get_visible_rect().size
 	var compact := viewport.y < 900.0
+	_apply_responsive_layout(root, viewport, compact)
+
+func _apply_responsive_layout(root: Control, viewport: Vector2, compact: bool) -> void:
+	# On short phones the original 21.5% / 79.5% anchors squeezed the board
+	# between two HUD panels. Give Persian labels room while preserving a larger
+	# unobstructed central play area.
+	var header_bottom := 0.31 if compact else 0.215
+	var footer_top := 0.70 if compact else 0.795
 	for child in root.get_children():
 		if child is PanelContainer:
 			var panel := child as PanelContainer
 			if panel.anchor_bottom == 0.0:
-				panel.anchor_bottom = 0.215
+				panel.anchor_bottom = header_bottom
 				panel.offset_left = 9.0
 				panel.offset_right = -9.0
 				panel.offset_top = 9.0
 				panel.offset_bottom = 0.0
 				_style_panel(panel, Color(0.035, 0.105, 0.13, 0.96), Color(0.22, 0.72, 0.67))
 			else:
-				panel.anchor_top = 0.795
+				panel.anchor_top = footer_top
 				panel.offset_left = 9.0
 				panel.offset_right = -9.0
 				panel.offset_top = 0.0
@@ -76,6 +84,8 @@ func _style_descendants(node: Node, compact: bool) -> void:
 			label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.65))
 			label.add_theme_constant_override("shadow_offset_x", 1)
 			label.add_theme_constant_override("shadow_offset_y", 2)
+			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			if value.contains("نوبت") or value.contains("پایان بازی") or value.contains("چیدمان"):
 				label.add_theme_color_override("font_color", GOLD)
 				label.add_theme_font_size_override("font_size", 30 if not compact else 25)
