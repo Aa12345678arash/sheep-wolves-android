@@ -26,6 +26,7 @@ func _run() -> void:
 	assert(panel.size.x <= viewport_size.x + 1.0, "Settings panel must fit the available phone width")
 	assert(panel.size.y <= viewport_size.y + 1.0, "Settings panel must fit the available phone height")
 	assert(panel.size.y >= viewport_size.y - 40.0, "Settings panel should use most of the available screen for easier access")
+	assert(is_zero_approx(panel.offset_top) and is_zero_approx(panel.offset_bottom), "Startup settings panel must extend to the top and bottom viewport edges")
 	assert(panel.get_child_count() == 1 and panel.get_child(0) is ScrollContainer, "Settings content must scroll on smaller screens")
 
 	var option_buttons := panel.find_children("*", "OptionButton", true, false)
@@ -69,5 +70,5 @@ func _run() -> void:
 	assert(config.contains("boot_splash/show_image=false"), "Godot boot splash must be hidden for direct game launch")
 
 	meadow.queue_free()
-	print("WOLF-DUSK-024 checks passed: compact-phone HUD spacing, direct launch, readable controls and responsive settings.")
+	print("WOLF-DUSK-025 checks passed: edge-to-edge startup panel, compact-phone HUD spacing, direct launch and readable controls.")
 	quit()
