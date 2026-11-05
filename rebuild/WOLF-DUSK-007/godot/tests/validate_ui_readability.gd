@@ -39,8 +39,9 @@ func _run() -> void:
 		assert((option as OptionButton).custom_minimum_size.y >= 64.0, "Selector touch targets must remain comfortable")
 	assert(is_instance_valid(meadow.setup_layer), "Settings panel must open on launch")
 	assert(meadow.setup_layer.get_child_count() >= 2, "Settings overlay must contain shade and panel")
-	var panel := meadow.setup_layer.get_child(1) as PanelContainer
-	assert(panel != null, "Settings panel container must exist")
+	var panels: Array[Node] = meadow.setup_layer.find_children("*", "PanelContainer", true, false)
+	assert(panels.size() == 1, "Settings panel container must exist exactly once")
+	var panel := panels[0] as PanelContainer
 	var viewport_size := meadow.get_viewport().get_visible_rect().size
 	assert(panel.size.x <= viewport_size.x + 1.0, "Settings panel must fit the available phone width")
 	assert(panel.size.y <= viewport_size.y + 1.0, "Settings panel must fit the available phone height")
