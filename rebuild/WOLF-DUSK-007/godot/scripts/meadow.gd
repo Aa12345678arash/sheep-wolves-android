@@ -635,8 +635,8 @@ func _show_setup_menu() -> void:
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel.offset_left = horizontal_margin
 	panel.offset_right = -horizontal_margin
-	panel.offset_top = 12.0
-	panel.offset_bottom = -12.0
+	panel.offset_top = 0.0
+	panel.offset_bottom = 0.0
 	panel.custom_minimum_size = Vector2(300.0, 0.0)
 	# Re-apply the full-rect layout after parenting to CanvasLayer so the
 	# panel receives the live viewport rectangle on first frame on Android.
