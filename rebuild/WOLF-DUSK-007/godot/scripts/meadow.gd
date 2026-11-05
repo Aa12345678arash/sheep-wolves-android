@@ -640,14 +640,14 @@ func _show_setup_menu() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	# Use almost the full available phone height so every setting is easy to reach.
 	# Keep a centered maximum width on tablets while preserving a 12 px safe margin.
-	var horizontal_margin := maxf(12.0, (viewport_size.x - 680.0) * 0.5)
+	var horizontal_margin := clampf((viewport_size.x - 680.0) * 0.5, 8.0, 48.0)
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel.offset_left = horizontal_margin
 	panel.offset_right = -horizontal_margin
 	panel.offset_top = 0.0
 	panel.offset_bottom = 0.0
-	panel.custom_minimum_size = Vector2(300.0, 0.0)
+	panel.custom_minimum_size = Vector2(minf(300.0, maxf(0.0, viewport_size.x - horizontal_margin * 2.0)), 0.0)
 	# Re-apply the full-rect layout after parenting to CanvasLayer so the
 	# panel receives the live viewport rectangle on first frame on Android.
 	setup_layer.add_child(panel)
@@ -663,8 +663,11 @@ func _show_setup_menu() -> void:
 	panel_style.set_corner_radius_all(24)
 	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.48)
 	panel_style.shadow_size = 12
-	panel_style.content_margin_left = 28.0
-	panel_style.content_margin_right = 28.0
+	# Narrow phones need compact inner gutters so the panel's minimum width
+	# cannot exceed the visible viewport when large Persian controls are laid out.
+	var inner_gutter := 12.0 if viewport_size.x < 420.0 else 24.0
+	panel_style.content_margin_left = inner_gutter
+	panel_style.content_margin_right = inner_gutter
 	panel_style.content_margin_top = 18.0
 	panel_style.content_margin_bottom = 18.0
 	panel.add_theme_stylebox_override("panel", panel_style)
