@@ -1,41 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
 <defs>
- <linearGradient id="night" x2="0" y2="1"><stop stop-color="#101c45"/><stop offset=".62" stop-color="#285b73"/><stop offset="1" stop-color="#6d9a68"/></linearGradient>
- <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff0a8"/><stop offset=".5" stop-color="#e7a92f"/><stop offset="1" stop-color="#9a551b"/></linearGradient>
- <linearGradient id="wool" x2="0" y2="1"><stop stop-color="#fffef4"/><stop offset="1" stop-color="#d8d8cb"/></linearGradient>
- <filter id="shade"><feGaussianBlur stdDeviation="9"/></filter>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#101b48"/><stop offset=".55" stop-color="#67527b"/><stop offset="1" stop-color="#e5a45e"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff4bd"/><stop offset=".45" stop-color="#e8b33f"/><stop offset="1" stop-color="#9d5a19"/></linearGradient>
+ <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#a9672f"/><stop offset=".5" stop-color="#70401f"/><stop offset="1" stop-color="#432719"/></linearGradient>
+ <linearGradient id="wool" x2="0" y2="1"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#d7d9d2"/></linearGradient>
+ <clipPath id="clip"><rect x="18" y="18" width="476" height="476" rx="94"/></clipPath>
 </defs>
-<rect width="512" height="512" rx="112" fill="#111b2d"/>
-<rect x="18" y="18" width="476" height="476" rx="100" fill="url(#night)"/>
-<circle cx="385" cy="112" r="54" fill="#ffe9a0"/>
-<circle cx="385" cy="112" r="68" fill="#ffe9a0" opacity=".13"/>
-<path d="M20 305 Q115 230 215 292 T492 280 V492 H20Z" fill="#47764d"/>
-<path d="M20 366 Q140 295 255 355 T492 340 V492 H20Z" fill="#28553b"/>
-<path d="M64 435 Q180 375 275 420 T448 410" fill="none" stroke="#d6b878" stroke-width="18" stroke-linecap="round"/>
-<ellipse cx="165" cy="390" rx="104" ry="28" fill="#071321" opacity=".45" filter="url(#shade)"/>
-<ellipse cx="360" cy="385" rx="90" ry="25" fill="#071321" opacity=".45" filter="url(#shade)"/>
-<!-- Wolf silhouette -->
-<g transform="translate(35 165)">
- <path d="M28 88 L5 5 L75 45 Q125 18 174 48 L235 12 L220 104 Q245 144 204 181 L183 232 L153 232 L148 185 Q103 204 63 180 L58 232 L27 232 L29 166 Q0 137 28 88Z" fill="#667887" stroke="#263746" stroke-width="10" stroke-linejoin="round"/>
- <path d="M18 25 L60 59 L45 93Z M218 31 L178 64 L194 96Z" fill="#c58d82"/>
- <path d="M49 111 Q121 73 204 111 Q190 166 126 174 Q66 166 49 111Z" fill="#d9cdb8"/>
- <path d="M76 119 L105 128 L88 140Z M177 119 L148 128 L165 140Z" fill="#fff0cf"/>
- <path d="M105 158 Q126 146 147 158 Q145 184 126 186 Q107 183 105 158Z" fill="#222a31"/>
- <circle cx="79" cy="99" r="12" fill="#ffd45c"/><circle cx="181" cy="99" r="12" fill="#ffd45c"/>
- <circle cx="81" cy="99" r="5" fill="#17202a"/><circle cx="179" cy="99" r="5" fill="#17202a"/>
-</g>
-<!-- Sheep -->
-<g transform="translate(265 245)">
- <ellipse cx="94" cy="99" rx="90" ry="70" fill="url(#wool)" stroke="#b7c1c0" stroke-width="5"/>
- <g fill="#fffef5" stroke="#d9ded6" stroke-width="3">
- <circle cx="40" cy="65" r="35"/><circle cx="81" cy="42" r="38"/><circle cx="124" cy="55" r="37"/><circle cx="157" cy="91" r="35"/><circle cx="132" cy="132" r="38"/><circle cx="81" cy="143" r="38"/><circle cx="37" cy="119" r="34"/>
+<g clip-path="url(#clip)">
+ <rect width="512" height="512" fill="url(#sky)"/>
+ <circle cx="395" cy="105" r="59" fill="#fff0b5"/>
+ <circle cx="395" cy="105" r="77" fill="#fff0b5" opacity=".12"/>
+ <path d="M0 255 L76 165 128 226 211 142 285 232 361 171 512 255V512H0Z" fill="#344c61"/>
+ <path d="M0 292 Q100 222 196 278 T512 266V512H0Z" fill="#47734c"/>
+ <path d="M0 354 Q125 282 249 345 T512 323V512H0Z" fill="#28523b"/>
+ <path d="M-10 472 Q116 393 231 444 T535 419" fill="none" stroke="#c7a36b" stroke-width="27"/>
+ <path d="M-10 472 Q116 393 231 444 T535 419" fill="none" stroke="#5d442d" stroke-width="7" stroke-dasharray="3 24"/>
+ <!-- distant pines -->
+ <g fill="#1d3d36"><path d="M42 292l22-68 22 68h-13l22 39H33l22-39z"/><path d="M420 285l22-74 22 74h-13l22 39h-62l22-39z"/><path d="M355 295l17-55 18 55h-11l18 31h-50l18-31z"/></g>
+ <!-- wolf, left -->
+ <g transform="translate(18 176)">
+  <path d="M30 91L10 8 83 51Q130 25 180 52L239 17 220 112Q246 151 204 187L183 238H151L148 190Q103 210 63 183L57 238H26L29 169Q-1 139 30 91Z" fill="#657687" stroke="#263746" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M23 29L65 65 49 104Z M226 38L184 72 201 108Z" fill="#c68d82"/>
+  <path d="M50 119Q125 81 207 119Q190 177 126 184Q67 177 50 119Z" fill="#e4d6c1"/>
+  <path d="M75 124L107 133 88 145Z M177 124L147 133 166 145Z" fill="#fff0d2"/>
+  <circle cx="83" cy="106" r="13" fill="#ffd15b"/><circle cx="180" cy="106" r="13" fill="#ffd15b"/>
+  <circle cx="85" cy="106" r="6" fill="#17212b"/><circle cx="178" cy="106" r="6" fill="#17212b"/>
+  <path d="M107 165Q126 151 147 165Q145 190 126 192Q108 190 107 165Z" fill="#202a31"/>
+  <path d="M105 184L114 198 122 187 131 199 141 184" fill="#fff7e8"/>
  </g>
- <ellipse cx="12" cy="97" rx="36" ry="43" fill="#d9b49c" stroke="#9e796b" stroke-width="4"/>
- <path d="M-8 66 Q-48 39 -43 81 Q-36 100 -8 91 M34 66 Q68 39 62 80 Q54 99 31 91" fill="#d9b49c" stroke="#9e796b" stroke-width="5"/>
- <circle cx="1" cy="88" r="7" fill="#26323b"/><circle cx="26" cy="88" r="7" fill="#26323b"/>
- <circle cx="3" cy="85" r="2.5" fill="#fff"/><circle cx="28" cy="85" r="2.5" fill="#fff"/>
- <ellipse cx="13" cy="112" rx="11" ry="7" fill="#8d5b56"/>
+ <!-- friendly sheep, right -->
+ <g transform="translate(276 264)">
+  <ellipse cx="94" cy="112" rx="91" ry="73" fill="url(#wool)" stroke="#b8c1bd" stroke-width="5"/>
+  <g fill="#fffef5" stroke="#d8ddd6" stroke-width="3">
+   <circle cx="40" cy="75" r="36"/><circle cx="82" cy="50" r="39"/><circle cx="127" cy="62" r="39"/><circle cx="159" cy="101" r="35"/><circle cx="133" cy="145" r="39"/><circle cx="82" cy="153" r="39"/><circle cx="36" cy="129" r="35"/>
+  </g>
+  <ellipse cx="9" cy="108" rx="38" ry="46" fill="#e2bda4" stroke="#a77e70" stroke-width="4"/>
+  <path d="M-12 76Q-50 46-48 91Q-38 111-12 102M34 77Q70 48 65 91Q57 111 33 103" fill="#e2bda4" stroke="#a77e70" stroke-width="5"/>
+  <circle cx="0" cy="99" r="8" fill="#27313a"/><circle cx="26" cy="99" r="8" fill="#27313a"/>
+  <circle cx="2" cy="96" r="3" fill="#fff"/><circle cx="28" cy="96" r="3" fill="#fff"/>
+  <ellipse cx="13" cy="124" rx="12" ry="8" fill="#95605a"/>
+ </g>
+ <!-- wooden title plaque -->
+ <path d="M143 25Q256 7 369 25L389 43 378 118Q256 137 134 118L123 43Z" fill="url(#wood)" stroke="#e8bb62" stroke-width="7"/>
+ <path d="M147 37Q256 23 365 37" fill="none" stroke="#d49a52" stroke-width="4" opacity=".8"/>
+ <text x="256" y="79" text-anchor="middle" font-family="sans-serif" font-size="43" font-weight="900" fill="#fff0a2" stroke="#633817" stroke-width="2" paint-order="stroke">گرگ و میش</text>
+ <text x="256" y="105" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#fff8e5">راز دشت سبز</text>
+ <!-- gold frame -->
+ <rect x="18" y="18" width="476" height="476" rx="94" fill="none" stroke="url(#gold)" stroke-width="15"/>
+ <rect x="31" y="31" width="450" height="450" rx="82" fill="none" stroke="#fff0a8" stroke-width="3" opacity=".8"/>
 </g>
-<rect x="18" y="18" width="476" height="476" rx="100" fill="none" stroke="url(#gold)" stroke-width="13"/>
-<path d="M118 43 L139 24 L160 43 L181 24 L202 43" fill="none" stroke="#ffe6a0" stroke-width="7" stroke-linecap="round" opacity=".9"/>
 </svg>
