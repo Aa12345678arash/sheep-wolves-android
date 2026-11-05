@@ -47,7 +47,7 @@ var camera_shake_time: float = 0.0
 var camera_shake_strength: float = 0.0
 var match_mode: String = "local"
 var human_side: String = "sheep"
-var ai_difficulty: int = 1
+var ai_difficulty: int = 3
 var ai_busy: bool = false
 var ai_turn_generation: int = 0
 var move_audio: AudioStreamPlayer
@@ -821,6 +821,7 @@ func _show_setup_menu() -> void:
 	mode_picker.custom_minimum_size = Vector2(0, 64)
 	side_picker.custom_minimum_size = Vector2(0, 64)
 	difficulty_picker.custom_minimum_size = Vector2(0, 64)
+	difficulty_picker.select(3) # Default to hard; educational/random play is opt-in.
 	column.add_child(difficulty_picker)
 	mode_picker.add_theme_font_size_override("font_size", 28)
 	side_picker.add_theme_font_size_override("font_size", 28)
