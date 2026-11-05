@@ -66,16 +66,23 @@ var touch_points: Dictionary = {}
 var last_pinch_distance: float = 0.0
 
 func _ready() -> void:
+	# WOLF-DUSK-036: paint the real startup screen before constructing the
+	# procedural 3D meadow and synthesizing the 16-second music buffer.
+	# These synchronous tasks previously ran before the first visible frame,
+	# leaving Android users on a dark screen during startup.
+	_build_hud()
+	_update_hud()
+	_show_setup_menu()
+	await get_tree().create_timer(0.25).timeout
+	if not is_inside_tree():
+		return
 	_build_audio()
 	_build_environment()
 	_build_board()
 	_build_camera()
 	_build_light()
-	_build_hud()
 	_refresh_board()
 	_update_hud()
-	# Expose match mode and AI difficulty on first launch.
-	_show_setup_menu()
 
 func _process(delta: float) -> void:
 	sheep_anim_clock += delta
