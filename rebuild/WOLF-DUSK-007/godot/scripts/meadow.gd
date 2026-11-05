@@ -736,9 +736,9 @@ func _show_setup_menu() -> void:
 	side_picker.custom_minimum_size = Vector2(0, 64)
 	difficulty_picker.custom_minimum_size = Vector2(0, 64)
 	column.add_child(difficulty_picker)
-	mode_picker.add_theme_font_size_override("font_size", 23)
-	side_picker.add_theme_font_size_override("font_size", 23)
-	difficulty_picker.add_theme_font_size_override("font_size", 23)
+	mode_picker.add_theme_font_size_override("font_size", 28)
+	side_picker.add_theme_font_size_override("font_size", 28)
+	difficulty_picker.add_theme_font_size_override("font_size", 28)
 	setup_music_button = Button.new()
 	setup_music_button.text = "موسیقی دشت: روشن"
 	setup_music_button.toggle_mode = true
