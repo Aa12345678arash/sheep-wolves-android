@@ -265,17 +265,19 @@ static func _future_capture_potential(state, node: int) -> float:
 
 # WOLF-DUSK-038: turn-based alpha-beta search for levels 2-4.
 static func _search_depth(difficulty: int) -> int:
-	return 2 if difficulty == 2 else (3 if difficulty == 3 else 4)
+	# Search complete turns more deeply; mobile limits are enforced by the shared budget.
+	return 4 if difficulty == 2 else (6 if difficulty == 3 else 8)
 
 static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionary:
 	var moves := _legal_search_moves(state, false)
 	if moves.is_empty():
 		return {}
+	moves = _order_search_moves(state, moves, true, ai_is_sheep)
 	var best_move: Dictionary = moves[0]
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
-	var context := {"nodes": 0, "node_limit": 4500 if depth == 3 else 8500, "start": Time.get_ticks_usec(), "time_limit": 90000}
+	var context := {"nodes": 0, "node_limit": 24000 if depth <= 4 else 36000, "start": Time.get_ticks_usec(), "time_limit": 240000}
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
@@ -299,6 +301,7 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 	if moves.is_empty():
 		return _evaluate_position(state, ai_is_sheep)
 	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
+	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep)
 	var value := -INF if maximizing else INF
 	for move in moves:
 		var child = _copy_state(state)
@@ -313,6 +316,24 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 		if beta <= alpha or _search_stopped(context):
 			break
 	return value
+
+static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool) -> Array[Dictionary]:
+	# Evaluate children before exploring them so alpha-beta sees forcing captures,
+	# immediate escapes and blocking moves first instead of wasting its mobile budget.
+	var scored: Array[Dictionary] = []
+	for move in moves:
+		var child = _copy_state(state)
+		_apply_search_move(child, move)
+		scored.append({"move": move, "score": _evaluate_position(child, ai_is_sheep)})
+	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if maximizing:
+			return float(a.score) > float(b.score)
+		return float(a.score) < float(b.score)
+	)
+	var ordered: Array[Dictionary] = []
+	for entry in scored:
+		ordered.append(entry.move)
+	return ordered
 
 static func _legal_search_moves(state, include_chain_decline: bool) -> Array[Dictionary]:
 	var moves: Array[Dictionary] = []
@@ -360,20 +381,45 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 		return 100000.0 if ai_is_sheep else -100000.0
 	var sheep_count := float(state.sheep_total())
 	var sheep_mobility := 0.0
+	var sheep_progress := 0.0
+	var blocked_sheep := 0.0
 	var wolf_mobility := 0.0
 	var capture_threats := 0.0
 	var blocked_wolves := 0.0
+	var wolf_centrality := 0.0
+	var nearest_wolf_distance := 0.0
+	var sheep_nodes := 0
+	var wolf_nodes := 0
 	for node in range(BoardGraph.NODE_COUNT):
 		if state.sheep[node] > 0:
-			sheep_mobility += float(state.sheep_moves(node).size()) * float(state.sheep[node])
+			sheep_nodes += 1
+			var legal_sheep_moves: Array[int] = state.sheep_moves(node)
+			sheep_mobility += float(legal_sheep_moves.size())
+			sheep_progress += float(4 - int(node / 5)) * float(state.sheep[node])
+			if legal_sheep_moves.is_empty():
+				blocked_sheep += float(state.sheep[node])
 		if state.wolves[node]:
+			wolf_nodes += 1
 			var wm: int = state.wolf_moves(node).size()
 			var captures: int = state.capture_options(node).size()
 			wolf_mobility += float(wm)
 			capture_threats += float(captures)
+			wolf_centrality += _centrality(node)
 			if wm == 0 and captures == 0:
 				blocked_wolves += 1.0
-	var sheep_score := sheep_count * 7.0 + sheep_mobility * 0.7 + blocked_wolves * 34.0
-	var wolf_score := (25.0 - sheep_count) * 11.0 + capture_threats * 9.0 + wolf_mobility * 1.2
+	# Reward wolves for closing distance, but do not let proximity outweigh legal tactics.
+	if wolf_nodes > 0 and sheep_nodes > 0:
+		for wolf_node in range(BoardGraph.NODE_COUNT):
+			if not state.wolves[wolf_node]:
+				continue
+			var closest := INF
+			for sheep_node in range(BoardGraph.NODE_COUNT):
+				if state.sheep[sheep_node] <= 0:
+					continue
+				var distance := Vector2(float((wolf_node % 5) - (sheep_node % 5)), float(int(wolf_node / 5) - int(sheep_node / 5))).length()
+				closest = minf(closest, distance)
+			nearest_wolf_distance += closest
+	var sheep_score := sheep_count * 9.0 + sheep_mobility * 1.7 + sheep_progress * 0.55 - blocked_sheep * 3.0 + blocked_wolves * 48.0
+	var wolf_score := (25.0 - sheep_count) * 17.0 + capture_threats * 22.0 + wolf_mobility * 1.1 + wolf_centrality * 1.4 - nearest_wolf_distance * 1.8
 	var score := sheep_score - wolf_score
 	return score if ai_is_sheep else -score
