@@ -875,7 +875,11 @@ func _show_setup_menu() -> void:
 				player_two_name = "رایانه (گرگ‌ها)"
 			else:
 				player_one_name = "رایانه (گوسفندها)"
-		player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s" % [player_one_name, player_two_name]
+		var opponent_level_text := ""
+		if match_mode == "ai":
+			var level_names := ["آموزشی", "آسان", "متوسط", "سخت", "استاد"]
+			opponent_level_text = "\nسطح هوش مصنوعی: %s" % level_names[clampi(ai_difficulty, 0, 4)]
+		player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s%s" % [player_one_name, player_two_name, opponent_level_text]
 		setup_layer.queue_free()
 		setup_layer = null
 		feedback_message = "مسابقه آغاز شد؛ گوسفندها شروع می‌کنند."
