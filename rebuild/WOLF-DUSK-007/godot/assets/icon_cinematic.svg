@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#101a3a"/><stop offset=".48" stop-color="#51476a"/><stop offset="1" stop-color="#e59b58"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff3bb"/><stop offset=".5" stop-color="#e4ad42"/><stop offset="1" stop-color="#8f4e1c"/></linearGradient>
+ <linearGradient id="fur" x2="0" y2="1"><stop stop-color="#9eafbb"/><stop offset="1" stop-color="#34495d"/></linearGradient>
+ <linearGradient id="wool" x2="0" y2="1"><stop stop-color="#fffef1"/><stop offset="1" stop-color="#d8d9ce"/></linearGradient>
+ <linearGradient id="ground" x2="0" y2="1"><stop stop-color="#557b4a"/><stop offset="1" stop-color="#183c2d"/></linearGradient>
+ <clipPath id="frame"><rect x="14" y="14" width="484" height="484" rx="88"/></clipPath>
+</defs>
+<g clip-path="url(#frame)">
+ <rect width="512" height="512" fill="url(#sky)"/>
+ <circle cx="390" cy="105" r="57" fill="#fff0bd"/><circle cx="390" cy="105" r="76" fill="#fff0bd" opacity=".12"/>
+ <path d="M0 250L65 165 117 220 196 128 272 224 345 156 422 221 512 158V365H0Z" fill="#293d58"/>
+ <path d="M0 286Q95 220 188 280T365 267T512 277V512H0Z" fill="#496b48"/>
+ <path d="M0 345Q130 270 250 340T512 325V512H0Z" fill="url(#ground)"/>
+ <g fill="#1c3c32"><path d="M28 300l27-89 28 89H66l24 40H20l24-40z"/><path d="M445 296l26-83 27 83h-17l22 37h-59l22-37z"/><path d="M365 306l20-63 21 63h-13l17 29h-49l17-29z"/></g>
+ <path d="M-12 492Q100 404 224 447T530 420" fill="none" stroke="#c4a071" stroke-width="31"/>
+ <path d="M-12 492Q100 404 224 447T530 420" fill="none" stroke="#6a4a2e" stroke-width="7" stroke-dasharray="4 22"/>
+ <!-- wolf -->
+ <g transform="translate(25 185)">
+  <path d="M28 93L8 5 84 51Q133 24 181 54L239 17 221 112Q247 151 205 189L183 239H151L148 190Q103 213 63 183L56 239H25L29 168Q-2 137 28 93Z" fill="url(#fur)" stroke="#24364b" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M22 26L65 65 48 106Z M226 37L184 73 201 108Z" fill="#d58e85"/>
+  <path d="M49 119Q126 82 207 119Q190 178 126 185Q66 178 49 119Z" fill="#e8d8c4"/>
+  <path d="M74 124L107 133 88 145Z M178 124L147 133 166 145Z" fill="#fff1d4"/>
+  <ellipse cx="84" cy="105" rx="13" ry="15" fill="#ffd15d"/><ellipse cx="180" cy="105" rx="13" ry="15" fill="#ffd15d"/>
+  <circle cx="85" cy="106" r="6" fill="#17212b"/><circle cx="179" cy="106" r="6" fill="#17212b"/>
+  <path d="M107 165Q126 151 147 165Q145 190 126 192Q108 190 107 165Z" fill="#202a31"/>
+  <path d="M105 184L114 198 122 187 131 199 141 184" fill="#fff7e8"/>
+ </g>
+ <!-- sheep flock -->
+ <g transform="translate(277 278)">
+  <ellipse cx="95" cy="105" rx="91" ry="73" fill="url(#wool)" stroke="#c6c9c1" stroke-width="5"/>
+  <g fill="#fffef5" stroke="#d8ddd6" stroke-width="3"><circle cx="41" cy="70" r="36"/><circle cx="83" cy="46" r="39"/><circle cx="128" cy="59" r="39"/><circle cx="160" cy="98" r="35"/><circle cx="134" cy="139" r="39"/><circle cx="82" cy="148" r="39"/><circle cx="37" cy="124" r="35"/></g>
+  <ellipse cx="10" cy="101" rx="38" ry="46" fill="#dfb99f" stroke="#a77e70" stroke-width="4"/>
+  <path d="M-12 69Q-50 39-48 84Q-38 104-12 95M34 70Q70 41 65 84Q57 104 33 96" fill="#dfb99f" stroke="#a77e70" stroke-width="5"/>
+  <circle cx="0" cy="92" r="8" fill="#27313a"/><circle cx="26" cy="92" r="8" fill="#27313a"/>
+  <circle cx="2" cy="89" r="3" fill="#fff"/><circle cx="28" cy="89" r="3" fill="#fff"/>
+  <ellipse cx="13" cy="117" rx="12" ry="8" fill="#95605a"/>
+ </g>
+ <path d="M112 20Q256 0 400 20L417 38 407 112Q256 131 105 112L95 38Z" fill="#59371f" stroke="#e9bd67" stroke-width="7"/>
+ <text x="256" y="72" text-anchor="middle" font-family="sans-serif" font-size="43" font-weight="900" fill="#fff0a2" stroke="#633817" stroke-width="2" paint-order="stroke">گرگ و میش</text>
+ <text x="256" y="99" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#fff8e5">راز دشت سبز</text>
+ <rect x="14" y="14" width="484" height="484" rx="88" fill="none" stroke="url(#gold)" stroke-width="15"/>
+ <rect x="27" y="27" width="458" height="458" rx="77" fill="none" stroke="#fff0a8" stroke-width="3" opacity=".8"/>
+</g></svg>
