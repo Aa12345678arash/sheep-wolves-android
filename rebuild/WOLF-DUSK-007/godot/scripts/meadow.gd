@@ -708,30 +708,37 @@ func _show_setup_menu() -> void:
 	var subtitle := Label.new()
 	subtitle.text = "راز دشت سبز | نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	subtitle.add_theme_font_size_override("font_size", 28)
 	subtitle.add_theme_color_override("font_color", Color(0.98, 0.95, 0.83))
 	column.add_child(subtitle)
 	var sheep_name := LineEdit.new()
+	sheep_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
 	sheep_name.custom_minimum_size = Vector2(0, 70)
 	sheep_name.add_theme_font_size_override("font_size", 28)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
+	wolf_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
 	wolf_name.custom_minimum_size = Vector2(0, 70)
 	wolf_name.add_theme_font_size_override("font_size", 28)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
+	mode_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
 	mode_picker.add_item("بازی با رایانه (هوش مصنوعی)", 1)
 	column.add_child(mode_picker)
 	var side_picker := OptionButton.new()
+	side_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_picker.add_item("من گوسفندها باشم", 0)
 	side_picker.add_item("من گرگ‌ها باشم", 1)
 	column.add_child(side_picker)
 	var difficulty_picker := OptionButton.new()
+	difficulty_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	difficulty_picker.add_item("هوش مصنوعی: آسان", 0)
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 1)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 2)
@@ -743,6 +750,7 @@ func _show_setup_menu() -> void:
 	side_picker.add_theme_font_size_override("font_size", 28)
 	difficulty_picker.add_theme_font_size_override("font_size", 28)
 	setup_music_button = Button.new()
+	setup_music_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	setup_music_button.text = "موسیقی دشت: روشن"
 	setup_music_button.toggle_mode = true
 	setup_music_button.button_pressed = true
@@ -751,6 +759,7 @@ func _show_setup_menu() -> void:
 	setup_music_button.toggled.connect(_toggle_meadow_music)
 	column.add_child(setup_music_button)
 	var start_button := Button.new()
+	start_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	start_button.text = "شروع مسابقه"
 	start_button.custom_minimum_size = Vector2(0, 82)
 	start_button.add_theme_font_size_override("font_size", 34)
