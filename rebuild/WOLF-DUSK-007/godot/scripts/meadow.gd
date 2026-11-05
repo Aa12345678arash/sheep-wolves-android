@@ -716,12 +716,15 @@ func _show_setup_menu() -> void:
 	panel.offset_top = 0.0
 	panel.offset_bottom = 0.0
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.025, 0.075, 0.055, 0.56)
-	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
-	panel_style.set_border_width_all(3)
-	panel_style.set_corner_radius_all(24)
-	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.48)
-	panel_style.shadow_size = 12
+	# WOLF-DUSK-037: the poster must remain the dominant full-screen artwork.
+	# The previous full-rect panel tinted almost the entire image and made the
+	# start screen look unchanged. Keep only a subtle glass-like veil behind controls.
+	panel_style.bg_color = Color(0.018, 0.045, 0.032, 0.16)
+	panel_style.border_color = Color(0.88, 0.72, 0.42, 0.52)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(20)
+	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.22)
+	panel_style.shadow_size = 5
 	# Narrow phones need compact inner gutters so the panel's minimum width
 	# cannot exceed the visible viewport when large Persian controls are laid out.
 	var inner_gutter := 12.0 if viewport_size.x < 420.0 else 24.0
