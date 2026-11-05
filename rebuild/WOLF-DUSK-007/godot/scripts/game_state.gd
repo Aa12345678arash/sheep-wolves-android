@@ -76,7 +76,8 @@ func capture_options(from: int) -> Array[Dictionary]:
 	var start_row: int = int(from / 5)
 	var start_col: int = from % 5
 	for middle in adjacency[from]:
-		if sheep[middle] <= 0:
+		# A jump is legal only over exactly one sheep.
+		if sheep[middle] != 1:
 			continue
 		var middle_row: int = int(middle / 5)
 		var middle_col: int = middle % 5
