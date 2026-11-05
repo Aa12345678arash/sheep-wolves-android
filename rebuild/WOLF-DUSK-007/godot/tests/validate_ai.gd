@@ -7,7 +7,7 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	for difficulty in range(3):
+	for difficulty in range(5):
 		var state = GameState.new()
 		var placed: Array[int] = []
 		for _i in range(3):
@@ -66,5 +66,5 @@ func _run() -> void:
 		assert(chain_state.sheep == sheep_before and chain_state.wolves == wolves_before, "Chain selection mutated game state")
 		assert(chain_state.move_wolf(int(chain_action.from), int(chain_action.to)) == "captured", "Rules rejected AI second capture")
 		assert(chain_state.turn == GameState.Turn.SHEEP, "Second capture must finish the wolf turn")
-	print("WOLF-DUSK-AI-015 checks passed: all difficulty levels choose legal placements, sheep moves and wolf moves without mutating state.")
+	print("WOLF-DUSK-AI-015 checks passed: all five difficulty levels choose legal placements, sheep moves and wolf moves without mutating state.")
 	quit()
