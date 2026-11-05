@@ -44,7 +44,7 @@ func _run() -> void:
 
 	# During an optional chain, every difficulty must keep the same wolf and choose
 	# the only legal second capture. Selection itself must not mutate the board.
-	for difficulty in range(3):
+	for difficulty in range(5):
 		var chain_state = GameState.new()
 		for node in range(25):
 			chain_state.sheep[node] = 0
