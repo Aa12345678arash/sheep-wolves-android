@@ -78,6 +78,20 @@ func _initialize() -> void:
 		assert(geometry_found)
 		assert(geometry_state.move_wolf(int(geometry[0]), int(geometry[2])) in ["captured", "captured_chain_available", "won"])
 
+	# WOLF-DUSK-030: stacked sheep block a jump even when the landing point is empty.
+	for stack_size in [2, 3, 4, 5]:
+		var stacked_capture_state = GameState.new()
+		for i in range(25):
+			stacked_capture_state.sheep[i] = 0
+			stacked_capture_state.wolves[i] = false
+		stacked_capture_state.wolves[0] = true
+		stacked_capture_state.sheep[1] = stack_size
+		stacked_capture_state.turn = GameState.Turn.WOLVES
+		assert(stacked_capture_state.capture_options(0).is_empty())
+		assert(stacked_capture_state.move_wolf(0, 2) == "invalid")
+		assert(stacked_capture_state.wolves[0] and not stacked_capture_state.wolves[2])
+		assert(stacked_capture_state.sheep[1] == stack_size)
+
 	# A connected but non-collinear landing point is not a valid capture.
 	var non_collinear_state = GameState.new()
 	for i in range(25):
