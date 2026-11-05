@@ -96,3 +96,5 @@ jobs:
           path: wolf-dusk-026-preview.apk
           if-no-files-found: error
           retention-days: 14
+
+# Re-run validation after the narrow-phone panel width fix.
