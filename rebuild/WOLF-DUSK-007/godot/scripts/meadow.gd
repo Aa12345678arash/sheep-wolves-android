@@ -624,7 +624,7 @@ func _show_setup_menu() -> void:
 	add_child(setup_layer)
 	var shade := ColorRect.new()
 	# Keep the meadow visible but prevent the HUD behind the setup screen from competing.
-	shade.color = Color(0.008, 0.025, 0.018, 0.48)
+	shade.color = Color(0.008, 0.025, 0.018, 0.34)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
 	var poster := TextureRect.new()
@@ -657,7 +657,7 @@ func _show_setup_menu() -> void:
 	panel.offset_top = 0.0
 	panel.offset_bottom = 0.0
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.025, 0.075, 0.055, 0.84)
+	panel_style.bg_color = Color(0.025, 0.075, 0.055, 0.56)
 	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
 	panel_style.set_border_width_all(3)
 	panel_style.set_corner_radius_all(24)
@@ -695,7 +695,7 @@ func _show_setup_menu() -> void:
 	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	column.add_child(emblem)
 	var heading := Label.new()
-	heading.text = "گرگ و میش | راز دشت سبز"
+	heading.text = "گرگ و میش"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 42)
 	heading.add_theme_color_override("font_color", Color(1.0, 0.88, 0.48))
@@ -703,7 +703,7 @@ func _show_setup_menu() -> void:
 	heading.add_theme_constant_override("outline_size", 3)
 	column.add_child(heading)
 	var subtitle := Label.new()
-	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
+	subtitle.text = "راز دشت سبز | نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 28)
 	subtitle.add_theme_color_override("font_color", Color(0.98, 0.95, 0.83))
