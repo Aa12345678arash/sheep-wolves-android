@@ -11,6 +11,7 @@ on:
       - WOLF-DUSK-021-BOARD-NODE-EXPANSION
       - WOLF-DUSK-022-DIRECT-LAUNCH-ACCESSIBLE-UI
       - WOLF-DUSK-023-COLORFUL-FULLSCREEN-HUD
+      - WOLF-DUSK-024-RESPONSIVE-PLAY-AREA
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-011-mobile.yml'
@@ -82,14 +83,14 @@ jobs:
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_player_control.gd
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_ui_readability.gd
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_board_pads.gd
-      - name: Export Android debug APK
+      - name: Export WOLF-DUSK-024 Android debug APK
         run: |
-          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-022-preview.apk"
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-024-preview.apk"
           test -s "$GITHUB_WORKSPACE/wolf-dusk-022-preview.apk"
-      - name: Upload WOLF-DUSK-011 installable debug APK
+      - name: Upload WOLF-DUSK-024 installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: wolf-dusk-022-android-preview
+          name: wolf-dusk-024-android-preview
           path: wolf-dusk-022-preview.apk
           if-no-files-found: error
           retention-days: 14
