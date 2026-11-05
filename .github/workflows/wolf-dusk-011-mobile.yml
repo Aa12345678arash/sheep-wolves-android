@@ -10,6 +10,7 @@ on:
       - WOLF-DUSK-AI-019-TOUCH-TARGETS
       - WOLF-DUSK-021-BOARD-NODE-EXPANSION
       - WOLF-DUSK-022-DIRECT-LAUNCH-ACCESSIBLE-UI
+      - WOLF-DUSK-023-COLORFUL-FULLSCREEN-HUD
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-011-mobile.yml'
