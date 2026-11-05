@@ -289,6 +289,7 @@ func _build_environment() -> void:
 	for spot in rock_spots:
 		_add_meadow_rock(spot)
 	_build_meadow_details()
+	_build_stone_approach()
 
 func _build_board_frame() -> void:
 	# A low timber frame gives the playable field a clear, tactile boundary.
@@ -383,6 +384,26 @@ func _build_meadow_details() -> void:
 	flower_instance.multimesh = flower_batch
 	flower_instance.material_override = flower_material
 	add_child(flower_instance)
+
+
+func _build_stone_approach() -> void:
+	# A short hand-laid stone approach frames the front of the meadow board.
+	# All slabs stay beyond the playable 5x5 field and use shared materials.
+	var stone_mesh := BoxMesh.new()
+	stone_mesh.size = Vector3(0.78, 0.13, 0.58)
+	var stone_colors := [Color(0.48, 0.47, 0.40), Color(0.57, 0.53, 0.44), Color(0.40, 0.42, 0.38)]
+	var stones := 9
+	for i in range(stones):
+		var t := float(i) / float(stones - 1)
+		var slab := MeshInstance3D.new()
+		slab.mesh = stone_mesh
+		slab.material_override = _material(stone_colors[i % stone_colors.size()])
+		var x := lerpf(-3.35, 3.35, t)
+		var z := 7.35 - sin(t * PI) * 0.62
+		slab.position = Vector3(x, -0.015, z)
+		slab.rotation.y = sin(float(i) * 1.7) * 0.10
+		slab.scale = Vector3(1.0 + float(i % 3) * 0.08, 1.0, 0.92 + float(i % 2) * 0.12)
+		add_child(slab)
 
 func _add_meadow_tree(at: Vector3) -> void:
 	var trunk := MeshInstance3D.new()
@@ -1330,6 +1351,13 @@ func _add_sheep_piece(parent: Node3D, node_index: int, count: int, highlight_one
 		body.position = Vector3(-0.015, 0.36, 0.0)
 		body.scale = Vector3(1.12, 0.94, 0.92)
 		pivot.add_child(body)
+		# Two side fleece puffs make the sheep read as a fuller, soft 3D character.
+		for side in [-1.0, 1.0]:
+			var side_fleece := MeshInstance3D.new()
+			side_fleece.mesh = _cached_sphere(0.105, 0.22)
+			side_fleece.material_override = wool_light
+			side_fleece.position = Vector3(-0.07, 0.405, side * 0.155)
+			pivot.add_child(side_fleece)
 
 		var curl_positions := [
 			Vector3(-0.11, 0.47, -0.105),
@@ -1511,6 +1539,14 @@ func _add_wolf_piece(parent: Node3D, node_index: int) -> void:
 	chest.material_override = fur_light
 	chest.position = Vector3(0.15, 0.39, 0.0)
 	pivot.add_child(chest)
+	# Layered shoulder ruff gives the wolf a clearer, more dimensional silhouette.
+	for side in [-1.0, 1.0]:
+		var ruff := MeshInstance3D.new()
+		ruff.mesh = _cached_sphere(0.145, 0.28)
+		ruff.material_override = fur_light
+		ruff.position = Vector3(-0.015, 0.47, side * 0.19)
+		ruff.scale = Vector3(1.0, 1.0, 0.82)
+		pivot.add_child(ruff)
 
 	var neck := MeshInstance3D.new()
 	var neck_mesh := _cached_sphere(0.17, 0.30)
