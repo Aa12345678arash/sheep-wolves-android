@@ -10,6 +10,8 @@ func _run() -> void:
 	root.size = Vector2i(360, 740)
 	var meadow = Meadow.new()
 	root.add_child(meadow)
+	# Allow the CanvasLayer controls to enter the tree and receive their first layout pass.
+	await process_frame
 	await process_frame
 
 	assert(meadow.player_names_label.get_theme_font_size("font_size") >= 24, "Player names must be readable")
@@ -39,9 +41,15 @@ func _run() -> void:
 		assert((option as OptionButton).custom_minimum_size.y >= 64.0, "Selector touch targets must remain comfortable")
 	assert(is_instance_valid(meadow.setup_layer), "Settings panel must open on launch")
 	assert(meadow.setup_layer.get_child_count() >= 2, "Settings overlay must contain shade and panel")
-	var panels: Array[Node] = meadow.setup_layer.find_children("*", "PanelContainer", true, false)
-	assert(panels.size() == 1, "Settings panel container must exist exactly once")
-	var panel := panels[0] as PanelContainer
+	# The startup panel is a direct child of the setup CanvasLayer. Inspect direct
+	# children rather than recursively matching generated control names; this avoids
+	# false negatives when Godot assigns an automatic node name during construction.
+	var panels: Array[PanelContainer] = []
+	for child in meadow.setup_layer.get_children():
+		if child is PanelContainer:
+			panels.append(child as PanelContainer)
+	assert(panels.size() == 1, "Settings panel container must exist exactly once as a direct setup-layer child")
+	var panel := panels[0]
 	var viewport_size := meadow.get_viewport().get_visible_rect().size
 	assert(panel.size.x <= viewport_size.x + 1.0, "Settings panel must fit the available phone width")
 	assert(panel.size.y <= viewport_size.y + 1.0, "Settings panel must fit the available phone height")
