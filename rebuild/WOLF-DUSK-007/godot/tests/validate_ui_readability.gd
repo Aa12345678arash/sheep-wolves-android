@@ -51,6 +51,7 @@ func _run() -> void:
 	assert(panels.size() == 1, "Settings panel container must exist exactly once as a direct setup-layer child")
 	var panel := panels[0]
 	var viewport_size := meadow.get_viewport().get_visible_rect().size
+	print("READABILITY_DIAGNOSTIC viewport=", viewport_size, " panel_size=", panel.size, " panel_min=", panel.get_combined_minimum_size(), " offsets=", [panel.offset_left, panel.offset_right, panel.offset_top, panel.offset_bottom])
 	assert(panel.size.x <= viewport_size.x + 1.0, "Settings panel must fit the available phone width")
 	assert(panel.size.y <= viewport_size.y + 1.0, "Settings panel must fit the available phone height")
 	assert(panel.size.y >= viewport_size.y - 40.0, "Settings panel should use most of the available screen for easier access")
