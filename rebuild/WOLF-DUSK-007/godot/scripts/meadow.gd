@@ -56,6 +56,7 @@ var victory_audio: AudioStreamPlayer
 var music_audio: AudioStreamPlayer
 var music_button: Button
 var setup_music_button: Button
+var music_enabled: bool = true
 var announced_winner: String = ""
 var celebration_layer: CanvasLayer
 # Two-finger camera gestures are deliberately separate from one-finger board taps.
@@ -83,6 +84,8 @@ func _ready() -> void:
 	_build_light()
 	_refresh_board()
 	_update_hud()
+	# Build the long music buffer only after the first usable screen is visible.
+	call_deferred("_prepare_meadow_music")
 
 func _process(delta: float) -> void:
 	sheep_anim_clock += delta
@@ -148,11 +151,17 @@ func _build_audio() -> void:
 	music_audio.volume_db = -5.0
 	music_audio.bus = "Master"
 	music_audio.process_mode = Node.PROCESS_MODE_ALWAYS
-	music_audio.stream = _make_meadow_music()
 	add_child(music_audio)
-	music_audio.play()
 
-func _make_meadow_music() -> AudioStreamWAV:
+func _prepare_meadow_music() -> void:
+	var stream: AudioStreamWAV = await _make_meadow_music_async()
+	if not is_inside_tree() or music_audio == null:
+		return
+	music_audio.stream = stream
+	if music_enabled:
+		music_audio.play()
+
+func _make_meadow_music_async() -> AudioStreamWAV:
 	var sample_rate := 22050
 	var sample_count := sample_rate * 16
 	var pcm := PackedByteArray()
@@ -164,6 +173,8 @@ func _make_meadow_music() -> AudioStreamWAV:
 		[87.31, 110.00, 130.81], [98.00, 123.47, 146.83]
 	]
 	for sample_index in range(sample_count):
+		if sample_index > 0 and sample_index % 8192 == 0:
+			await get_tree().process_frame
 		var time := float(sample_index) / float(sample_rate)
 		var beat_time := fmod(time, 2.0)
 		var chord_index := mini(int(time / 2.0), chords.size() - 1)
@@ -206,6 +217,7 @@ func _make_sfx(frequencies: Array, duration: float, amplitude: float, decay: flo
 	return stream
 
 func _toggle_meadow_music(enabled: bool) -> void:
+	music_enabled = enabled
 	if music_audio == null:
 		return
 	if enabled:
