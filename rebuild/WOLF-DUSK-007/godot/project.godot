@@ -4,7 +4,8 @@ config_version=5
 [application]
 config/name="گرگ و میش"
 config/icon="res://assets/icon_cinematic.svg"
-boot_splash/show_image=false
+boot_splash/show_image=true
+boot_splash/image="res://assets/start_poster.svg"
 boot_splash/fullsize=true
 boot_splash/bg_color=Color(0.035, 0.06, 0.12, 1)
 config/description="بازی گرگ و میش؛ راز دشت سبز"
