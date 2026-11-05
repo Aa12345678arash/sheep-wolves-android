@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#101d3c"/><stop offset=".45" stop-color="#d27b50"/><stop offset=".72" stop-color="#f0c27b"/><stop offset="1" stop-color="#6b9657"/></linearGradient>
+ <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#7eaa64"/><stop offset="1" stop-color="#244d37"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff1b5"/><stop offset="1" stop-color="#d28a32"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#fff4c7"/><stop offset="1" stop-color="#f6bd69" stop-opacity="0"/></radialGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="900" height="1600" fill="url(#sky)"/>
+<circle cx="690" cy="330" r="260" fill="url(#sun)"/><circle cx="690" cy="330" r="92" fill="#ffe7a4" opacity=".92"/>
+<path d="M0 710 130 570 240 680 390 485 520 680 655 520 900 735V1600H0Z" fill="#314b54" opacity=".7"/>
+<path d="M0 850Q180 690 360 830T720 790T1100 850V1600H0Z" fill="#6f965b"/>
+<path d="M0 1030Q180 840 390 980T790 910T1100 980V1600H0Z" fill="url(#hill)"/>
+<path d="M0 1210Q230 1000 460 1160T900 1090V1600H0Z" fill="#244b35"/>
+<path d="M-50 1500Q180 1270 420 1400T960 1300" fill="none" stroke="#c5a36b" stroke-width="68" opacity=".9"/>
+<path d="M-50 1500Q180 1270 420 1400T960 1300" fill="none" stroke="#e4c58d" stroke-width="6" stroke-dasharray="18 22" opacity=".8"/>
+<g fill="#203d2d" opacity=".7"><path d="M80 1060l45-150 45 150zM140 1060l55-190 55 190zM740 1010l42-145 42 145zM795 1030l54-185 54 185z"/></g>
+<!-- wolf silhouette -->
+<g transform="translate(115 865) scale(1.55)" fill="#202c39" stroke="#111d2a" stroke-width="8" stroke-linejoin="round">
+ <path d="M32 105 6 6 91 57Q150 28 215 61L288 10 267 119Q302 172 264 226L244 310 205 310 197 246Q139 274 82 243L74 310 34 310 37 224Q0 172 32 105Z"/>
+ <path d="M78 143Q145 107 238 145Q217 214 157 221Q99 214 78 143Z" fill="#d5c9b4" stroke="none"/>
+ <ellipse cx="112" cy="123" rx="12" ry="17" fill="#ffd15e" stroke="none"/><ellipse cx="215" cy="123" rx="12" ry="17" fill="#ffd15e" stroke="none"/>
+</g>
+<!-- flock -->
+<g transform="translate(480 1010)">
+ <g fill="#f4f0dc" stroke="#c6cbbd" stroke-width="5">
+  <ellipse cx="145" cy="165" rx="116" ry="88"/><circle cx="77" cy="122" r="50"/><circle cx="139" cy="92" r="55"/><circle cx="202" cy="120" r="51"/><circle cx="220" cy="181" r="48"/><circle cx="156" cy="224" r="52"/><circle cx="88" cy="215" r="48"/>
+ </g>
+ <path d="M42 154Q-4 121 6 180Q11 236 70 232L93 192Z" fill="#c9a48a" stroke="#9b7866" stroke-width="5"/>
+ <circle cx="38" cy="166" r="7" fill="#26323b"/><circle cx="69" cy="166" r="7" fill="#26323b"/>
+ <path d="M20 210l-5 80M72 220l-2 70M195 224l8 66" stroke="#eee8d8" stroke-width="17" stroke-linecap="round"/>
+</g>
+<g transform="translate(635 1190) scale(.72)" fill="#f5f0df" stroke="#c6cbbd" stroke-width="6">
+ <ellipse cx="110" cy="120" rx="100" ry="76"/><circle cx="54" cy="82" r="43"/><circle cx="111" cy="54" r="45"/><circle cx="164" cy="85" r="43"/><path d="M20 125Q-20 96 -16 151Q-7 190 42 180Z" fill="#c9a48a"/>
+</g>
+<text x="450" y="155" text-anchor="middle" fill="#fff1c9" font-family="sans-serif" font-size="27" letter-spacing="5">THE SECRET OF THE GREEN MEADOW</text>
+<text x="450" y="260" text-anchor="middle" fill="url(#gold)" stroke="#3a2b21" stroke-width="5" paint-order="stroke" font-family="sans-serif" font-size="94" font-weight="bold">گرگ و میش</text>
+<text x="450" y="320" text-anchor="middle" fill="#fff4d6" stroke="#3b3526" stroke-width="2" paint-order="stroke" font-family="sans-serif" font-size="37">راز دشت سبز</text>
+<rect x="95" y="1420" width="710" height="2" fill="#f3d89d" opacity=".6"/>
+<text x="450" y="1480" text-anchor="middle" fill="#fff0c8" font-family="sans-serif" font-size="26">یک نبرد هوشمندانه در دل طبیعت</text>
+</svg>
