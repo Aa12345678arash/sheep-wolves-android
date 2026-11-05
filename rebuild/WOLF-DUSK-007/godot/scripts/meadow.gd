@@ -717,7 +717,7 @@ func _show_setup_menu() -> void:
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
-	wolf_name.custom_minimum_size = Vector2(0, 64)
+	wolf_name.custom_minimum_size = Vector2(0, 70)
 	wolf_name.add_theme_font_size_override("font_size", 28)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
