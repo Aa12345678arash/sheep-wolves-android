@@ -663,10 +663,19 @@ func _show_setup_menu() -> void:
 	panel.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Give the content column the full usable screen height. The two flexible
+	# spacers balance the menu vertically instead of leaving all unused space below.
+	column.custom_minimum_size = Vector2(0.0, maxf(viewport_size.y - 52.0, 0.0))
 	column.add_theme_constant_override("separation", 12)
 	column.add_theme_font_size_override("font_size", 24)
 	column.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86))
 	scroll.add_child(column)
+	var top_spacer := Control.new()
+	top_spacer.name = "StartScreenTopSpacer"
+	top_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	top_spacer.custom_minimum_size.y = 1.0
+	column.add_child(top_spacer)
 	var emblem := TextureRect.new()
 	emblem.texture = load("res://assets/title_emblem.svg")
 	emblem.custom_minimum_size = Vector2(0, clampf(viewport_size.y * 0.13, 76.0, 116.0))
@@ -777,6 +786,11 @@ func _show_setup_menu() -> void:
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_font_size_override("font_size", 20)
 	column.add_child(note)
+	var bottom_spacer := Control.new()
+	bottom_spacer.name = "StartScreenBottomSpacer"
+	bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	bottom_spacer.custom_minimum_size.y = 1.0
+	column.add_child(bottom_spacer)
 
 func _is_ai_turn() -> bool:
 	if match_mode != "ai" or game.turn == GameState.Turn.FINISHED:
