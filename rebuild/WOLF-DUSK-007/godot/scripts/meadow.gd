@@ -255,7 +255,7 @@ func _build_environment() -> void:
 
 	var ground := MeshInstance3D.new()
 	var mesh := PlaneMesh.new()
-	mesh.size = Vector2(18.0, 18.0)
+	mesh.size = Vector2(26.0, 26.0)
 	ground.mesh = mesh
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.20, 0.38, 0.20)
@@ -290,6 +290,7 @@ func _build_environment() -> void:
 		_add_meadow_rock(spot)
 	_build_meadow_details()
 	_build_stone_approach()
+	_build_distant_meadow_ridges()
 
 func _build_board_frame() -> void:
 	# A low timber frame gives the playable field a clear, tactile boundary.
@@ -333,7 +334,7 @@ func _build_meadow_details() -> void:
 	grass_batch.transform_format = MultiMesh.TRANSFORM_3D
 	grass_batch.use_colors = true
 	grass_batch.mesh = grass_mesh
-	grass_batch.instance_count = 240
+	grass_batch.instance_count = 520
 	for i in range(grass_batch.instance_count):
 		var x := rng.randf_range(-8.7, 8.7)
 		var z := rng.randf_range(-8.7, 8.7)
@@ -364,7 +365,7 @@ func _build_meadow_details() -> void:
 	flower_batch.transform_format = MultiMesh.TRANSFORM_3D
 	flower_batch.use_colors = true
 	flower_batch.mesh = flower_mesh
-	flower_batch.instance_count = 42
+	flower_batch.instance_count = 96
 	var flower_colors := [
 		Color(0.96, 0.83, 0.45), Color(0.91, 0.91, 0.82),
 		Color(0.78, 0.55, 0.67), Color(0.91, 0.68, 0.39)
@@ -385,6 +386,29 @@ func _build_meadow_details() -> void:
 	flower_instance.material_override = flower_material
 	add_child(flower_instance)
 
+
+func _build_distant_meadow_ridges() -> void:
+	# Broad, softly lit low-poly hills make the playfield read as an outdoor valley.
+	var ridge_mesh := SphereMesh.new()
+	ridge_mesh.radius = 1.0
+	ridge_mesh.height = 2.0
+	ridge_mesh.radial_segments = 16
+	ridge_mesh.rings = 8
+	var ridge_colors := [Color(0.22, 0.39, 0.25), Color(0.30, 0.47, 0.29), Color(0.36, 0.49, 0.32)]
+	var ridge_specs := [
+		[Vector3(-10.5, 0.15, -8.5), Vector3(6.8, 2.2, 2.5)],
+		[Vector3(-3.5, 0.10, -10.0), Vector3(7.5, 2.8, 2.2)],
+		[Vector3(5.5, 0.12, -9.0), Vector3(8.2, 2.5, 2.6)],
+		[Vector3(10.5, 0.12, 1.0), Vector3(3.0, 2.4, 8.0)],
+		[Vector3(-10.5, 0.12, 2.0), Vector3(3.2, 2.1, 7.5)]
+	]
+	for i in range(ridge_specs.size()):
+		var hill := MeshInstance3D.new()
+		hill.mesh = ridge_mesh
+		hill.material_override = _material(ridge_colors[i % ridge_colors.size()])
+		hill.position = ridge_specs[i][0]
+		hill.scale = ridge_specs[i][1]
+		add_child(hill)
 
 func _build_stone_approach() -> void:
 	# A short hand-laid stone approach frames the front of the meadow board.
@@ -502,16 +526,16 @@ func _build_camera() -> void:
 	camera = Camera3D.new()
 	# Phone-first overview: leave generous margins around the complete board.
 	# Tactical selection and piece animation must never zoom past the playable area.
-	camera.position = Vector3(0.0, 27.0, 9.0)
+	camera.position = Vector3(0.0, 22.8, 7.8)
 	camera.current = true
-	camera.fov = 48.0
+	camera.fov = 44.0
 	add_child(camera)
 	camera.look_at(Vector3.ZERO, Vector3.UP)
 
 func _build_light() -> void:
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-48.0, -25.0, 0.0)
-	light.light_energy = 1.0
+	light.light_energy = 1.35
 	# Mobile performance: avoid expensive real-time shadow maps.
 	light.shadow_enabled = false
 	add_child(light)
@@ -1335,7 +1359,7 @@ func _add_sheep_piece(parent: Node3D, node_index: int, count: int, highlight_one
 		var column := i % 3
 		var row := int(i / 3)
 		pivot.position = Vector3((column - 1) * SHEEP_SLOT_SPACING, 0.29, (row - 0.5) * SHEEP_SLOT_SPACING)
-		pivot.scale = Vector3.ONE * (1.18 if highlight_one and i == visible_count - 1 else 1.12)
+		pivot.scale = Vector3.ONE * (1.48 if highlight_one and i == visible_count - 1 else 1.38)
 		pivot.rotation.y = _awareness_yaw(node_index, _sheep_attention_target(node_index))
 		parent.add_child(pivot)
 		if highlight_one and i == visible_count - 1:
@@ -1519,7 +1543,7 @@ func _add_wolf_piece(parent: Node3D, node_index: int) -> void:
 	# Stronger silhouette and amber eyes echo the wolf artwork on the new app icon.
 	var pivot := Node3D.new()
 	pivot.add_to_group("animated_game_piece")
-	pivot.scale = Vector3.ONE * 1.24
+	pivot.scale = Vector3.ONE * 1.62
 	pivot.rotation.y = _awareness_yaw(node_index, _wolf_attention_target(node_index))
 	parent.add_child(pivot)
 	wolf_idle_pivots.append(pivot)
