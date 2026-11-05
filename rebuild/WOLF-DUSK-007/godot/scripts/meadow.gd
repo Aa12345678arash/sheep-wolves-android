@@ -240,15 +240,18 @@ func _build_environment() -> void:
 	environment.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sky_material := ProceduralSkyMaterial.new()
-	sky_material.sky_top_color = Color(0.20, 0.43, 0.68)
-	sky_material.sky_horizon_color = Color(0.78, 0.84, 0.79)
-	sky_material.ground_bottom_color = Color(0.16, 0.25, 0.16)
-	sky_material.ground_horizon_color = Color(0.45, 0.53, 0.39)
+	sky_material.sky_top_color = Color(0.055, 0.09, 0.20)
+	sky_material.sky_horizon_color = Color(0.72, 0.48, 0.39)
+	sky_material.ground_bottom_color = Color(0.07, 0.12, 0.10)
+	sky_material.ground_horizon_color = Color(0.31, 0.34, 0.27)
 	sky.sky_material = sky_material
 	environment.sky = sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.72, 0.79, 0.72)
-	environment.ambient_light_energy = 0.55
+	environment.ambient_light_color = Color(0.62, 0.63, 0.78)
+	environment.ambient_light_energy = 0.72
+	environment.fog_enabled = true
+	environment.fog_light_color = Color(0.49, 0.43, 0.49)
+	environment.fog_density = 0.006
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	world.environment = environment
 	add_child(world)
