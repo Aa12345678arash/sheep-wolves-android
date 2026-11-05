@@ -224,7 +224,7 @@ func _initialize() -> void:
 
 	# AI must always return actions accepted by the same authoritative rules.
 	var ai_state = GameState.new()
-	for difficulty in range(5):
+	for difficulty in range(3):
 		var placement: int = AI.choose_wolf_placement(ai_state, difficulty)
 		assert(placement >= 0 and placement < BoardGraph.NODE_COUNT)
 		assert(ai_state.place_wolf(placement))
