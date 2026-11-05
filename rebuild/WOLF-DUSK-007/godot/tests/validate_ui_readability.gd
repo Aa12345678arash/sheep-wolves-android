@@ -21,18 +21,18 @@ func _run() -> void:
 	var poster_backgrounds := meadow.find_children("StartScreenPosterBackground", "TextureRect", true, false)
 	assert(poster_backgrounds.size() == 1, "Startup screen must include the cinematic poster background")
 	assert((poster_backgrounds[0] as TextureRect).texture != null, "Poster background texture must load")
-	var setup_headings := meadow.setup_layer.find_children("*", "Label", true, false)
+	var setup_headings: Array[Node] = meadow.setup_layer.find_children("*", "Label", true, false)
 	var has_large_title := false
 	for label in setup_headings:
 		if (label as Label).text.contains("گرگ و میش"):
 			has_large_title = (label as Label).get_theme_font_size("font_size") >= 40
 	assert(has_large_title, "Startup title must use large readable Persian typography")
-	var setup_edits := meadow.setup_layer.find_children("*", "LineEdit", true, false)
+	var setup_edits: Array[Node] = meadow.setup_layer.find_children("*", "LineEdit", true, false)
 	assert(setup_edits.size() == 2, "Both player-name fields must remain available")
 	for edit in setup_edits:
 		assert((edit as LineEdit).get_theme_font_size("font_size") >= 27, "Player-name text must be large and readable")
 		assert((edit as LineEdit).custom_minimum_size.y >= 68.0, "Player-name fields must have comfortable touch targets")
-	var setup_options := meadow.setup_layer.find_children("*", "OptionButton", true, false)
+	var setup_options: Array[Node] = meadow.setup_layer.find_children("*", "OptionButton", true, false)
 	assert(setup_options.size() == 3, "All game selectors must remain available")
 	for option in setup_options:
 		assert((option as OptionButton).get_theme_font_size("font_size") >= 26, "Selector text must be larger for phone readability")
