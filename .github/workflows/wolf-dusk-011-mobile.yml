@@ -1,3 +1,4 @@
+# WOLF-DUSK-028: validate wrapped startup text and narrow-screen control sizing.
 name: WOLF-DUSK-011 Mobile validation and APK
 
 on:
