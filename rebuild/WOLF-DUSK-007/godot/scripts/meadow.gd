@@ -624,9 +624,19 @@ func _show_setup_menu() -> void:
 	add_child(setup_layer)
 	var shade := ColorRect.new()
 	# Keep the meadow visible but prevent the HUD behind the setup screen from competing.
-	shade.color = Color(0.015, 0.035, 0.025, 0.90)
+	shade.color = Color(0.008, 0.025, 0.018, 0.48)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	setup_layer.add_child(shade)
+	var poster := TextureRect.new()
+	poster.name = "StartScreenPosterBackground"
+	poster.texture = load("res://assets/start_poster.svg")
+	poster.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	poster.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	poster.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	poster.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	setup_layer.add_child(poster)
+	setup_layer.move_child(poster, 0)
+	setup_layer.move_child(shade, 1)
 	var viewport_size := get_viewport().get_visible_rect().size
 	# Use almost the full available phone height so every setting is easy to reach.
 	# Keep a centered maximum width on tablets while preserving a 12 px safe margin.
@@ -647,14 +657,16 @@ func _show_setup_menu() -> void:
 	panel.offset_top = 0.0
 	panel.offset_bottom = 0.0
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.075, 0.12, 0.095, 0.98)
+	panel_style.bg_color = Color(0.025, 0.075, 0.055, 0.84)
 	panel_style.border_color = Color(0.72, 0.61, 0.38, 0.95)
 	panel_style.set_border_width_all(3)
-	panel_style.set_corner_radius_all(22)
+	panel_style.set_corner_radius_all(24)
+	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.48)
+	panel_style.shadow_size = 12
 	panel_style.content_margin_left = 28.0
 	panel_style.content_margin_right = 28.0
-	panel_style.content_margin_top = 26.0
-	panel_style.content_margin_bottom = 26.0
+	panel_style.content_margin_top = 18.0
+	panel_style.content_margin_bottom = 18.0
 	panel.add_theme_stylebox_override("panel", panel_style)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -667,7 +679,7 @@ func _show_setup_menu() -> void:
 	# Give the content column the full usable screen height. The two flexible
 	# spacers balance the menu vertically instead of leaving all unused space below.
 	column.custom_minimum_size = Vector2(0.0, maxf(viewport_size.y - 52.0, 0.0))
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", 14)
 	column.add_theme_font_size_override("font_size", 24)
 	column.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86))
 	scroll.add_child(column)
@@ -678,31 +690,35 @@ func _show_setup_menu() -> void:
 	column.add_child(top_spacer)
 	var emblem := TextureRect.new()
 	emblem.texture = load("res://assets/title_emblem.svg")
-	emblem.custom_minimum_size = Vector2(0, clampf(viewport_size.y * 0.13, 76.0, 116.0))
+	emblem.custom_minimum_size = Vector2(0, clampf(viewport_size.y * 0.12, 78.0, 108.0))
 	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	column.add_child(emblem)
 	var heading := Label.new()
 	heading.text = "گرگ و میش | راز دشت سبز"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 32)
+	heading.add_theme_font_size_override("font_size", 42)
+	heading.add_theme_color_override("font_color", Color(1.0, 0.88, 0.48))
+	heading.add_theme_color_override("font_outline_color", Color(0.035, 0.07, 0.045, 1.0))
+	heading.add_theme_constant_override("outline_size", 3)
 	column.add_child(heading)
 	var subtitle := Label.new()
 	subtitle.text = "نوع مسابقه و نام بازیکن را انتخاب کنید"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 25)
+	subtitle.add_theme_font_size_override("font_size", 28)
+	subtitle.add_theme_color_override("font_color", Color(0.98, 0.95, 0.83))
 	column.add_child(subtitle)
 	var sheep_name := LineEdit.new()
 	sheep_name.placeholder_text = "نام بازیکن گوسفندها"
 	sheep_name.text = player_one_name
-	sheep_name.custom_minimum_size = Vector2(0, 64)
-	sheep_name.add_theme_font_size_override("font_size", 25)
+	sheep_name.custom_minimum_size = Vector2(0, 70)
+	sheep_name.add_theme_font_size_override("font_size", 28)
 	column.add_child(sheep_name)
 	var wolf_name := LineEdit.new()
 	wolf_name.placeholder_text = "نام بازیکن گرگ‌ها"
 	wolf_name.text = player_two_name
 	wolf_name.custom_minimum_size = Vector2(0, 64)
-	wolf_name.add_theme_font_size_override("font_size", 25)
+	wolf_name.add_theme_font_size_override("font_size", 28)
 	column.add_child(wolf_name)
 	var mode_picker := OptionButton.new()
 	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
@@ -733,8 +749,17 @@ func _show_setup_menu() -> void:
 	column.add_child(setup_music_button)
 	var start_button := Button.new()
 	start_button.text = "شروع مسابقه"
-	start_button.custom_minimum_size = Vector2(0, 72)
-	start_button.add_theme_font_size_override("font_size", 29)
+	start_button.custom_minimum_size = Vector2(0, 82)
+	start_button.add_theme_font_size_override("font_size", 34)
+	var start_style := StyleBoxFlat.new()
+	start_style.bg_color = Color(0.67, 0.31, 0.10, 1.0)
+	start_style.border_color = Color(1.0, 0.83, 0.40, 1.0)
+	start_style.set_border_width_all(2)
+	start_style.set_corner_radius_all(18)
+	start_style.content_margin_top = 10.0
+	start_style.content_margin_bottom = 10.0
+	start_button.add_theme_stylebox_override("normal", start_style)
+	start_button.add_theme_stylebox_override("hover", start_style)
 	start_button.pressed.connect(func():
 		if is_instance_valid(celebration_layer):
 			celebration_layer.queue_free()
@@ -784,7 +809,8 @@ func _show_setup_menu() -> void:
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note.add_theme_font_size_override("font_size", 20)
+	note.add_theme_font_size_override("font_size", 22)
+	note.add_theme_color_override("font_color", Color(0.98, 0.90, 0.70))
 	column.add_child(note)
 	var bottom_spacer := Control.new()
 	bottom_spacer.name = "StartScreenBottomSpacer"
