@@ -1,5 +1,7 @@
 extends Node3D
 
+# WOLF-DUSK-032: cinematic twilight palette and fog in the active main scene.
+
 # WOLF-DUSK-030: enlarged, gold-trimmed start pads keep five sheep compact and readable.
 
 const GRID_SIZE := 5
