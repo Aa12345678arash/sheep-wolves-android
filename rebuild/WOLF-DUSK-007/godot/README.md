@@ -49,3 +49,6 @@
 - Expanded the board touch target slightly to 1.08 units while preserving the 2.2-unit node spacing.
 - The pad validation now checks the gold trim and compact five-sheep footprint.
 - This is a visual/gameplay-layout iteration only; final phone verification is still required.
+
+
+Build trigger: workflow registration on the default branch is complete; this branch commit triggers the isolated WOLF-DUSK-030 validation and APK export.
