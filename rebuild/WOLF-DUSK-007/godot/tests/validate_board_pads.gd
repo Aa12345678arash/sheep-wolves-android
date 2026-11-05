@@ -18,8 +18,9 @@ func _run() -> void:
 		var platform := visual.get_node_or_null("NodePlatform") as MeshInstance3D
 		assert(platform != null, "Every node must expose a physical platform")
 		assert(platform.mesh is CylinderMesh, "Node platform must use a cylindrical pad mesh")
+		assert(visual.get_node_or_null("NodePlatformGoldTrim") is MeshInstance3D, "Every enlarged pad must have a visible gold rim")
 		var pad := platform.mesh as CylinderMesh
-		assert(pad.top_radius >= 0.90 and pad.bottom_radius >= 0.90, "Platform diameter must be large enough for five sheep")
+		assert(pad.top_radius >= 1.00 and pad.bottom_radius >= 1.00, "Enlarged platform diameter must comfortably fit five clustered sheep")
 		assert(pad.height >= 0.12, "Platform must have visible physical thickness")
 
 	# Put five sheep on one start point and verify all five visible slots fit inside its platform.
@@ -37,6 +38,7 @@ func _run() -> void:
 		var footprint_z := absf(slot.position.z) + 0.20
 		var footprint_radius := Vector2(footprint_x, footprint_z).length()
 		assert(footprint_radius < Meadow.NODE_PAD_RADIUS, "The complete sheep footprint must stay inside the enlarged platform")
+	assert(Meadow.SHEEP_SLOT_SPACING <= 0.38, "Five sheep must remain grouped closely on the starting platform")
 
 	# The enlarged platforms must not change the canonical graph or gameplay setup.
 	assert(meadow.game.sheep.size() == 25, "Sheep state must remain mapped to 25 board nodes")
