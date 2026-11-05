@@ -5,6 +5,7 @@ on:
     branches:
       - WOLF-DUSK-007-REBUILD
       - WOLF-DUSK-008-FIX
+      - WOLF-DUSK-035-CINEMATIC-REDESIGN
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
