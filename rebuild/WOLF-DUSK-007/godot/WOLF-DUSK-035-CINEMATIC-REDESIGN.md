@@ -57,3 +57,21 @@ Every level must obey the same rules. Measure response time on-device and never 
 - Build and run automated Godot validation and gameplay-rule tests.
 - Produce an APK only after the implementation is actually present and CI succeeds.
 - The owner must install the APK and confirm launch, icon, menu, mode selection, gameplay readability, sound, and performance. A successful CI build is not proof of real-device acceptance.
+
+## Owner-provided visual references (2026-11-05)
+The two images uploaded with the WOLF-DUSK-035 request are the primary visual/layout references:
+- `22971.png`: cover panel with wolf, lamb, full moon and wooden Persian title plaque; gameplay screenshot with lush meadow board, stone pads, wooden paths, stage/turn plaque, settings/pause controls, and bottom rule plaque; lower panels show high-quality 3D characters and a moonlit village/bridge landscape.
+- `22973.jpg`: dedicated gameplay-screen reference. Keep the board central and legible, with the natural meadow visible around it and compact wooden information plaques at top and bottom.
+Use the images as visual source material for the art/layout; do not replace them with the rejected shield emblem.
+
+### Persian copy from the references
+- Main title: «گرگ و میش»
+- Story subtitle: «راز دشت سبز»
+- Match status: «مرحله: ۱» and «نوبت: گوسفندها» (update dynamically to the actual state)
+- Gameplay tagline: «بازی استراتژیک و جذاب»
+- Character/art direction: «شخصیت‌های سه‌بعدی با کیفیت بالا» and «گرافیک سه‌بعدی خیره‌کننده و دنیای زیبا»
+- Rule reminder: «گوسفندها برنده می‌شوند اگر همهٔ گرگ‌ها محصور شوند»
+All displayed rule text must remain exactly consistent with the existing rules engine. The board topology, starting setup, turns, movement, captures, chain-capture behavior, and win thresholds are not to be altered as part of this visual redesign.
+
+### Strict gameplay preservation
+The redesign is presentation-only unless the owner separately approves a rule change. Preserve the canonical board JSON and the existing rule implementation. In particular, a wolf may jump only over exactly one sheep into an empty landing node; if two or more sheep occupy the middle node, the jump is forbidden. Sheep win only when all three wolves are blocked; wolves win at the existing threshold of eight sheep. Do not change the 5×5 / 56-connection framework.
