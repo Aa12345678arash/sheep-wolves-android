@@ -2,13 +2,13 @@ extends Node3D
 
 const GRID_SIZE := 5
 const SPACING := 2.2
-const BOARD_TOUCH_RADIUS := 1.02
+const BOARD_TOUCH_RADIUS := 1.08
 const TOUCH_FALLBACK_RADIUS_PIXELS := 70.0
 const NODE_MARKER_SELECTED_RADIUS := 0.44
 const NODE_MARKER_IDLE_RADIUS := 0.25
-const NODE_PAD_RADIUS := 0.92
+const NODE_PAD_RADIUS := 1.02
 const NODE_PAD_HEIGHT := 0.14
-const SHEEP_SLOT_SPACING := 0.40
+const SHEEP_SLOT_SPACING := 0.36
 const BoardGraph = preload("res://scripts/board_graph.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
@@ -1246,6 +1246,17 @@ func _refresh_board() -> void:
 		node_platform.material_override = _cached_material(Color(0.55, 0.45, 0.31))
 		node_platform.position.y = -0.095
 		visual.add_child(node_platform)
+		var platform_trim := MeshInstance3D.new()
+		platform_trim.name = "NodePlatformGoldTrim"
+		var trim_mesh := TorusMesh.new()
+		trim_mesh.inner_radius = 0.955
+		trim_mesh.outer_radius = 1.015
+		trim_mesh.rings = 12
+		trim_mesh.ring_segments = 32
+		platform_trim.mesh = trim_mesh
+		platform_trim.material_override = _cached_material(Color(0.86, 0.65, 0.29))
+		platform_trim.position.y = -0.012
+		visual.add_child(platform_trim)
 		# Broad, low-profile destination markers remain visible above the platform.
 		# Selected and legal nodes use emissive colors so the next action is unmistakable.
 		var marker := MeshInstance3D.new()
