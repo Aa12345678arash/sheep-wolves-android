@@ -367,8 +367,8 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 		if state.sheep[node] > 0:
 			sheep_mobility += float(state.sheep_moves(node).size()) * float(state.sheep[node])
 		if state.wolves[node]:
-			var wm := state.wolf_moves(node).size()
-			var captures := state.capture_options(node).size()
+			var wm: int = state.wolf_moves(node).size()
+			var captures: int = state.capture_options(node).size()
 			wolf_mobility += float(wm)
 			capture_threats += float(captures)
 			if wm == 0 and captures == 0:
