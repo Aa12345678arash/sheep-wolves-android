@@ -4,9 +4,8 @@ config_version=5
 [application]
 config/name="گرگ و میش"
 config/icon="res://assets/icon.svg"
-boot_splash/show_image=true
-boot_splash/image="res://assets/splash.svg"
-; Show the illustrated meadow splash instead of a blank dark startup screen.
+boot_splash/show_image=false
+; Keep the engine splash disabled; the game draws its own full-screen menu on launch.
 boot_splash/fullsize=true
 boot_splash/bg_color=Color(0.20, 0.31, 0.22, 1)
 config/description="بازی گرگ و میش؛ راز دشت سبز"
