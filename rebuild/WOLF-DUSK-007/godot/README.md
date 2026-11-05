@@ -39,3 +39,13 @@
 5. ساخت APK و آزمایش روی گوشی پیش از انتشار.
 
 سازنده و معرفی‌کننده: آرش سلیمی
+
+
+## WOLF-DUSK-030 — wider five-sheep starting pads
+
+- Enlarged each raised 3D node platform from radius 0.92 to 1.02 units.
+- Added a subtle gold perimeter ring to make each placement point easier to read.
+- Tightened the five-sheep formation spacing from 0.40 to 0.36 units so all five sheep sit together as one compact flock on each starting pad.
+- Expanded the board touch target slightly to 1.08 units while preserving the 2.2-unit node spacing.
+- The pad validation now checks the gold trim and compact five-sheep footprint.
+- This is a visual/gameplay-layout iteration only; final phone verification is still required.
