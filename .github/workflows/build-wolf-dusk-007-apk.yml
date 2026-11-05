@@ -8,6 +8,7 @@ on:
       - WOLF-DUSK-008-FIX
       - WOLF-DUSK-027-POSTER-HOME-DESIGN
       - WOLF-DUSK-033-ICON-CLEANUP
+      - WOLF-DUSK-034-ICON-REDESIGN
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/build-wolf-dusk-007-apk.yml'
