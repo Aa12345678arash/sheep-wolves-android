@@ -48,10 +48,26 @@ func _run() -> void:
 	for button in control_buttons:
 		assert(button.custom_minimum_size.y >= 54.0, "Game controls need comfortable touch targets")
 
+	# WOLF-DUSK-024 compact-phone HUD layout regression check.
+	var polish_script = load("res://scripts/ui_polish.gd")
+	var polish = polish_script.new()
+	var layout_root := Control.new()
+	var header := PanelContainer.new()
+	var footer := PanelContainer.new()
+	footer.anchor_top = 1.0
+	layout_root.add_child(header)
+	layout_root.add_child(footer)
+	polish._apply_responsive_layout(layout_root, Vector2(360.0, 740.0), true)
+	assert(is_equal_approx(header.anchor_bottom, 0.31), "Compact phone header must have sufficient height")
+	assert(is_equal_approx(footer.anchor_top, 0.70), "Compact phone footer must have sufficient height")
+	assert(footer.anchor_top - header.anchor_bottom >= 0.38, "Compact phone must retain a central playable area")
+	polish.free()
+	layout_root.free()
+
 	# The exported app should open directly into the game, not display the Godot logo splash.
 	var config := FileAccess.get_file_as_string("res://project.godot")
 	assert(config.contains("boot_splash/show_image=false"), "Godot boot splash must be hidden for direct game launch")
 
 	meadow.queue_free()
-	print("WOLF-DUSK-022 checks passed: direct game launch, larger readable HUD, two-column controls, responsive settings and larger touch targets.")
+	print("WOLF-DUSK-024 checks passed: compact-phone HUD spacing, direct launch, readable controls and responsive settings.")
 	quit()
