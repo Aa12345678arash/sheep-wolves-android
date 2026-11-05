@@ -8,8 +8,8 @@ const BOARD_TOUCH_RADIUS := 1.08
 const TOUCH_FALLBACK_RADIUS_PIXELS := 70.0
 const NODE_MARKER_SELECTED_RADIUS := 0.44
 const NODE_MARKER_IDLE_RADIUS := 0.25
-const NODE_PAD_RADIUS := 1.02
-const NODE_PAD_HEIGHT := 0.14
+const NODE_PAD_RADIUS := 1.08
+const NODE_PAD_HEIGHT := 0.22
 const SHEEP_SLOT_SPACING := 0.36
 const BoardGraph = preload("res://scripts/board_graph.gd")
 const GameState = preload("res://scripts/game_state.gd")
@@ -1266,20 +1266,26 @@ func _refresh_board() -> void:
 		var node_platform := MeshInstance3D.new()
 		node_platform.name = "NodePlatform"
 		node_platform.mesh = _cached_cylinder(NODE_PAD_RADIUS, NODE_PAD_RADIUS, NODE_PAD_HEIGHT)
-		node_platform.material_override = _cached_material(Color(0.55, 0.45, 0.31))
+		node_platform.material_override = _cached_material(Color(0.38, 0.31, 0.23))
 		node_platform.position.y = -0.095
 		visual.add_child(node_platform)
 		var platform_trim := MeshInstance3D.new()
 		platform_trim.name = "NodePlatformGoldTrim"
 		var trim_mesh := TorusMesh.new()
-		trim_mesh.inner_radius = 0.955
-		trim_mesh.outer_radius = 1.015
+		trim_mesh.inner_radius = 1.015
+		trim_mesh.outer_radius = 1.095
 		trim_mesh.rings = 12
 		trim_mesh.ring_segments = 32
 		platform_trim.mesh = trim_mesh
 		platform_trim.material_override = _cached_material(Color(0.86, 0.65, 0.29))
-		platform_trim.position.y = -0.012
+		platform_trim.position.y = 0.012
 		visual.add_child(platform_trim)
+		var platform_top := MeshInstance3D.new()
+		platform_top.name = "NodePlatformStoneTop"
+		platform_top.mesh = _cached_cylinder(0.99, 0.99, 0.045)
+		platform_top.material_override = _cached_material(Color(0.72, 0.62, 0.43))
+		platform_top.position.y = 0.018
+		visual.add_child(platform_top)
 		# Broad, low-profile destination markers remain visible above the platform.
 		# Selected and legal nodes use emissive colors so the next action is unmistakable.
 		var marker := MeshInstance3D.new()
@@ -1329,7 +1335,7 @@ func _add_sheep_piece(parent: Node3D, node_index: int, count: int, highlight_one
 		var column := i % 3
 		var row := int(i / 3)
 		pivot.position = Vector3((column - 1) * SHEEP_SLOT_SPACING, 0.29, (row - 0.5) * SHEEP_SLOT_SPACING)
-		pivot.scale = Vector3.ONE * (1.04 if highlight_one and i == visible_count - 1 else 0.92)
+		pivot.scale = Vector3.ONE * (1.18 if highlight_one and i == visible_count - 1 else 1.12)
 		pivot.rotation.y = _awareness_yaw(node_index, _sheep_attention_target(node_index))
 		parent.add_child(pivot)
 		if highlight_one and i == visible_count - 1:
