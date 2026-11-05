@@ -37,9 +37,13 @@
   <circle cx="2" cy="89" r="3" fill="#fff"/><circle cx="28" cy="89" r="3" fill="#fff"/>
   <ellipse cx="13" cy="117" rx="12" ry="8" fill="#95605a"/>
  </g>
- <path d="M112 20Q256 0 400 20L417 38 407 112Q256 131 105 112L95 38Z" fill="#59371f" stroke="#e9bd67" stroke-width="7"/>
- <text x="256" y="72" text-anchor="middle" font-family="sans-serif" font-size="43" font-weight="900" fill="#fff0a2" stroke="#633817" stroke-width="2" paint-order="stroke">گرگ و میش</text>
- <text x="256" y="99" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#fff8e5">راز دشت سبز</text>
+ <!-- Pure vector star crest: avoids missing Persian glyphs in Android launcher rasterization. -->
+ <g transform="translate(255 70)">
+  <path d="M0 -42L10 -10 42 0 10 10 0 42 -10 10 -42 0 -10 -10Z" fill="#e8bb62" stroke="#fff0bd" stroke-width="3"/>
+  <circle r="10" fill="#fff5d4"/>
+  <path d="M-65 -24L-58 -5 -39 2 -58 9 -65 28 -72 9 -91 2 -72 -5Z" fill="#f4d98c" opacity=".9"/>
+  <path d="M65 -24L72 -5 91 2 72 9 65 28 58 9 39 2 58 -5Z" fill="#f4d98c" opacity=".9"/>
+ </g>
  <rect x="14" y="14" width="484" height="484" rx="88" fill="none" stroke="url(#gold)" stroke-width="15"/>
  <rect x="27" y="27" width="458" height="458" rx="77" fill="none" stroke="#fff0a8" stroke-width="3" opacity=".8"/>
 </g></svg>
