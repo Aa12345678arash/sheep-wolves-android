@@ -74,7 +74,6 @@ jobs:
         run: |
           set -euxo pipefail
           PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
-          # Bound each headless process so a stalled editor/import cannot hold the runner forever.
           timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit --verbose
           timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2 --verbose
           timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
@@ -86,11 +85,11 @@ jobs:
       - name: Export WOLF-DUSK-024 Android debug APK
         run: |
           godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-024-preview.apk"
-          test -s "$GITHUB_WORKSPACE/wolf-dusk-022-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-024-preview.apk"
       - name: Upload WOLF-DUSK-024 installable debug APK
         uses: actions/upload-artifact@v4
         with:
           name: wolf-dusk-024-android-preview
-          path: wolf-dusk-022-preview.apk
+          path: wolf-dusk-024-preview.apk
           if-no-files-found: error
           retention-days: 14
