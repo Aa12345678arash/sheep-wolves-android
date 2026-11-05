@@ -80,11 +80,11 @@ jobs:
       - name: Export Android debug APK
         run: |
           godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-027-preview.apk"
-          test -s "$GITHUB_WORKSPACE/wolf-dusk-008-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-027-preview.apk"
       - name: Upload WOLF-DUSK-027 installable debug APK
         uses: actions/upload-artifact@v4
         with:
           name: wolf-dusk-027-android-preview
-          path: wolf-dusk-008-preview.apk
+          path: wolf-dusk-027-preview.apk
           if-no-files-found: error
           retention-days: 14
