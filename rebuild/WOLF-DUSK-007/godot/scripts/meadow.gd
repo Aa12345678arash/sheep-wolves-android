@@ -504,7 +504,8 @@ func _build_board() -> void:
 	rail_mesh.top_radius = 0.115
 	rail_mesh.bottom_radius = 0.115
 	rail_mesh.height = 1.0
-	rail_mesh.radial_segments = 12	var rail_material := _material(Color(0.16, 0.19, 0.14))
+	rail_mesh.radial_segments = 12
+	var rail_material := _material(Color(0.16, 0.19, 0.14))
 	var path_mesh := CylinderMesh.new()
 	path_mesh.top_radius = 0.068
 	path_mesh.bottom_radius = 0.068
