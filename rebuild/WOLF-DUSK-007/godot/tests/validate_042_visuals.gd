@@ -28,8 +28,8 @@ func _run() -> void:
 		assert(absf(probe.rotation.x) <= 0.02, "Sheep idle motion must remain subtle and must not distort board readability")
 
 	# The visual animation is presentation-only: it must not alter board state or rules.
-	var sheep_before := meadow.game.sheep.duplicate()
-	var wolves_before := meadow.game.wolves.duplicate()
+	var sheep_before: Variant = meadow.game.sheep.duplicate()
+	var wolves_before: Variant = meadow.game.wolves.duplicate()
 	meadow._process(0.016)
 	assert(meadow.game.sheep == sheep_before, "Sheep idle animation must not mutate sheep positions or counts")
 	assert(meadow.game.wolves == wolves_before, "Sheep idle animation must not mutate wolf positions")
