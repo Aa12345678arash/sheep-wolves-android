@@ -211,7 +211,7 @@ static func _count_capture_options_after(state, wolf_from: int, wolf_to: int, ca
 	var wolf_row := int(wolf_to / 5)
 	var wolf_col := wolf_to % 5
 	for middle in adjacency[wolf_to]:
-		if middle == captured_middle or state.sheep[middle] <= 0:
+		if middle == captured_middle or state.sheep[middle] != 1:
 			continue
 		var dr: int = int(middle / 5) - wolf_row
 		var dc: int = int(middle % 5) - wolf_col
@@ -231,7 +231,7 @@ static func _count_threatened_sheep_after(state, wolf_from: int, wolf_to: int, c
 	var wolf_row := int(wolf_to / 5)
 	var wolf_col := wolf_to % 5
 	for middle in adjacency[wolf_to]:
-		if middle == captured_middle or state.sheep[middle] <= 0:
+		if middle == captured_middle or state.sheep[middle] != 1:
 			continue
 		var dr := int(middle / 5) - wolf_row
 		var dc := int(middle % 5) - wolf_col
@@ -257,7 +257,7 @@ static func _future_capture_potential(state, node: int) -> float:
 	# Retained as a small positional heuristic for callers that need it.
 	var total := 0.0
 	for middle in BoardGraph.adjacency()[node]:
-		if state.sheep[middle] > 0:
+		if state.sheep[middle] == 1:
 			total += 1.0
 	return total
 
@@ -268,21 +268,24 @@ static func _search_depth(difficulty: int) -> int:
 	# Search complete turns more deeply; mobile limits are enforced by the shared budget.
 	return 4 if difficulty == 2 else (6 if difficulty == 3 else 8)
 
+static func _search_node_limit(depth: int) -> int:
+	return 7000 if depth <= 4 else (16000 if depth <= 6 else 30000)
+
+static func _search_time_limit_usec(depth: int) -> int:
+	return 70000 if depth <= 4 else (150000 if depth <= 6 else 240000)
+
 static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionary:
 	var moves := _legal_search_moves(state, false)
 	if moves.is_empty():
 		return {}
-	moves = _order_search_moves(state, moves, true, ai_is_sheep)
+	# Start the deadline before move ordering: ordering itself evaluates children
+	# and must consume the same mobile time budget as the search.
+	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth)}
+	moves = _order_search_moves(state, moves, true, ai_is_sheep, context)
 	var best_move: Dictionary = moves[0]
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
-	# WOLF-DUSK-040: give the three search-based tiers genuinely different
-	# mobile budgets. Medium stays responsive; Hard searches deeper; Expert
-	# receives the largest node/time allowance without blocking the UI indefinitely.
-	var node_limit := 7000 if depth <= 4 else (16000 if depth <= 6 else 30000)
-	var time_limit := 70000 if depth <= 4 else (150000 if depth <= 6 else 240000)
-	var context := {"nodes": 0, "node_limit": node_limit, "start": Time.get_ticks_usec(), "time_limit": time_limit}
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
@@ -306,7 +309,7 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 	if moves.is_empty():
 		return _evaluate_position(state, ai_is_sheep)
 	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
-	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep)
+	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep, context)
 	var value := -INF if maximizing else INF
 	for move in moves:
 		var child = _copy_state(state)
@@ -322,11 +325,17 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 			break
 	return value
 
-static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool) -> Array[Dictionary]:
+static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}) -> Array[Dictionary]:
 	# Evaluate children before exploring them so alpha-beta sees forcing captures,
 	# immediate escapes and blocking moves first instead of wasting its mobile budget.
 	var scored: Array[Dictionary] = []
-	for move in moves:
+	var remaining: Array[Dictionary] = []
+	for index in range(moves.size()):
+		if not context.is_empty() and _search_stopped(context):
+			for rest in range(index, moves.size()):
+				remaining.append(moves[rest])
+			break
+		var move: Dictionary = moves[index]
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
 		scored.append({"move": move, "score": _evaluate_position(child, ai_is_sheep)})
@@ -338,6 +347,9 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 	var ordered: Array[Dictionary] = []
 	for entry in scored:
 		ordered.append(entry.move)
+	# If the deadline interrupts ordering, preserve every unscored legal action.
+	for move in remaining:
+		ordered.append(move)
 	return ordered
 
 static func _legal_search_moves(state, include_chain_decline: bool) -> Array[Dictionary]:
