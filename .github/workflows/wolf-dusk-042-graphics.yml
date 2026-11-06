@@ -68,7 +68,7 @@ jobs:
           PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
           timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit --verbose
           timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2 --verbose
-          for TEST in validate_board.gd validate_rules.gd validate_ai.gd validate_ai_tactics.gd validate_player_control.gd validate_ui_readability.gd validate_board_pads.gd; do
+          for TEST in validate_board.gd validate_rules.gd validate_ai.gd validate_ai_tactics.gd validate_player_control.gd validate_ui_readability.gd validate_board_pads.gd validate_042_visuals.gd; do
             timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script "res://tests/$TEST"
           done
       - name: Export WOLF-DUSK-042 Android debug APK
