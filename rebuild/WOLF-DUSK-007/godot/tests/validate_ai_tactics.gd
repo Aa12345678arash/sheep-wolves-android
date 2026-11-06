@@ -26,6 +26,12 @@ func _run() -> void:
 		"Wolf search must not count a stack as a future capture")
 	assert(AI._count_threatened_sheep_after(stacked, 0, 1) == 0,
 		"Wolf evaluation must not mark a stack as a capturable threat")
+	# The educational/random tier is also checked for legality, though it is not
+	# expected to choose the tactically best move.
+	var random_action: Dictionary = AI.choose_wolf_move(stacked, 0)
+	assert(not random_action.is_empty())
+	assert(not bool(random_action.get("capture", false)))
+	assert(int(random_action.to) in stacked.wolf_moves(int(random_action.from)))
 	for difficulty in range(1, 5):
 		var action: Dictionary = AI.choose_wolf_move(stacked, difficulty)
 		assert(not action.is_empty(), "Every deterministic tier must find a legal fallback")
