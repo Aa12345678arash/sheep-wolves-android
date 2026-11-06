@@ -9,6 +9,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var meadow = Meadow.new()
 	root.add_child(meadow)
+	await create_timer(0.40).timeout
 	await process_frame
 	# WOLF-019: verify the board exposes enlarged, forgiving touch targets.
 	assert(meadow.node_areas.size() == 25, "All 25 board nodes must expose touch areas")
