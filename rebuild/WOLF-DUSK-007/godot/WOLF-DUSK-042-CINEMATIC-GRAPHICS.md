@@ -74,3 +74,8 @@ This is a presentation-only redesign:
 - The Godot project already contains a procedural twilight meadow, wooden board frame, grass/flower MultiMeshes, distant ridges, stone approach, a portrait HUD, and procedural music.
 - The 3D pieces are still described in the project README as temporary geometric models, not final art.
 - Existing startup work intentionally draws the menu before building the meadow and synthesizing music; retain and improve this first-frame strategy.
+
+## CI correction log — 2026-11-07
+- Run 10 exposed a malformed `elif` line in `scripts/meadow.gd` at the winner HUD branch; the status assignment was placed on the same line after a tab and caused a GDScript parse error. The branch and assignment have been separated.
+- The visual regression test now explicitly types its duplicated sheep/wolf state snapshots as `Variant` to avoid inference errors when the meadow script is unavailable during parsing.
+- Run 10 did not export an APK: validation failed before the Android export step. The next run must pass the complete validation suite and produce the named artifact before this branch can be considered CI-ready.
