@@ -89,7 +89,15 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	sheep_anim_clock += delta
-	# Sheep use static low-poly poses on mobile; avoid per-frame work for 25 individual pieces.
+	# Animate one representative sheep per occupied flock, not all 125 possible sheep.
+	# This gives the meadow a living feel while keeping the mobile frame budget small.
+	for i in range(sheep_idle_pivots.size()):
+		var sheep_pivot := sheep_idle_pivots[i]
+		if is_instance_valid(sheep_pivot):
+			var sheep_phase := sheep_anim_clock * 1.6 + float(i) * 1.37
+			var base_y := float(sheep_pivot.get_meta("idle_base_y", 0.29))
+			sheep_pivot.position.y = base_y + sin(sheep_phase) * 0.012
+			sheep_pivot.rotation.x = sin(sheep_phase * 0.7) * 0.012
 	for i in range(wolf_idle_pivots.size()):
 		var wolf_pivot := wolf_idle_pivots[i]
 		if is_instance_valid(wolf_pivot):
@@ -247,8 +255,7 @@ func _play_audio_test() -> void:
 		victory_audio.play()
 
 func _ensure_music_playing() -> void:
-	if music_audio != null and not music_audio.playing:
-		music_audio.play()
+	if music_audio != null and not music_audio.playing:		music_audio.play()
 
 func _play_capture_sound() -> void:
 	if capture_audio != null:
@@ -497,8 +504,7 @@ func _build_board() -> void:
 	rail_mesh.top_radius = 0.115
 	rail_mesh.bottom_radius = 0.115
 	rail_mesh.height = 1.0
-	rail_mesh.radial_segments = 12
-	var rail_material := _material(Color(0.16, 0.19, 0.14))
+	rail_mesh.radial_segments = 12	var rail_material := _material(Color(0.16, 0.19, 0.14))
 	var path_mesh := CylinderMesh.new()
 	path_mesh.top_radius = 0.068
 	path_mesh.bottom_radius = 0.068
@@ -747,8 +753,7 @@ func _show_setup_menu() -> void:
 	panel.add_theme_stylebox_override("panel", panel_style)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -997,8 +1002,7 @@ func _run_ai_turn(generation: int) -> void:
 				feedback_message = "رایانه با ارزیابی تاکتیکی، شکار زنجیره‌ای را انجام داد."
 			else:
 				feedback_message = "رایانه گرگ‌ها را حرکت داد."
-		else:
-			feedback_message = "رایانه حرکت قانونی دیگری ندارد."
+		else:			feedback_message = "رایانه حرکت قانونی دیگری ندارد."
 	ai_busy = false
 	selected_node = -1
 	chain_time_left = 0.0
@@ -1248,7 +1252,6 @@ func _reset_game() -> void:
 	_refresh_board()
 	_update_hud()
 	_schedule_ai_turn()
-
 func _trigger_camera_shake() -> void:
 	camera_shake_time = 0.24
 	camera_shake_strength = 0.075
@@ -1396,6 +1399,11 @@ func _add_sheep_piece(parent: Node3D, node_index: int, count: int, highlight_one
 		pivot.scale = Vector3.ONE * (1.48 if highlight_one and i == visible_count - 1 else 1.38)
 		pivot.rotation.y = _awareness_yaw(node_index, _sheep_attention_target(node_index))
 		parent.add_child(pivot)
+		# One animated representative per flock is enough to communicate breathing
+		# without updating every sheep in a five-piece stack every frame.
+		if i == 0:
+			pivot.set_meta("idle_base_y", pivot.position.y)
+			sheep_idle_pivots.append(pivot)
 		if highlight_one and i == visible_count - 1:
 			var ring := MeshInstance3D.new()
 			var ring_mesh := TorusMesh.new()
@@ -1497,8 +1505,7 @@ func _awareness_yaw(from_index: int, to_index: int) -> float:
 		return PI * 0.5
 	var from_row := int(from_index / 5)
 	var from_col := from_index % 5
-	var to_row := int(to_index / 5)
-	var to_col := to_index % 5
+	var to_row := int(to_index / 5)	var to_col := to_index % 5
 	var direction := Vector2(float(to_col - from_col), float(to_row - from_row))
 	if direction.length_squared() < 0.0001:
 		return PI * 0.5
@@ -1747,8 +1754,7 @@ func _update_hud() -> void:
 		_set_turn_view(-1)
 		status_label.text = "نوبت گرگ‌ها"
 		detail_label.text = "گرگ را انتخاب کنید؛ مقصد سبز = حرکت، مقصد نارنجی = شکار."
-	elif game.winner == "wolves":
-		status_label.text = "پایان بازی | پیروزی گرگ‌ها"
+	elif game.winner == "wolves":		status_label.text = "پایان بازی | پیروزی گرگ‌ها"
 		detail_label.text = "تعداد گوسفندان به ۸ یا کمتر رسیده است."
 	elif game.winner == "sheep":
 		status_label.text = "پایان بازی | پیروزی گوسفندها"
