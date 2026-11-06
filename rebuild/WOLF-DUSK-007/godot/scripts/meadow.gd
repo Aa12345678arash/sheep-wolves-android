@@ -1506,7 +1506,8 @@ func _awareness_yaw(from_index: int, to_index: int) -> float:
 		return PI * 0.5
 	var from_row := int(from_index / 5)
 	var from_col := from_index % 5
-	var to_row := int(to_index / 5)	var to_col := to_index % 5
+	var to_row := int(to_index / 5)
+	var to_col := to_index % 5
 	var direction := Vector2(float(to_col - from_col), float(to_row - from_row))
 	if direction.length_squared() < 0.0001:
 		return PI * 0.5
