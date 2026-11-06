@@ -1757,7 +1757,8 @@ func _update_hud() -> void:
 		_set_turn_view(-1)
 		status_label.text = "نوبت گرگ‌ها"
 		detail_label.text = "گرگ را انتخاب کنید؛ مقصد سبز = حرکت، مقصد نارنجی = شکار."
-	elif game.winner == "wolves":		status_label.text = "پایان بازی | پیروزی گرگ‌ها"
+	elif game.winner == "wolves":
+		status_label.text = "پایان بازی | پیروزی گرگ‌ها"
 		detail_label.text = "تعداد گوسفندان به ۸ یا کمتر رسیده است."
 	elif game.winner == "sheep":
 		status_label.text = "پایان بازی | پیروزی گوسفندها"
