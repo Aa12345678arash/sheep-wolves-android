@@ -11,6 +11,7 @@ func _run() -> void:
 	var meadow = Meadow.new()
 	root.add_child(meadow)
 	# Allow the CanvasLayer controls to enter the tree and receive their first layout pass.
+	await create_timer(0.40).timeout
 	await process_frame
 	await process_frame
 
