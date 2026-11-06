@@ -9,6 +9,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var meadow = Meadow.new()
 	root.add_child(meadow)
+	await create_timer(0.40).timeout
 	await process_frame
 
 	assert(meadow.node_visuals.size() == 25, "All 25 board nodes must have a visual platform")
