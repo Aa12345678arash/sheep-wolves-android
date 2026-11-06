@@ -6,7 +6,7 @@ const AI = preload("res://scripts/ai_opponent.gd")
 func _initialize() -> void:
 	call_deferred("_run")
 
-func _empty_state() -> GameState:
+func _empty_state():
 	var state = GameState.new()
 	for node in range(25):
 		state.sheep[node] = 0
