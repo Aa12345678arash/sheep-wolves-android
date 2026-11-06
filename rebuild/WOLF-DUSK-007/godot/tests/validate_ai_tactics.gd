@@ -22,6 +22,10 @@ func _run() -> void:
 	stacked.sheep[6] = 2
 	stacked.turn = GameState.Turn.WOLVES
 	assert(stacked.capture_options(0).is_empty(), "Rules must reject jumping over a stack")
+	assert(AI._count_capture_options_after(stacked, 0, 1, -1) == 0,
+		"Wolf search must not count a stack as a future capture")
+	assert(AI._count_threatened_sheep_after(stacked, 0, 1) == 0,
+		"Wolf evaluation must not mark a stack as a capturable threat")
 	for difficulty in range(1, 5):
 		var action: Dictionary = AI.choose_wolf_move(stacked, difficulty)
 		assert(not action.is_empty(), "Every deterministic tier must find a legal fallback")
@@ -32,8 +36,7 @@ func _run() -> void:
 	# Fixture B: capture reduces the flock from nine to eight and wins immediately.
 	var winning = _empty_state()
 	winning.wolves[0] = true
-	winning.wolves[1] = true
-	winning.wolves[2] = true
+	# One wolf keeps the only immediate winning capture unambiguous.
 	winning.sheep[6] = 1
 	winning.sheep[20] = 4
 	winning.sheep[21] = 4
@@ -48,6 +51,13 @@ func _run() -> void:
 		var simulation = AI._copy_state(winning)
 		assert(simulation.move_wolf(int(action.from), int(action.to)) == "won",
 			"Chosen tactical capture must be accepted as an immediate win")
+
+	assert(AI._search_node_limit(4) < AI._search_node_limit(6)
+		and AI._search_node_limit(6) < AI._search_node_limit(8),
+		"Higher search tiers must receive larger node budgets")
+	assert(AI._search_time_limit_usec(4) < AI._search_time_limit_usec(6)
+		and AI._search_time_limit_usec(6) < AI._search_time_limit_usec(8),
+		"Higher search tiers must receive larger time budgets")
 
 	# Fixture C: the sheep side must recognize that moving onto node 6 exposes
 	# the single sheep to the wolf at node 0, while a two-sheep stack is not capturable.
