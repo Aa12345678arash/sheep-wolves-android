@@ -279,10 +279,14 @@ func _build_environment() -> void:
 	environment.ambient_light_energy = 0.72
 	environment.fog_enabled = true
 	environment.fog_light_color = Color(0.49, 0.43, 0.49)
-	environment.fog_density = 0.006
+	environment.fog_density = 0.0045
+	environment.glow_enabled = true
+	environment.glow_intensity = 0.55
+	environment.glow_bloom = 0.08
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	world.environment = environment
 	add_child(world)
+	_build_twilight_accents()
 
 	var ground := MeshInstance3D.new()
 	var mesh := PlaneMesh.new()
@@ -322,6 +326,69 @@ func _build_environment() -> void:
 	_build_meadow_details()
 	_build_stone_approach()
 	_build_distant_meadow_ridges()
+
+
+func _build_twilight_accents() -> void:
+	# A visible moon and warm meadow lanterns make the in-game scene distinct
+	# from the flat green prototype while keeping every light shadow-free on mobile.
+	var moon := MeshInstance3D.new()
+	moon.name = "TwilightMoon"
+	var moon_mesh := SphereMesh.new()
+	moon_mesh.radius = 0.82
+	moon_mesh.height = 1.64
+	moon_mesh.radial_segments = 24
+	moon_mesh.rings = 12
+	moon.mesh = moon_mesh
+	var moon_material := StandardMaterial3D.new()
+	moon_material.albedo_color = Color(1.0, 0.88, 0.62)
+	moon_material.emission_enabled = true
+	moon_material.emission = Color(0.92, 0.64, 0.30)
+	moon_material.emission_energy_multiplier = 1.4
+	moon_material.roughness = 0.72
+	moon.material_override = moon_material
+	moon.position = Vector3(-8.2, 7.8, -9.5)
+	add_child(moon)
+
+	var lantern_positions := [
+		Vector3(-7.0, 0.0, -2.8), Vector3(7.0, 0.0, 2.8),
+		Vector3(-6.8, 0.0, 6.0), Vector3(6.8, 0.0, -6.0)
+	]
+	var post_mesh := CylinderMesh.new()
+	post_mesh.top_radius = 0.055
+	post_mesh.bottom_radius = 0.085
+	post_mesh.height = 1.35
+	var post_material := StandardMaterial3D.new()
+	post_material.albedo_color = Color(0.22, 0.12, 0.075)
+	post_material.roughness = 0.86
+	var bulb_mesh := SphereMesh.new()
+	bulb_mesh.radius = 0.19
+	bulb_mesh.height = 0.38
+	bulb_mesh.radial_segments = 12
+	bulb_mesh.rings = 6
+	var bulb_material := StandardMaterial3D.new()
+	bulb_material.albedo_color = Color(1.0, 0.67, 0.31)
+	bulb_material.emission_enabled = true
+	bulb_material.emission = Color(1.0, 0.43, 0.12)
+	bulb_material.emission_energy_multiplier = 1.8
+	for position in lantern_positions:
+		var post := MeshInstance3D.new()
+		post.mesh = post_mesh
+		post.material_override = post_material
+		post.position = position + Vector3(0.0, 0.68, 0.0)
+		add_child(post)
+		var bulb := MeshInstance3D.new()
+		bulb.mesh = bulb_mesh
+		bulb.material_override = bulb_material
+		bulb.position = position + Vector3(0.0, 1.42, 0.0)
+		add_child(bulb)
+		var light := OmniLight3D.new()
+		light.light_color = Color(1.0, 0.58, 0.28)
+		light.light_energy = 0.55
+		light.omni_range = 3.4
+		light.shadow_enabled = false
+		light.position = position + Vector3(0.0, 1.5, 0.0)
+		add_child(light)
+
 
 func _build_board_frame() -> void:
 	# A low timber frame gives the playable field a clear, tactile boundary.
