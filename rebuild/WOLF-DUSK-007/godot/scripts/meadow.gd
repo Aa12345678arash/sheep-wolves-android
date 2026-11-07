@@ -19,6 +19,8 @@ const AI = preload("res://scripts/ai_opponent.gd")
 
 var game = GameState.new()
 var _shared_resources: Dictionary = {}
+var _world_ready: bool = false
+var _world_loading: bool = false
 var camera: Camera3D
 var camera_target_position: Vector3 = Vector3(0.0, 22.0, 8.0)
 var camera_target_look_at: Vector3 = Vector3.ZERO
@@ -67,24 +69,47 @@ var touch_points: Dictionary = {}
 var last_pinch_distance: float = 0.0
 
 func _ready() -> void:
-	# WOLF-DUSK-036: paint the real startup screen before constructing the
-	# procedural 3D meadow and synthesizing the 16-second music buffer.
-	# These synchronous tasks previously ran before the first visible frame,
-	# leaving Android users on a dark screen during startup.
+	# WOLF-DUSK-044-CONT-003: startup is menu-only. Do not construct the 3D
+	# meadow, board, audio players, or music buffer before the user starts a match.
+	# This keeps cold launch focused on the first usable screen.
+	var startup_started_usec := Time.get_ticks_usec()
 	_build_hud()
 	_update_hud()
 	_show_setup_menu()
-	await get_tree().create_timer(0.25).timeout
-	if not is_inside_tree():
+	print("WOLF_STARTUP_UI_READY_MS=", float(Time.get_ticks_usec() - startup_started_usec) / 1000.0)
+
+func _ensure_game_world() -> void:
+	if _world_ready:
 		return
+	if _world_loading:
+		while _world_loading and is_inside_tree():
+			await get_tree().process_frame
+		return
+	_world_loading = true
+	var world_started_usec := Time.get_ticks_usec()
 	_build_audio()
+	await get_tree().process_frame
+	if not is_inside_tree():
+		_world_loading = false
+		return
 	_build_environment()
+	await get_tree().process_frame
+	if not is_inside_tree():
+		_world_loading = false
+		return
 	_build_board()
+	await get_tree().process_frame
+	if not is_inside_tree():
+		_world_loading = false
+		return
 	_build_camera()
 	_build_light()
 	_refresh_board()
 	_update_hud()
-	# Build the long music buffer only after the first usable screen is visible.
+	_world_ready = true
+	_world_loading = false
+	print("WOLF_GAME_WORLD_READY_MS=", float(Time.get_ticks_usec() - world_started_usec) / 1000.0)
+	# Generate the long music buffer only after the match scene is ready.
 	call_deferred("_prepare_meadow_music")
 
 func _process(delta: float) -> void:
@@ -850,6 +875,9 @@ func _show_setup_menu() -> void:
 	start_button.add_theme_stylebox_override("normal", start_style)
 	start_button.add_theme_stylebox_override("hover", start_style)
 	start_button.pressed.connect(func():
+		if _world_loading:
+			return
+		start_button.disabled = true
 		if is_instance_valid(celebration_layer):
 			celebration_layer.queue_free()
 			celebration_layer = null
@@ -860,7 +888,6 @@ func _show_setup_menu() -> void:
 		chain_time_left = 0.0
 		pass_button.visible = false
 		announced_winner = ""
-		_refresh_board()
 		player_one_name = sheep_name.text.strip_edges()
 		player_two_name = wolf_name.text.strip_edges()
 		if player_one_name.is_empty():
@@ -880,7 +907,12 @@ func _show_setup_menu() -> void:
 			var level_names := ["آموزشی", "آسان", "متوسط", "سخت", "استاد"]
 			opponent_level_text = "\nسطح هوش مصنوعی: %s" % level_names[clampi(ai_difficulty, 0, 4)]
 		player_names_label.text = "گوسفندها: %s  |  گرگ‌ها: %s%s" % [player_one_name, player_two_name, opponent_level_text]
-		setup_layer.queue_free()
+		# Keep the approved setup screen visible while the match-only 3D scene is prepared.
+		await _ensure_game_world()
+		if not is_inside_tree():
+			return
+		if is_instance_valid(setup_layer):
+			setup_layer.queue_free()
 		setup_layer = null
 		feedback_message = "مسابقه آغاز شد؛ گوسفندها شروع می‌کنند."
 		_update_hud()
