@@ -18,6 +18,12 @@ Coordinates are pixel rectangles in the original 1536 × 1024 image, with right/
 | Lower-left | (0, 568, 750, 456) | Character appearance reference: wolf and sheep |
 | Lower-right | (750, 568, 786, 456) | Menu environment reference: cottage, bridge, river, forest, moon, windmill |
 
+The machine-readable map is `assets/art/WOLF-DUSK-044-source-panel-map.json`. The reproducible crop utility is `tools/extract_wolf_dusk_044_panels.py`. It validates the source dimensions and writes four separate, aspect-ratio-preserving JPEG reference panels. A local extraction run against the supplied image produced:
+- icon-reference.jpg — 512 × 568
+- gameplay-reference.jpg — 1024 × 568
+- characters-reference.jpg — 750 × 456
+- menu-environment-reference.jpg — 786 × 456
+
 Keep the original aspect ratios during extraction. Do not stretch the panels. Trim rounded panel borders only when preparing final derived assets, and preserve a clean, readable silhouette and safe margins for launcher icon masks. The lower-left panel is a character reference; it is not a transparent cutout or a rigged 3D model.
 
 ## Required extraction and integration
@@ -29,14 +35,15 @@ Keep the original aspect ratios during extraction. Do not stretch the panels. Tr
 
 ## Current project inspection
 - The Godot project is under `rebuild/WOLF-DUSK-007/godot/`.
-- `project.godot` currently points at `res://assets/icon.svg` and `res://scenes/main.tscn`.
+- `project.godot` points at `res://assets/icon.svg` and `res://scenes/main.tscn`.
+- `scenes/main.tscn` attaches `scripts/meadow.gd`; this is the active scene implementation.
 - Android export preset explicitly points launcher and adaptive icon fields at SVG files in `assets/`.
-- `scripts/meadow.gd` contains the procedural active meadow, board, HUD, and character construction and is the primary integration area to verify against the active scene.
-- `scripts/main.gd` is a separate legacy/simple board implementation; do not assume it is the active scene without checking scene attachments.
+- `scripts/meadow.gd` contains the procedural active meadow, board, HUD, and character construction and is the primary integration area to verify against the approved art.
+- `scripts/main.gd` is a separate legacy/simple board implementation; do not mistake it for the active scene.
 - Existing procedural environment and primitive animal meshes are not yet evidence of compliance with this approved artwork.
 
 ## Critical acceptance criteria
-- The exact source image and derived panel assets must be present in the project before claiming visual integration. This commit records the approved panel map only; it does not claim that the binary source image or crops have been committed.
+- The exact source image and derived panel assets must be present in the project before claiming visual integration. The source image and four binary crop files have not yet been committed to the Git branch; the panel map and reproducible extraction utility are committed. Do not describe the image assets as integrated until they are actually in the project.
 - Keep source artwork and derived assets in a clearly named project assets directory; document provenance and crop/alpha processing.
 - The in-game wolf/sheep models must visually match the lower-left panel, not merely resemble generic animals.
 - The green meadow environment and board must render during an active match. A menu-only implementation fails.
