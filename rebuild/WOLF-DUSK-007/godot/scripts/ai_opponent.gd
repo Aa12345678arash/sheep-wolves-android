@@ -269,10 +269,10 @@ static func _search_depth(difficulty: int) -> int:
 	return 4 if difficulty == 2 else (6 if difficulty == 3 else 8)
 
 static func _search_node_limit(depth: int) -> int:
-	return 7000 if depth <= 4 else (16000 if depth <= 6 else 30000)
+	return 16000 if depth <= 4 else (52000 if depth <= 6 else 110000)
 
 static func _search_time_limit_usec(depth: int) -> int:
-	return 70000 if depth <= 4 else (150000 if depth <= 6 else 240000)
+	return 180000 if depth <= 4 else (450000 if depth <= 6 else 950000)
 
 static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionary:
 	var moves := _legal_search_moves(state, false)
