@@ -13,6 +13,10 @@ func _run() -> void:
 	assert(AI._search_depth(3) == 6, "Hard must use a six-ply search")
 	assert(AI._search_depth(4) == 8, "Expert must use an eight-ply search")
 	assert(AI._search_depth(2) < AI._search_depth(3) and AI._search_depth(3) < AI._search_depth(4), "Search tiers must increase in depth")
+	assert(AI._search_node_limit(4) == 16000 and AI._search_node_limit(6) == 52000 and AI._search_node_limit(8) == 110000,
+		"Medium, hard and expert must receive materially larger node budgets")
+	assert(AI._search_time_limit_usec(4) == 180000 and AI._search_time_limit_usec(6) == 450000 and AI._search_time_limit_usec(8) == 950000,
+		"Medium, hard and expert must receive materially larger search time budgets")
 	for difficulty in range(5):
 		var state = GameState.new()
 		var placed: Array[int] = []
