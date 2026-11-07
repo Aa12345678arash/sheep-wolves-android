@@ -278,10 +278,12 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	var moves := _legal_search_moves(state, false)
 	if moves.is_empty():
 		return {}
-	# Start the deadline before move ordering: ordering itself evaluates children
-	# and must consume the same mobile time budget as the search.
+	# Give root move ordering its own bounded preparation phase. Starting the
+	# search deadline before sorting caused large opening move lists to consume
+	# the entire mobile budget before alpha-beta visited even one child.
+	# Nested ordering still shares the live search deadline and node budget.
+	moves = _order_search_moves(state, moves, true, ai_is_sheep)
 	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth)}
-	moves = _order_search_moves(state, moves, true, ai_is_sheep, context)
 	var best_move: Dictionary = moves[0]
 	var best_score := -INF
 	var alpha := -INF
