@@ -1,4 +1,4 @@
-name: Build WOLF-DUSK-040 Android APK
+name: Build WOLF-DUSK-044 Android APK
 
 on:
   workflow_dispatch:
@@ -12,6 +12,7 @@ on:
       - WOLF-DUSK-035-CINEMATIC-REDESIGN
       - WOLF-DUSK-040-AI-LEVEL-AUDIT
       - WOLF-DUSK-041-AI-TACTICAL-INTELLIGENCE
+      - WOLF-DUSK-044-COLLAGE-ASSET-INTEGRATION
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/build-wolf-dusk-007-apk.yml'
@@ -79,18 +80,18 @@ jobs:
         run: |
           godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
           godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
-      - name: Run WOLF-DUSK-027 startup visual and readability checks
+      - name: Run WOLF-DUSK-044 startup visual and readability regression checks
         run: |
           echo "Running isolated UI readability test with a 120-second hard limit"
           timeout --signal=TERM --kill-after=10s 120s godot --headless --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --script res://tests/validate_ui_readability.gd
       - name: Export Android debug APK
         run: |
-          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-040-preview.apk"
-          test -s "$GITHUB_WORKSPACE/wolf-dusk-027-preview.apk"
-      - name: Upload WOLF-DUSK-027 installable debug APK
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-044-preview.apk"
+          test -s "$GITHUB_WORKSPACE/wolf-dusk-044-preview.apk"
+      - name: Upload WOLF-DUSK-044 installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: wolf-dusk-040-android-preview
-          path: wolf-dusk-027-preview.apk
+          name: wolf-dusk-044-android-preview
+          path: wolf-dusk-044-preview.apk
           if-no-files-found: error
           retention-days: 14
