@@ -1,0 +1,59 @@
+{
+  "source_image": {
+    "width": 1536,
+    "height": 1024,
+    "format": "JPEG",
+    "supplied_by_user": true,
+    "approved_on": "2026-11-07"
+  },
+  "coordinate_convention": "pixel rectangles; x/y inclusive, right/bottom exclusive",
+  "panels": [
+    {
+      "id": "icon",
+      "rect": [
+        0,
+        0,
+        512,
+        568
+      ],
+      "intended_use": "launcher icon source"
+    },
+    {
+      "id": "gameplay",
+      "rect": [
+        512,
+        0,
+        1536,
+        568
+      ],
+      "intended_use": "active gameplay appearance and layout reference"
+    },
+    {
+      "id": "characters",
+      "rect": [
+        0,
+        568,
+        750,
+        1024
+      ],
+      "intended_use": "wolf and sheep character appearance reference"
+    },
+    {
+      "id": "menu_environment",
+      "rect": [
+        750,
+        568,
+        1536,
+        1024
+      ],
+      "intended_use": "menu environment background reference"
+    }
+  ],
+  "processing_rules": [
+    "preserve aspect ratio",
+    "do not stretch panels",
+    "trim rounded panel borders only in derived assets",
+    "do not treat character panel as transparent cutouts or rigged 3D models",
+    "keep gameplay board and pieces interactive"
+  ]
+}
