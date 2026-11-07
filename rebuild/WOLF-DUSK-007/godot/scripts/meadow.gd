@@ -825,14 +825,22 @@ func _show_setup_menu() -> void:
 	difficulty_picker.add_item("هوش مصنوعی: متوسط", 2)
 	difficulty_picker.add_item("هوش مصنوعی: سخت", 3)
 	difficulty_picker.add_item("هوش مصنوعی: استاد", 4)
-	mode_picker.custom_minimum_size = Vector2(0, 64)
-	side_picker.custom_minimum_size = Vector2(0, 64)
-	difficulty_picker.custom_minimum_size = Vector2(0, 64)
+	# Oversized touch targets and popup typography are both required: setting
+	# only the closed OptionButton font leaves Android's opened choice list tiny.
+	mode_picker.custom_minimum_size = Vector2(0, 86)
+	side_picker.custom_minimum_size = Vector2(0, 82)
+	difficulty_picker.custom_minimum_size = Vector2(0, 82)
 	difficulty_picker.select(3) # Default to hard; educational/random play is opt-in.
 	column.add_child(difficulty_picker)
-	mode_picker.add_theme_font_size_override("font_size", 28)
-	side_picker.add_theme_font_size_override("font_size", 28)
-	difficulty_picker.add_theme_font_size_override("font_size", 28)
+	mode_picker.add_theme_font_size_override("font_size", 31)
+	side_picker.add_theme_font_size_override("font_size", 30)
+	difficulty_picker.add_theme_font_size_override("font_size", 30)
+	mode_picker.get_popup().add_theme_font_size_override("font_size", 29)
+	side_picker.get_popup().add_theme_font_size_override("font_size", 29)
+	difficulty_picker.get_popup().add_theme_font_size_override("font_size", 29)
+	mode_picker.get_popup().add_theme_constant_override("v_separation", 14)
+	side_picker.get_popup().add_theme_constant_override("v_separation", 12)
+	difficulty_picker.get_popup().add_theme_constant_override("v_separation", 12)
 	setup_music_button = Button.new()
 	setup_music_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	setup_music_button.text = "موسیقی دشت: روشن"
