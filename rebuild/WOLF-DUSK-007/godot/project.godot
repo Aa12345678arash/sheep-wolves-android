@@ -7,7 +7,7 @@ config/icon="res://assets/icon.svg"
 boot_splash/show_image=false
 ; Keep the engine splash disabled; the game draws its own full-screen menu on launch.
 boot_splash/fullsize=true
-boot_splash/bg_color=Color(0.20, 0.31, 0.22, 1)
+boot_splash/bg_color=Color(0.055, 0.09, 0.20, 1)
 config/description="بازی گرگ و میش؛ راز دشت سبز"
 run/main_scene="res://scenes/main.tscn"
 
@@ -29,4 +29,4 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 textures/default_filters/use_nearest_mipmap_filter=false
-environment/defaults/default_clear_color=Color(0.31, 0.48, 0.34, 1)
+; Use the twilight sky color while the first menu frame is being drawn.\nenvironment/defaults/default_clear_color=Color(0.055, 0.09, 0.20, 1)
