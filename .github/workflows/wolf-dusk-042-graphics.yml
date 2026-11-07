@@ -1,4 +1,4 @@
-name: WOLF-DUSK-043 Cinematic graphics validation and APK
+name: WOLF-DUSK-044 Startup, AI and graphics validation and APK
 
 on:
   push:
@@ -72,14 +72,14 @@ jobs:
           for TEST in validate_board.gd validate_rules.gd validate_ai.gd validate_ai_tactics.gd validate_player_control.gd validate_ui_readability.gd validate_board_pads.gd validate_042_visuals.gd; do
             timeout --signal=TERM --kill-after=15s 120s godot --headless --path "$PROJECT" --script "res://tests/$TEST"
           done
-      - name: Export WOLF-DUSK-043 Android debug APK
+      - name: Export WOLF-DUSK-044 Android debug APK
         run: |
-          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-043-preview.apk"
+          godot --headless --verbose --path "$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot" --export-debug "Android" "$GITHUB_WORKSPACE/wolf-dusk-044-preview.apk"
           test -s "$GITHUB_WORKSPACE/wolf-dusk-043-preview.apk"
-      - name: Upload WOLF-DUSK-043 installable debug APK
+      - name: Upload WOLF-DUSK-044 installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: wolf-dusk-043-android-preview
+          name: wolf-dusk-044-android-preview
           path: wolf-dusk-043-preview.apk
           if-no-files-found: error
           retention-days: 14
