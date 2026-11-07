@@ -107,10 +107,24 @@ func _run() -> void:
 	polish.free()
 	layout_root.free()
 
+	# Startup regression: opening the app must not construct the 3D world or audio.
+	assert(not meadow._world_ready, "3D world must be deferred until the user starts a match")
+	assert(not meadow._world_loading, "3D world must not be loading during startup")
+	assert(meadow.camera == null, "Camera must not be constructed during cold startup")
+	assert(meadow.node_areas.is_empty(), "Board hit areas must not be constructed during cold startup")
+	assert(meadow.move_audio == null and meadow.music_audio == null, "Audio players must not be constructed during cold startup")
+	assert(is_instance_valid(meadow.setup_layer), "Usable setup menu must be available before world construction")
+
+	# Verify the deferred match path still builds the full playable world.
+	await meadow._ensure_game_world()
+	assert(meadow._world_ready, "Match world must become ready when requested")
+	assert(meadow.camera != null and meadow.camera.current, "Match camera must be initialized")
+	assert(meadow.node_areas.size() == 25, "All 25 playable board touch areas must be initialized")
+
 	# The exported app should open directly into the game, not display the Godot logo splash.
 	var config := FileAccess.get_file_as_string("res://project.godot")
 	assert(config.contains("boot_splash/show_image=false"), "Godot boot splash must be hidden for direct game launch")
 
 	meadow.queue_free()
-	print("WOLF-DUSK-027 checks passed: poster background, large Persian title and controls, balanced full-height startup menu, compact-phone HUD spacing and direct launch.")
+	print("WOLF-DUSK-044-CONT-003 checks passed: menu-first cold startup, deferred playable world, 25 board touch areas, readable setup controls and direct launch.")
 	quit()
