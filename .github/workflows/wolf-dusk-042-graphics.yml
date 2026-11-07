@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - WOLF-DUSK-043-AI-ART-UX
+      - WOLF-DUSK-044-STARTUP-AI-ART-REWORK
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/wolf-dusk-042-graphics.yml'
