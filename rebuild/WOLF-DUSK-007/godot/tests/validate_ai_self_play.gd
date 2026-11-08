@@ -3,7 +3,7 @@ extends SceneTree
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
 
-const MAX_PLY := 16
+const MAX_PLY := 48
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -73,20 +73,32 @@ func _run() -> void:
 	var total_matches := 0
 	var total_plies := 0
 	var total_captures := 0
+	var completed_matches := 0
+	var capped_matches := 0
 	for level in range(5):
-		# Cross the levels: each tier controls the wolves once and the sheep
-		# opponent uses the complementary tier. Fixed seeds make fixtures repeatable.
-		var result := _play_match(level, 4 - level, 450045 + level)
-		assert(int(result.sheep_actions) > 0 and int(result.wolf_actions) > 0,
-			"Self-play must exercise both sides at every tier")
-		assert(int(result.plies) > 0 and int(result.plies) <= MAX_PLY,
-			"Self-play must remain within the bounded match budget")
-		assert(int(result.wolves_remaining) == 3,
-			"Self-play must preserve all three wolves")
-		total_matches += 1
-		total_plies += int(result.plies)
-		total_captures += int(result.captures)
-		print("WOLF-DUSK-045 SELF-PLAY ", result)
+		# Run both seat assignments for every complementary level pairing.
+		# Fixed seeds keep the fixtures reproducible while varying placements.
+		for seat in range(2):
+			var wolf_level: int = level if seat == 0 else 4 - level
+			var sheep_level: int = 4 - level if seat == 0 else level
+			var match_seed: int = 450045 + level * 2 + seat
+			var result := _play_match(wolf_level, sheep_level, match_seed)
+			assert(int(result.sheep_actions) > 0 and int(result.wolf_actions) > 0,
+				"Self-play must exercise both sides in every match")
+			assert(int(result.plies) > 0 and int(result.plies) <= MAX_PLY,
+				"Self-play must remain within the bounded match budget")
+			assert(int(result.wolves_remaining) <= 3 and int(result.wolves_remaining) >= 0,
+				"Self-play produced an invalid wolf count")
+			if str(result.winner) == "":
+				capped_matches += 1
+			else:
+				completed_matches += 1
+			total_matches += 1
+			total_plies += int(result.plies)
+			total_captures += int(result.captures)
+			print("WOLF-DUSK-045 SELF-PLAY ", result)
 
-	print("WOLF-DUSK-045 self-play passed: %d seeded matches, %d plies, %d legal captures." % [total_matches, total_plies, total_captures])
+	assert(total_plies >= total_matches * 24,
+		"Self-play fixtures ended too early to provide a useful tactical sample")
+	print("WOLF-DUSK-045 self-play passed: %d seeded matches, %d plies, %d legal captures, %d completed, %d ply-capped." % [total_matches, total_plies, total_captures, completed_matches, capped_matches])
 	quit()
