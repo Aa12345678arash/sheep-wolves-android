@@ -81,15 +81,9 @@ func _run() -> void:
 	assert((top_spacers[0] as Control).size_flags_vertical == Control.SIZE_EXPAND_FILL, "Top spacer must expand to balance the menu")
 	assert((bottom_spacers[0] as Control).size_flags_vertical == Control.SIZE_EXPAND_FILL, "Bottom spacer must expand to balance the menu")
 
-	var option_buttons := panel.find_children("*", "OptionButton", true, false)
-	assert(option_buttons.size() == 3, "Mode, side and difficulty selectors must all be present")
-	var has_five_ai_tiers := false
-	for option in option_buttons:
-		assert(option.custom_minimum_size.y >= 62.0, "Settings selectors must have larger touch targets")
-		assert(option.get_theme_font_size("font_size") >= 22, "Settings selector text must be readable")
-		if option.item_count == 5:
-			has_five_ai_tiers = true
-	assert(has_five_ai_tiers, "AI difficulty selector must expose all five named levels")
+	# The three settings groups are intentionally validated above as large direct-choice
+	# buttons. Do not retain the legacy OptionButton assertions here: they contradict
+	# the no-dropdown requirement and would make this regression test impossible to pass.
 
 	var edits := panel.find_children("*", "LineEdit", true, false)
 	assert(edits.size() == 2, "Both player-name fields must remain available")
