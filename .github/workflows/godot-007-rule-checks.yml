@@ -10,6 +10,7 @@ on:
       - WOLF-DUSK-041-AI-TACTICAL-INTELLIGENCE
       - WOLF-DUSK-044-CONT-004-VALIDATION
       - WOLF-DUSK-044-CONT-005-REAL-FIXES
+      - WOLF-DUSK-045-AI-CHALLENGE
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
@@ -43,3 +44,5 @@ jobs:
         run: timeout 45s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai.gd
       - name: Run WOLF-DUSK-041 tactical regression tests
         run: timeout 60s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_tactics.gd
+      - name: Run WOLF-DUSK-045 graph-distance AI quality tests
+        run: timeout 45s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_quality.gd
