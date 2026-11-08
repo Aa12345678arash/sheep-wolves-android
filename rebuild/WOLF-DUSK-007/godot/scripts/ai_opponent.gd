@@ -433,10 +433,46 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 			for sheep_node in range(BoardGraph.NODE_COUNT):
 				if state.sheep[sheep_node] <= 0:
 					continue
-				var distance := Vector2(float((wolf_node % 5) - (sheep_node % 5)), float(int(wolf_node / 5) - int(sheep_node / 5))).length()
+				var distance := float(_graph_distance(wolf_node, sheep_node))
 				closest = minf(closest, distance)
 			nearest_wolf_distance += closest
 	var sheep_score := sheep_count * 9.0 + sheep_mobility * 1.7 + sheep_progress * 0.55 - blocked_sheep * 3.0 + blocked_wolves * 48.0
 	var wolf_score := (25.0 - sheep_count) * 17.0 + capture_threats * 22.0 + wolf_mobility * 1.1 + wolf_centrality * 1.4 - nearest_wolf_distance * 1.8
 	var score := sheep_score - wolf_score
 	return score if ai_is_sheep else -score
+
+
+# WOLF-DUSK-045: use the actual 56-edge board graph for pursuit distance.
+# Euclidean proximity is misleading on this board because diagonal links and
+# missing edges make geometric distance differ from legal movement distance.
+static var _graph_distance_cache: Dictionary = {}
+
+static func _graph_distance(start_node: int, target_node: int) -> int:
+	if start_node < 0 or start_node >= BoardGraph.NODE_COUNT or target_node < 0 or target_node >= BoardGraph.NODE_COUNT:
+		return -1
+	if start_node == target_node:
+		return 0
+	var cache_key: int = start_node * BoardGraph.NODE_COUNT + target_node
+	if _graph_distance_cache.has(cache_key):
+		return int(_graph_distance_cache[cache_key])
+	var distances: Array[int] = []
+	for _node in range(BoardGraph.NODE_COUNT):
+		distances.append(-1)
+	var queue: Array[int] = [start_node]
+	var head := 0
+	distances[start_node] = 0
+	var adjacency := BoardGraph.adjacency()
+	while head < queue.size():
+		var current: int = queue[head]
+		head += 1
+		for neighbor in adjacency[current]:
+			if distances[neighbor] != -1:
+				continue
+			distances[neighbor] = distances[current] + 1
+			if neighbor == target_node:
+				var result: int = distances[neighbor]
+				_graph_distance_cache[cache_key] = result
+				_graph_distance_cache[target_node * BoardGraph.NODE_COUNT + start_node] = result
+				return result
+			queue.append(neighbor)
+	return -1
