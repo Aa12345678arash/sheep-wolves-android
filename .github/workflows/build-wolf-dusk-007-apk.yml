@@ -13,6 +13,7 @@ on:
       - WOLF-DUSK-040-AI-LEVEL-AUDIT
       - WOLF-DUSK-041-AI-TACTICAL-INTELLIGENCE
       - WOLF-DUSK-044-COLLAGE-ASSET-INTEGRATION
+      - WOLF-DUSK-044-CONT-004-VALIDATION
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/build-wolf-dusk-007-apk.yml'
