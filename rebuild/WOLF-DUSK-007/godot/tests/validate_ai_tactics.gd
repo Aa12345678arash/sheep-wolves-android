@@ -83,6 +83,20 @@ func _run() -> void:
 	for difficulty in range(1, 5):
 		assert(AI._sheep_safety_score(defence, 6, 12) < 0.0,
 			"Every defensive tier must detect the legal jump threat")
+		var defensive_action: Dictionary = AI.choose_sheep_move(defence, difficulty)
+		assert(not defensive_action.is_empty(), "Defensive tier failed to choose a move")
+		assert(not (int(defensive_action.from) == 12 and int(defensive_action.to) == 6),
+			"Defensive tier %d chose the known immediately capturable square" % difficulty)
 
-	print("WOLF-DUSK-041 tactical regression checks passed: stacked-sheep capture rejection, immediate winning capture, and sheep exposure avoidance.")
+	# Fixture D: a legal one-step retreat must remain available to the sheep
+	# after the exposed candidate is rejected; selection must not mutate state.
+	var sheep_before: Array = defence.sheep.duplicate()
+	var wolves_before: Array = defence.wolves.duplicate()
+	var defensive_probe: Dictionary = AI.choose_sheep_move(defence, 4)
+	assert(int(defensive_probe.from) == 12 and int(defensive_probe.to) != 6,
+		"Master tier must choose a move other than the known exposed square")
+	assert(defence.sheep == sheep_before and defence.wolves == wolves_before,
+		"Defensive tactical search must not mutate the source state")
+
+	print("WOLF-DUSK-045 tactical behavior checks passed: stacked-sheep capture rejection, immediate winning capture, and selected-move avoidance of a directly capturable sheep square.")
 	quit()
