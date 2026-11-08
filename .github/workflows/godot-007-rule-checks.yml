@@ -46,3 +46,5 @@ jobs:
         run: timeout 60s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_tactics.gd
       - name: Run WOLF-DUSK-045 graph-distance AI quality tests
         run: timeout 45s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_quality.gd
+      - name: Run WOLF-DUSK-045 seeded AI self-play tournament
+        run: timeout 120s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_self_play.gd
