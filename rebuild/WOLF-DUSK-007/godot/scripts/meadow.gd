@@ -658,6 +658,7 @@ func _build_hud() -> void:
 	footer.add_child(footer_column)
 
 	var controls := GridContainer.new()
+	controls.name = "HudControlGrid"
 	controls.columns = 2
 	controls.add_theme_constant_override("h_separation", 8)
 	controls.add_theme_constant_override("v_separation", 7)
