@@ -3,7 +3,7 @@ extends SceneTree
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
 
-const MAX_PLY := 48
+const MAX_PLY := 96
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -23,7 +23,11 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var sheep_actions := 0
 	var wolf_actions := 0
 	var captures := 0
-	while state.turn != GameState.Turn.FINISHED and ply < MAX_PLY:
+	var repetition_count: Dictionary = {}
+	var draw_reason := ""
+	var initial_key := _position_key(state)
+	repetition_count[initial_key] = 1
+	while state.turn != GameState.Turn.FINISHED and ply < MAX_PLY and draw_reason == "":
 		if state.turn == GameState.Turn.SHEEP:
 			var move: Dictionary = AI.choose_sheep_move(state, sheep_level)
 			assert(not move.is_empty(), "Self-play: sheep AI returned no move while game active")
@@ -55,6 +59,11 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		else:
 			assert(false, "Self-play: unexpected turn state")
 		ply += 1
+		if state.turn != GameState.Turn.FINISHED:
+			var key := _position_key(state)
+			repetition_count[key] = int(repetition_count.get(key, 0)) + 1
+			if int(repetition_count[key]) >= 3:
+				draw_reason = "threefold_repetition"
 
 	return {
 		"wolf_level": wolf_level,
@@ -64,10 +73,16 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"wolf_actions": wolf_actions,
 		"captures": captures,
 		"winner": state.winner,
+		"draw_reason": draw_reason if draw_reason != "" else ("ply_limit" if state.turn != GameState.Turn.FINISHED else ""),
+		"repeated_positions": repetition_count.size(),
 		"sheep_remaining": state.sheep_total(),
 		"wolves_remaining": state.wolf_total(),
 		"placements": placements
 	}
+
+func _position_key(state) -> String:
+	# A repetition key must include every rule-relevant part of the position.
+	return "%s|%s|%d|%d|%d" % [str(state.sheep), str(state.wolves), int(state.turn), int(state.chain_wolf), int(state.chain_capture_count)]
 
 func _run() -> void:
 	var total_matches := 0
@@ -75,6 +90,7 @@ func _run() -> void:
 	var total_captures := 0
 	var completed_matches := 0
 	var capped_matches := 0
+	var repetition_draws := 0
 	for level in range(5):
 		# Run both seat assignments for every complementary level pairing.
 		# Fixed seeds keep the fixtures reproducible while varying placements.
@@ -90,7 +106,10 @@ func _run() -> void:
 			assert(int(result.wolves_remaining) <= 3 and int(result.wolves_remaining) >= 0,
 				"Self-play produced an invalid wolf count")
 			if str(result.winner) == "":
-				capped_matches += 1
+				if str(result.draw_reason) == "threefold_repetition":
+					repetition_draws += 1
+				else:
+					capped_matches += 1
 			else:
 				completed_matches += 1
 			total_matches += 1
@@ -100,5 +119,5 @@ func _run() -> void:
 
 	assert(total_plies >= total_matches * 24,
 		"Self-play fixtures ended too early to provide a useful tactical sample")
-	print("WOLF-DUSK-045 self-play passed: %d seeded matches, %d plies, %d legal captures, %d completed, %d ply-capped." % [total_matches, total_plies, total_captures, completed_matches, capped_matches])
+	print("WOLF-DUSK-045 self-play passed: %d seeded matches, %d plies, %d legal captures, %d completed, %d repetition draws, %d ply-capped (limit %d)." % [total_matches, total_plies, total_captures, completed_matches, repetition_draws, capped_matches, MAX_PLY])
 	quit()
