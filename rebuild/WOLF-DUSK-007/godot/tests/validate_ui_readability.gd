@@ -35,10 +35,24 @@ func _run() -> void:
 		assert((edit as LineEdit).get_theme_font_size("font_size") >= 27, "Player-name text must be large and readable")
 		assert((edit as LineEdit).custom_minimum_size.y >= 68.0, "Player-name fields must have comfortable touch targets")
 	var setup_options: Array[Node] = meadow.setup_layer.find_children("*", "OptionButton", true, false)
-	assert(setup_options.size() == 3, "All game selectors must remain available")
-	for option in setup_options:
-		assert((option as OptionButton).get_theme_font_size("font_size") >= 26, "Selector text must be larger for phone readability")
-		assert((option as OptionButton).custom_minimum_size.y >= 64.0, "Selector touch targets must remain comfortable")
+	assert(setup_options.is_empty(), "Setup menu must not use compact dropdown selectors")
+	var mode_grids := meadow.setup_layer.find_children("SetupModeChoices", "GridContainer", true, false)
+	var side_grids := meadow.setup_layer.find_children("SetupSideChoices", "GridContainer", true, false)
+	var difficulty_grids := meadow.setup_layer.find_children("SetupDifficultyChoices", "GridContainer", true, false)
+	assert(mode_grids.size() == 1 and side_grids.size() == 1 and difficulty_grids.size() == 1, "All three large choice groups must be present")
+	var mode_buttons := mode_grids[0].find_children("*", "Button", true, false)
+	var side_buttons := side_grids[0].find_children("*", "Button", true, false)
+	var difficulty_buttons := difficulty_grids[0].find_children("*", "Button", true, false)
+	assert(mode_buttons.size() == 2, "Both match modes must be available as direct choices")
+	assert(side_buttons.size() == 2, "Both player sides must be available as direct choices")
+	assert(difficulty_buttons.size() == 5, "All five AI levels must be visible as direct choices")
+	for choice in mode_buttons + side_buttons + difficulty_buttons:
+		var button := choice as Button
+		assert(button.toggle_mode and button.button_group != null, "Setup choices must behave as exclusive selectable buttons")
+		assert(button.custom_minimum_size.y >= 68.0, "Setup choices must have large finger-friendly touch targets")
+		assert(button.get_theme_font_size("font_size") >= 24, "Setup choice text must be large and readable")
+	assert((difficulty_buttons[3] as Button).button_pressed, "Hard AI must remain the default selection")
+
 	assert(is_instance_valid(meadow.setup_layer), "Settings panel must open on launch")
 	assert(meadow.setup_layer.get_child_count() >= 2, "Settings overlay must contain shade and panel")
 	# The startup panel is a direct child of the setup CanvasLayer. Inspect direct
@@ -82,7 +96,7 @@ func _run() -> void:
 	for edit in edits:
 		assert(edit.custom_minimum_size.y >= 62.0, "Player-name fields must have larger touch targets")
 
-	var grids := meadow.find_children("*", "GridContainer", true, false)
+	var grids := meadow.find_children("HudControlGrid", "GridContainer", true, false)
 	assert(not grids.is_empty(), "Bottom controls must be arranged in a two-column touch-friendly grid")
 	var controls := grids[0] as GridContainer
 	assert(controls.columns == 2, "Phone controls must use two columns rather than narrow one-row buttons")
