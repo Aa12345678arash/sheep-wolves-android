@@ -712,6 +712,42 @@ func _build_hud() -> void:
 	credit.add_theme_font_size_override("font_size", 18)
 	footer_column.add_child(credit)
 
+func _make_setup_choice(parent: Container, label: String, choice_id: int, group: ButtonGroup, tint: Color, selected: bool = false) -> Button:
+	var button := Button.new()
+	button.text = label
+	button.name = "SetupChoice_%s" % str(choice_id)
+	button.toggle_mode = true
+	button.button_group = group
+	button.button_pressed = selected
+	button.set_meta("choice_id", choice_id)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.custom_minimum_size = Vector2(0.0, 70.0)
+	button.add_theme_font_size_override("font_size", 25)
+	button.add_theme_color_override("font_color", Color(1.0, 0.98, 0.91))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = tint.darkened(0.42)
+	normal.border_color = tint.lightened(0.12)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(14)
+	normal.content_margin_left = 8.0
+	normal.content_margin_right = 8.0
+	var pressed := StyleBoxFlat.new()
+	pressed.bg_color = tint
+	pressed.border_color = Color(1.0, 0.91, 0.58, 1.0)
+	pressed.set_border_width_all(4)
+	pressed.set_corner_radius_all(14)
+	pressed.content_margin_left = 8.0
+	pressed.content_margin_right = 8.0
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = tint.darkened(0.22)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_stylebox_override("hover_pressed", pressed)
+	parent.add_child(button)
+	return button
+
 func _show_setup_menu() -> void:
 	if is_instance_valid(setup_layer):
 		setup_layer.queue_free()
@@ -826,31 +862,57 @@ func _show_setup_menu() -> void:
 	wolf_name.custom_minimum_size = Vector2(0, 70)
 	wolf_name.add_theme_font_size_override("font_size", 28)
 	column.add_child(wolf_name)
-	var mode_picker := OptionButton.new()
-	mode_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	mode_picker.add_item("دو نفرهٔ حضوری روی یک دستگاه", 0)
-	mode_picker.add_item("بازی با رایانه (هوش مصنوعی)", 1)
-	column.add_child(mode_picker)
-	var side_picker := OptionButton.new()
-	side_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	side_picker.add_item("من گوسفندها باشم", 0)
-	side_picker.add_item("من گرگ‌ها باشم", 1)
-	column.add_child(side_picker)
-	var difficulty_picker := OptionButton.new()
-	difficulty_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	difficulty_picker.add_item("هوش مصنوعی: آموزشی", 0)
-	difficulty_picker.add_item("هوش مصنوعی: آسان", 1)
-	difficulty_picker.add_item("هوش مصنوعی: متوسط", 2)
-	difficulty_picker.add_item("هوش مصنوعی: سخت", 3)
-	difficulty_picker.add_item("هوش مصنوعی: استاد", 4)
-	mode_picker.custom_minimum_size = Vector2(0, 64)
-	side_picker.custom_minimum_size = Vector2(0, 64)
-	difficulty_picker.custom_minimum_size = Vector2(0, 64)
-	difficulty_picker.select(3) # Default to hard; educational/random play is opt-in.
-	column.add_child(difficulty_picker)
-	mode_picker.add_theme_font_size_override("font_size", 28)
-	side_picker.add_theme_font_size_override("font_size", 28)
-	difficulty_picker.add_theme_font_size_override("font_size", 28)
+	var mode_label := Label.new()
+	mode_label.text = "نوع مسابقه"
+	mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mode_label.add_theme_font_size_override("font_size", 26)
+	column.add_child(mode_label)
+	var mode_group := ButtonGroup.new()
+	mode_group.allow_unpress = false
+	var mode_grid := GridContainer.new()
+	mode_grid.name = "SetupModeChoices"
+	mode_grid.columns = 2
+	mode_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mode_grid.add_theme_constant_override("h_separation", 8)
+	mode_grid.add_theme_constant_override("v_separation", 8)
+	column.add_child(mode_grid)
+	_make_setup_choice(mode_grid, "دو نفره", 0, mode_group, Color(0.16, 0.48, 0.68), true)
+	_make_setup_choice(mode_grid, "بازی با رایانه", 1, mode_group, Color(0.15, 0.55, 0.34))
+	var side_label := Label.new()
+	side_label.text = "انتخاب مهرهٔ شما"
+	side_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	side_label.add_theme_font_size_override("font_size", 26)
+	column.add_child(side_label)
+	var side_group := ButtonGroup.new()
+	side_group.allow_unpress = false
+	var side_grid := GridContainer.new()
+	side_grid.name = "SetupSideChoices"
+	side_grid.columns = 2
+	side_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	side_grid.add_theme_constant_override("h_separation", 8)
+	side_grid.add_theme_constant_override("v_separation", 8)
+	column.add_child(side_grid)
+	_make_setup_choice(side_grid, "من گوسفندها", 0, side_group, Color(0.58, 0.43, 0.18), true)
+	_make_setup_choice(side_grid, "من گرگ‌ها", 1, side_group, Color(0.35, 0.36, 0.48))
+	var difficulty_label := Label.new()
+	difficulty_label.text = "سطح هوش مصنوعی"
+	difficulty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	difficulty_label.add_theme_font_size_override("font_size", 27)
+	column.add_child(difficulty_label)
+	var difficulty_group := ButtonGroup.new()
+	difficulty_group.allow_unpress = false
+	var difficulty_grid := GridContainer.new()
+	difficulty_grid.name = "SetupDifficultyChoices"
+	difficulty_grid.columns = 2
+	difficulty_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	difficulty_grid.add_theme_constant_override("h_separation", 8)
+	difficulty_grid.add_theme_constant_override("v_separation", 8)
+	column.add_child(difficulty_grid)
+	_make_setup_choice(difficulty_grid, "آموزشی", 0, difficulty_group, Color(0.20, 0.50, 0.65))
+	_make_setup_choice(difficulty_grid, "آسان", 1, difficulty_group, Color(0.20, 0.58, 0.40))
+	_make_setup_choice(difficulty_grid, "متوسط", 2, difficulty_group, Color(0.66, 0.52, 0.18))
+	_make_setup_choice(difficulty_grid, "سخت", 3, difficulty_group, Color(0.72, 0.34, 0.16), true)
+	_make_setup_choice(difficulty_grid, "استاد", 4, difficulty_group, Color(0.56, 0.22, 0.30))
 	setup_music_button = Button.new()
 	setup_music_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	setup_music_button.text = "موسیقی دشت: روشن"
@@ -894,9 +956,12 @@ func _show_setup_menu() -> void:
 			player_one_name = "بازیکن گوسفندها"
 		if player_two_name.is_empty():
 			player_two_name = "بازیکن گرگ‌ها"
-		match_mode = "ai" if mode_picker.get_selected_id() == 1 else "local"
-		human_side = "wolves" if side_picker.get_selected_id() == 1 else "sheep"
-		ai_difficulty = difficulty_picker.get_selected_id()
+		var selected_mode := mode_group.get_pressed_button()
+		var selected_side := side_group.get_pressed_button()
+		var selected_difficulty := difficulty_group.get_pressed_button()
+		match_mode = "ai" if selected_mode != null and int(selected_mode.get_meta("choice_id")) == 1 else "local"
+		human_side = "wolves" if selected_side != null and int(selected_side.get_meta("choice_id")) == 1 else "sheep"
+		ai_difficulty = int(selected_difficulty.get_meta("choice_id")) if selected_difficulty != null else 3
 		if match_mode == "ai":
 			if human_side == "sheep":
 				player_two_name = "رایانه (گرگ‌ها)"
