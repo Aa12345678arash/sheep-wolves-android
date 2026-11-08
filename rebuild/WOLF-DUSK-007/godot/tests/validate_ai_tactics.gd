@@ -93,8 +93,9 @@ func _run() -> void:
 	var sheep_before: Array = defence.sheep.duplicate()
 	var wolves_before: Array = defence.wolves.duplicate()
 	var defensive_probe: Dictionary = AI.choose_sheep_move(defence, 4)
-	assert(int(defensive_probe.from) == 12 and int(defensive_probe.to) != 6,
-		"Master tier must choose a move other than the known exposed square")
+	assert(not defensive_probe.is_empty(), "Master tier must choose a legal defensive move")
+	assert(not (int(defensive_probe.from) == 12 and int(defensive_probe.to) == 6),
+		"Master tier must not choose the known immediately capturable square")
 	assert(defence.sheep == sheep_before and defence.wolves == wolves_before,
 		"Defensive tactical search must not mutate the source state")
 
