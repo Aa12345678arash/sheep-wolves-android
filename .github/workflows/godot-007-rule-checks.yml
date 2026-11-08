@@ -9,6 +9,7 @@ on:
       - WOLF-DUSK-040-AI-LEVEL-AUDIT
       - WOLF-DUSK-041-AI-TACTICAL-INTELLIGENCE
       - WOLF-DUSK-044-CONT-004-VALIDATION
+      - WOLF-DUSK-044-CONT-005-REAL-FIXES
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
