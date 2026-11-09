@@ -1,5 +1,5 @@
 name: WOLF-DUSK-007 rule checks
-# WOLF-DUSK-046-CONT-002: rerun after active-game AI chain-decline handling was added.
+# WOLF-DUSK-046-CONT-002: rerun on latest branch head after active-game chain-decline controller validation.
 
 on:
   push:
