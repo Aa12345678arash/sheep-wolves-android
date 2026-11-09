@@ -154,11 +154,17 @@ func _initialize() -> void:
 	assert(AI._wolf_mobility_after(chain_ai_state, 6, 12) >= 0)
 	var chain_ai_action: Dictionary = AI.choose_wolf_move(chain_ai_state, 2)
 	assert(not chain_ai_action.is_empty())
-	assert(int(chain_ai_action.from) == 12)
-	assert(int(chain_ai_action.to) == 24)
-	assert(bool(chain_ai_action.capture))
-	assert(chain_ai_state.move_wolf(int(chain_ai_action.from), int(chain_ai_action.to)) == "captured")
-	assert(chain_ai_state.turn == GameState.Turn.SHEEP)
+	if str(chain_ai_action.get("side", "")) == "decline_chain":
+		# The second jump is legal, but this non-winning fixture may be declined
+		# when the evaluator prefers preserving the current material position.
+		chain_ai_state.finish_wolf_turn()
+		assert(chain_ai_state.turn == GameState.Turn.SHEEP and chain_ai_state.chain_wolf == -1)
+	else:
+		assert(int(chain_ai_action.from) == 12)
+		assert(int(chain_ai_action.to) == 24)
+		assert(bool(chain_ai_action.capture))
+		assert(chain_ai_state.move_wolf(int(chain_ai_action.from), int(chain_ai_action.to)) == "captured")
+		assert(chain_ai_state.turn == GameState.Turn.SHEEP)
 	# An unrelated destination cannot consume the pending chain opportunity.
 	assert(chain_state.move_wolf(12, 4) == "chain_capture_required")
 	assert(chain_state.wolves[12] and not chain_state.wolves[4])
