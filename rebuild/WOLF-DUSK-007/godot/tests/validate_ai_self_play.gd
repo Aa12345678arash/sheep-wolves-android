@@ -32,8 +32,11 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var search_total_usec := 0
 	var search_stopped := 0
 	var repetition_count: Dictionary = {}
+	var repetition_first_seen: Dictionary = {}
 	var draw_reason := ""
-	repetition_count[_position_key(state)] = 1
+	var initial_key := _position_key(state)
+	repetition_count[initial_key] = 1
+	repetition_first_seen[initial_key] = 0
 	while state.turn != GameState.Turn.FINISHED and ply < MAX_PLY and draw_reason == "":
 		if state.turn == GameState.Turn.SHEEP:
 			var move: Dictionary = AI.choose_sheep_move(state, sheep_level)
@@ -85,8 +88,13 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		ply += 1
 		if state.turn != GameState.Turn.FINISHED:
 			var key := _position_key(state)
-			repetition_count[key] = int(repetition_count.get(key, 0)) + 1
-			if int(repetition_count[key]) >= 3:
+			var previous_count := int(repetition_count.get(key, 0))
+			if not repetition_first_seen.has(key):
+				repetition_first_seen[key] = ply
+			repetition_count[key] = previous_count + 1
+			if int(repetition_count[key]) == 3:
+				var cycle_start_ply := int(repetition_first_seen[key])
+				print("WOLF-DUSK-047 CYCLE wolf=%d sheep=%d seed=%d first_seen_ply=%d repeated_at_ply=%d cycle_length=%d position=%s" % [wolf_level, sheep_level, match_seed, cycle_start_ply, ply, ply - cycle_start_ply, key])
 				draw_reason = "threefold_repetition"
 
 	return {
