@@ -67,10 +67,16 @@ func _run() -> void:
 		var sheep_before: Array = chain_state.sheep.duplicate()
 		var wolves_before: Array = chain_state.wolves.duplicate()
 		var chain_action: Dictionary = AI.choose_wolf_move(chain_state, difficulty)
-		assert(int(chain_action.from) == 12, "AI switched wolves during a chain capture")
-		assert(int(chain_action.to) == 24 and bool(chain_action.capture), "AI missed the only legal second capture")
+		assert(not chain_action.is_empty(), "AI returned no action during an optional chain")
 		assert(chain_state.sheep == sheep_before and chain_state.wolves == wolves_before, "Chain selection mutated game state")
-		assert(chain_state.move_wolf(int(chain_action.from), int(chain_action.to)) == "captured", "Rules rejected AI second capture")
-		assert(chain_state.turn == GameState.Turn.SHEEP, "Second capture must finish the wolf turn")
+		if str(chain_action.get("side", "")) == "decline_chain":
+			chain_state.finish_wolf_turn()
+			assert(chain_state.turn == GameState.Turn.SHEEP and chain_state.chain_wolf == -1,
+				"Declining the optional second capture must finish the wolf turn")
+		else:
+			assert(int(chain_action.from) == 12, "AI switched wolves during a chain capture")
+			assert(int(chain_action.to) == 24 and bool(chain_action.capture), "AI selected an illegal second capture")
+			assert(chain_state.move_wolf(int(chain_action.from), int(chain_action.to)) == "captured", "Rules rejected AI second capture")
+			assert(chain_state.turn == GameState.Turn.SHEEP, "Second capture must finish the wolf turn")
 	print("WOLF-DUSK-AI-015 checks passed: all five difficulty levels choose legal placements, sheep moves and wolf moves without mutating state.")
 	quit()
