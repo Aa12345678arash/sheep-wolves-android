@@ -27,12 +27,22 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var sheep_actions := 0
 	var wolf_actions := 0
 	var captures := 0
+	var search_calls := 0
+	var search_root_order_usec := 0
+	var search_total_usec := 0
+	var search_stopped := 0
 	var repetition_count: Dictionary = {}
 	var draw_reason := ""
 	repetition_count[_position_key(state)] = 1
 	while state.turn != GameState.Turn.FINISHED and ply < MAX_PLY and draw_reason == "":
 		if state.turn == GameState.Turn.SHEEP:
 			var move: Dictionary = AI.choose_sheep_move(state, sheep_level)
+			if sheep_level >= 2:
+				search_calls += 1
+				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
+				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
+				if bool(AI.last_search_stats.get("stopped", false)):
+					search_stopped += 1
 			assert(not move.is_empty(), "Sheep AI returned no move in an active match")
 			var from_node := int(move.get("from", -1))
 			var to_node := int(move.get("to", -1))
@@ -42,6 +52,12 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 			sheep_actions += 1
 		elif state.turn == GameState.Turn.WOLVES:
 			var move: Dictionary = AI.choose_wolf_move(state, wolf_level)
+			if wolf_level >= 2:
+				search_calls += 1
+				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
+				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
+				if bool(AI.last_search_stats.get("stopped", false)):
+					search_stopped += 1
 			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
 			if str(move.get("side", "")) == "decline_chain":
 				assert(state.chain_wolf != -1, "AI may decline only an active optional chain capture")
@@ -81,6 +97,10 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"sheep_actions": sheep_actions,
 		"wolf_actions": wolf_actions,
 		"captures": captures,
+		"search_calls": search_calls,
+		"search_root_order_usec": search_root_order_usec,
+		"search_total_usec": search_total_usec,
+		"search_stopped": search_stopped,
 		"winner": state.winner,
 		"draw_reason": draw_reason if draw_reason != "" else ("ply_limit" if state.turn != GameState.Turn.FINISHED else ""),
 		"repeated_positions": repetition_count.size(),
