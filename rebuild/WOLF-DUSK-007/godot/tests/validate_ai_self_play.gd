@@ -43,22 +43,27 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		elif state.turn == GameState.Turn.WOLVES:
 			var move: Dictionary = AI.choose_wolf_move(state, wolf_level)
 			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
-			var from_node := int(move.get("from", -1))
-			var to_node := int(move.get("to", -1))
-			assert(from_node >= 0 and from_node < 25 and state.wolves[from_node],
-				"Wolf AI selected a non-wolf origin")
-			var was_capture := false
-			for option in state.capture_options(from_node):
-				if int(option.to) == to_node:
-					was_capture = true
-			assert(was_capture or to_node in state.wolf_moves(from_node),
-				"Wolf level %d returned illegal move %d -> %d" % [wolf_level, from_node, to_node])
-			var result: String = state.move_wolf(from_node, to_node)
-			assert(result in ["moved", "captured", "captured_chain_available", "won"],
-				"Rules rejected wolf action: " + result)
-			if was_capture:
-				captures += 1
-			wolf_actions += 1
+			if str(move.get("side", "")) == "decline_chain":
+				assert(state.chain_wolf != -1, "AI may decline only an active optional chain capture")
+				state.finish_wolf_turn()
+				wolf_actions += 1
+			else:
+				var from_node := int(move.get("from", -1))
+				var to_node := int(move.get("to", -1))
+				assert(from_node >= 0 and from_node < 25 and state.wolves[from_node],
+					"Wolf AI selected a non-wolf origin")
+				var was_capture := false
+				for option in state.capture_options(from_node):
+					if int(option.to) == to_node:
+						was_capture = true
+				assert(was_capture or to_node in state.wolf_moves(from_node),
+					"Wolf level %d returned illegal move %d -> %d" % [wolf_level, from_node, to_node])
+				var result: String = state.move_wolf(from_node, to_node)
+				assert(result in ["moved", "captured", "captured_chain_available", "won"],
+					"Rules rejected wolf action: " + result)
+				if was_capture:
+					captures += 1
+				wolf_actions += 1
 		else:
 			assert(false, "Unexpected turn state")
 		ply += 1
