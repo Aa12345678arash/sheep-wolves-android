@@ -14,6 +14,7 @@ on:
       - WOLF-DUSK-045-AI-CHALLENGE
       - WOLF-DUSK-046-AI-COMPETITIVE-AUDIT
       - WOLF-DUSK-046-CONT-002
+      - WOLF-DUSK-047-AI-CYCLE-ROOT-CAUSE
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
