@@ -48,6 +48,27 @@ static func choose_sheep_move(state, difficulty: int) -> Dictionary:
 	return best
 
 static func choose_wolf_move(state, difficulty: int) -> Dictionary:
+	# Every tier must receive the same legal chain choices, including an explicit
+	# option to end the wolf turn. Tiers differ in how they rank those choices.
+	if state.chain_wolf != -1:
+		var chain_actions := _legal_search_moves(state, true)
+		if chain_actions.is_empty():
+			return {}
+		if difficulty == 0:
+			return chain_actions[randi() % chain_actions.size()]
+		if difficulty >= 2:
+			return _search_best_move(state, false, _search_depth(difficulty))
+		var best_chain_action: Dictionary = chain_actions[0]
+		var best_chain_score := -INF
+		for action in chain_actions:
+			var child = _copy_state(state)
+			_apply_search_move(child, action)
+			var score := _evaluate_position(child, false)
+			if score > best_chain_score:
+				best_chain_score = score
+				best_chain_action = action
+		return best_chain_action
+
 	var moves: Array[Dictionary] = []
 	# During an optional chain capture, only the wolf that made the first
 	# capture may move, and only another capture is legal.
@@ -275,7 +296,9 @@ static func _search_time_limit_usec(depth: int) -> int:
 	return 70000 if depth <= 4 else (150000 if depth <= 6 else 240000)
 
 static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionary:
-	var moves := _legal_search_moves(state, false)
+	# At the real decision root, include declining an optional second capture.
+	var include_chain_decline: bool = state.turn == GameState.Turn.WOLVES and state.chain_wolf != -1
+	var moves := _legal_search_moves(state, include_chain_decline)
 	if moves.is_empty():
 		return {}
 	# Start the deadline before move ordering: ordering itself evaluates children
