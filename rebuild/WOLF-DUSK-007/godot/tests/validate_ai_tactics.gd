@@ -99,5 +99,42 @@ func _run() -> void:
 	assert(defence.sheep == sheep_before and defence.wolves == wolves_before,
 		"Defensive tactical search must not mutate the source state")
 
-	print("WOLF-DUSK-045 tactical behavior checks passed: stacked-sheep capture rejection, immediate winning capture, and selected-move avoidance of a directly capturable sheep square.")
+	# Fixture E: the wolf has an optional second capture. Every tier must be
+	# given both legal choices; stronger tiers must take the immediate winning
+	# capture, while the random educational tier may choose either legal option.
+	var chain = _empty_state()
+	chain.wolves[14] = true
+	chain.sheep[18] = 1
+	chain.sheep[20] = 4
+	chain.sheep[21] = 4
+	chain.turn = GameState.Turn.WOLVES
+	chain.chain_wolf = 14
+	chain.chain_capture_count = 1
+	var chain_actions := AI._legal_search_moves(chain, true)
+	var has_decline := false
+	var has_follow_up := false
+	for action in chain_actions:
+		if str(action.get("side", "")) == "decline_chain":
+			has_decline = true
+		elif int(action.get("from", -1)) == 14 and int(action.get("to", -1)) == 22:
+			has_follow_up = true
+	assert(has_decline and has_follow_up,
+		"An optional chain turn must expose both decline and legal follow-up capture")
+	var declined = AI._copy_state(chain)
+	AI._apply_search_move(declined, {"side": "decline_chain"})
+	assert(declined.turn == GameState.Turn.SHEEP and declined.chain_wolf == -1,
+		"Declining the optional capture must legally finish the wolf turn")
+	for difficulty in range(5):
+		var chain_action: Dictionary = AI.choose_wolf_move(chain, difficulty)
+		assert(not chain_action.is_empty(), "Every AI tier must choose an action during an optional chain")
+		if str(chain_action.get("side", "")) == "decline_chain":
+			assert(difficulty == 0, "Tactical tiers must take the immediate winning follow-up capture")
+		else:
+			assert(int(chain_action.get("from", -1)) == 14 and int(chain_action.get("to", -1)) == 22,
+				"AI tier %d selected an invalid chain action" % difficulty)
+			var chain_result = AI._copy_state(chain)
+			assert(chain_result.move_wolf(14, 22) == "won",
+				"Follow-up capture must be accepted as the immediate winning move")
+
+	print("WOLF-DUSK-046 tactical checks passed: legal optional-chain decline and follow-up are exposed to all five tiers; tactical tiers take the immediate winning capture.")
 	quit()
