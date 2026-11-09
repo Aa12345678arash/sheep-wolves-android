@@ -12,6 +12,7 @@ on:
       - WOLF-DUSK-044-CONT-005-REAL-FIXES
       - WOLF-DUSK-045-AI-CHALLENGE
       - WOLF-DUSK-046-AI-COMPETITIVE-AUDIT
+      - WOLF-DUSK-046-CONT-002
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
