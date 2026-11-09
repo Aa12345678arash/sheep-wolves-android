@@ -1,5 +1,5 @@
 name: WOLF-DUSK-007 rule checks
-# WOLF-DUSK-046-CONT-002: rerun after optional-chain fixture assertions were aligned.
+# WOLF-DUSK-046-CONT-002: rerun after active-game AI chain-decline handling was added.
 
 on:
   push:
