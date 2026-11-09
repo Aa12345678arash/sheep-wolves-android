@@ -1,4 +1,5 @@
 name: WOLF-DUSK-007 rule checks
+# WOLF-DUSK-046-CONT-002: rerun after optional-chain fixture assertion was corrected.
 
 on:
   push:
