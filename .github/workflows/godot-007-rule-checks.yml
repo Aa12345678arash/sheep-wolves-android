@@ -11,6 +11,7 @@ on:
       - WOLF-DUSK-044-CONT-004-VALIDATION
       - WOLF-DUSK-044-CONT-005-REAL-FIXES
       - WOLF-DUSK-045-AI-CHALLENGE
+      - WOLF-DUSK-046-AI-COMPETITIVE-AUDIT
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/**'
       - '.github/workflows/godot-007-rule-checks.yml'
@@ -26,7 +27,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot 4.4.1
@@ -46,5 +47,5 @@ jobs:
         run: timeout 60s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_tactics.gd
       - name: Run WOLF-DUSK-045 graph-distance AI quality tests
         run: timeout 45s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_quality.gd
-      - name: Run WOLF-DUSK-045 seeded AI self-play tournament
-        run: timeout 120s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_self_play.gd
+      - name: Run WOLF-DUSK-046 competitive diagnostic tournament (25 matchups x 2 seeds)
+        run: timeout 1500s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_ai_self_play.gd
