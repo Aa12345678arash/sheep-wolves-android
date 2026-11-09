@@ -1073,7 +1073,11 @@ func _run_ai_turn(generation: int) -> void:
 				# Let the selected difficulty evaluate the optional second capture.
 				# The rules permit only the same wolf to continue the chain.
 				var chain_move: Dictionary = AI.choose_wolf_move(game, ai_difficulty)
-				if not chain_move.is_empty():
+				if str(chain_move.get("side", "")) == "decline_chain":
+					# Optional second capture was evaluated and deliberately declined.
+					game.finish_wolf_turn()
+					feedback_message = "رایانه پس از ارزیابی موقعیت، از شکار دوم صرف‌نظر کرد."
+				elif not chain_move.is_empty():
 					var chain_from := int(chain_move.from)
 					var chain_to := int(chain_move.to)
 					var chain_capture_node := -1
@@ -1090,9 +1094,10 @@ func _run_ai_turn(generation: int) -> void:
 					elif chain_result == "captured_chain_available":
 						# The current rules cap a chain at two captures; fail closed.
 						game.finish_wolf_turn()
+					feedback_message = "رایانه شکار دوم را انجام داد."
 				else:
 					game.finish_wolf_turn()
-				feedback_message = "رایانه با ارزیابی تاکتیکی، شکار زنجیره‌ای را انجام داد."
+					feedback_message = "رایانه از شکار دوم صرف‌نظر کرد."
 			else:
 				feedback_message = "رایانه گرگ‌ها را حرکت داد."
 		else:
