@@ -305,6 +305,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	# and must consume the same mobile time budget as the search.
 	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth)}
 	moves = _order_search_moves(state, moves, true, ai_is_sheep, context)
+	var root_order_usec: int = Time.get_ticks_usec() - int(context.start)
 	var best_move: Dictionary = moves[0]
 	var best_score := -INF
 	var alpha := -INF
@@ -319,6 +320,16 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		alpha = maxf(alpha, best_score)
 		if _search_stopped(context):
 			break
+	last_search_stats = {
+			"depth": depth,
+			"root_moves": moves.size(),
+			"root_order_usec": root_order_usec,
+			"total_usec": Time.get_ticks_usec() - int(context.start),
+			"nodes": int(context.nodes),
+			"node_limit": int(context.node_limit),
+			"time_limit_usec": int(context.time_limit),
+			"stopped": _search_stopped(context)
+		}
 	return best_move
 
 static func _search_stopped(context: Dictionary) -> bool:
@@ -469,6 +480,8 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 # Euclidean proximity is misleading on this board because diagonal links and
 # missing edges make geometric distance differ from legal movement distance.
 static var _graph_distance_cache: Dictionary = {}
+# WOLF-DUSK-047 diagnostics: last bounded-search execution, exposed to headless tests.
+static var last_search_stats: Dictionary = {}
 
 static func _graph_distance(start_node: int, target_node: int) -> int:
 	if start_node < 0 or start_node >= BoardGraph.NODE_COUNT or target_node < 0 or target_node >= BoardGraph.NODE_COUNT:
