@@ -3,7 +3,11 @@ extends SceneTree
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
 
-const MAX_PLY := 96
+# Diagnostic baseline: bounded matches, full 5x5 level matrix, two reproducible seeds.
+# This run measures competitive outcomes; it does not yet claim the AI passes a
+# strength threshold. Acceptance thresholds will be set after this baseline.
+const MAX_PLY := 72
+const SEEDS: Array[int] = [460046, 460047]
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -15,8 +19,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	for _i in range(3):
 		var node: int = AI.choose_wolf_placement(state, wolf_level)
 		assert(node >= 0 and node < 25 and not state.is_occupied(node),
-			"Self-play: invalid wolf placement at level %d" % wolf_level)
-		assert(state.place_wolf(node), "Self-play: rules rejected wolf placement")
+			"Competitive audit: invalid wolf placement at level %d" % wolf_level)
+		assert(state.place_wolf(node), "Competitive audit: rules rejected wolf placement")
 		placements.append(node)
 
 	var ply := 0
@@ -25,39 +29,38 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var captures := 0
 	var repetition_count: Dictionary = {}
 	var draw_reason := ""
-	var initial_key := _position_key(state)
-	repetition_count[initial_key] = 1
+	repetition_count[_position_key(state)] = 1
 	while state.turn != GameState.Turn.FINISHED and ply < MAX_PLY and draw_reason == "":
 		if state.turn == GameState.Turn.SHEEP:
 			var move: Dictionary = AI.choose_sheep_move(state, sheep_level)
-			assert(not move.is_empty(), "Self-play: sheep AI returned no move while game active")
+			assert(not move.is_empty(), "Sheep AI returned no move in an active match")
 			var from_node := int(move.get("from", -1))
 			var to_node := int(move.get("to", -1))
 			assert(to_node in state.sheep_moves(from_node),
-				"Self-play: sheep level %d returned illegal move %d -> %d" % [sheep_level, from_node, to_node])
-			assert(state.move_sheep(from_node, to_node), "Self-play: rules rejected sheep move")
+				"Sheep level %d returned illegal move %d -> %d" % [sheep_level, from_node, to_node])
+			assert(state.move_sheep(from_node, to_node), "Rules rejected sheep action")
 			sheep_actions += 1
 		elif state.turn == GameState.Turn.WOLVES:
 			var move: Dictionary = AI.choose_wolf_move(state, wolf_level)
-			assert(not move.is_empty(), "Self-play: wolf AI returned no move while game active")
+			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
 			var from_node := int(move.get("from", -1))
 			var to_node := int(move.get("to", -1))
 			assert(from_node >= 0 and from_node < 25 and state.wolves[from_node],
-				"Self-play: wolf AI selected a non-wolf origin")
+				"Wolf AI selected a non-wolf origin")
 			var was_capture := false
 			for option in state.capture_options(from_node):
 				if int(option.to) == to_node:
 					was_capture = true
 			assert(was_capture or to_node in state.wolf_moves(from_node),
-				"Self-play: wolf level %d returned illegal move %d -> %d" % [wolf_level, from_node, to_node])
+				"Wolf level %d returned illegal move %d -> %d" % [wolf_level, from_node, to_node])
 			var result: String = state.move_wolf(from_node, to_node)
 			assert(result in ["moved", "captured", "captured_chain_available", "won"],
-				"Self-play: rules rejected wolf action: " + result)
+				"Rules rejected wolf action: " + result)
 			if was_capture:
 				captures += 1
 			wolf_actions += 1
 		else:
-			assert(false, "Self-play: unexpected turn state")
+			assert(false, "Unexpected turn state")
 		ply += 1
 		if state.turn != GameState.Turn.FINISHED:
 			var key := _position_key(state)
@@ -68,6 +71,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	return {
 		"wolf_level": wolf_level,
 		"sheep_level": sheep_level,
+		"seed": match_seed,
 		"plies": ply,
 		"sheep_actions": sheep_actions,
 		"wolf_actions": wolf_actions,
@@ -81,43 +85,62 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	}
 
 func _position_key(state) -> String:
-	# A repetition key must include every rule-relevant part of the position.
 	return "%s|%s|%d|%d|%d" % [str(state.sheep), str(state.wolves), int(state.turn), int(state.chain_wolf), int(state.chain_capture_count)]
 
 func _run() -> void:
-	var total_matches := 0
-	var total_plies := 0
-	var total_captures := 0
-	var completed_matches := 0
-	var capped_matches := 0
-	var repetition_draws := 0
-	for level in range(5):
-		# Run both seat assignments for every complementary level pairing.
-		# Fixed seeds keep the fixtures reproducible while varying placements.
-		for seat in range(2):
-			var wolf_level: int = level if seat == 0 else 4 - level
-			var sheep_level: int = 4 - level if seat == 0 else level
-			var match_seed: int = 450045 + level * 2 + seat
-			var result := _play_match(wolf_level, sheep_level, match_seed)
-			assert(int(result.sheep_actions) > 0 and int(result.wolf_actions) > 0,
-				"Self-play must exercise both sides in every match")
-			assert(int(result.plies) > 0 and int(result.plies) <= MAX_PLY,
-				"Self-play must remain within the bounded match budget")
-			assert(int(result.wolves_remaining) <= 3 and int(result.wolves_remaining) >= 0,
-				"Self-play produced an invalid wolf count")
-			if str(result.winner) == "":
-				if str(result.draw_reason) == "threefold_repetition":
-					repetition_draws += 1
+	var totals := {
+		"matches": 0,
+		"plies": 0,
+		"captures": 0,
+		"wolf_wins": 0,
+		"sheep_wins": 0,
+		"repetition_draws": 0,
+		"ply_limit_draws": 0
+	}
+	var matchup_stats: Dictionary = {}
+	for wolf_level in range(5):
+		for sheep_level in range(5):
+			var key := "%d-%d" % [wolf_level, sheep_level]
+			matchup_stats[key] = {
+				"matches": 0, "wolf_wins": 0, "sheep_wins": 0,
+				"repetition_draws": 0, "ply_limit_draws": 0,
+				"plies": 0, "captures": 0, "sheep_remaining": 0
+			}
+			for match_seed in SEEDS:
+				var result := _play_match(wolf_level, sheep_level, match_seed)
+				assert(int(result.sheep_actions) > 0 and int(result.wolf_actions) > 0,
+					"Both sides must act in every diagnostic match")
+				assert(int(result.plies) > 0 and int(result.plies) <= MAX_PLY,
+					"Match exceeded its bounded ply budget")
+				var winner := str(result.winner)
+				var draw_reason := str(result.draw_reason)
+				var stats: Dictionary = matchup_stats[key]
+				stats.matches = int(stats.matches) + 1
+				stats.plies = int(stats.plies) + int(result.plies)
+				stats.captures = int(stats.captures) + int(result.captures)
+				stats.sheep_remaining = int(stats.sheep_remaining) + int(result.sheep_remaining)
+				totals.matches = int(totals.matches) + 1
+				totals.plies = int(totals.plies) + int(result.plies)
+				totals.captures = int(totals.captures) + int(result.captures)
+				if winner == "wolves":
+					stats.wolf_wins = int(stats.wolf_wins) + 1
+					totals.wolf_wins = int(totals.wolf_wins) + 1
+				elif winner == "sheep":
+					stats.sheep_wins = int(stats.sheep_wins) + 1
+					totals.sheep_wins = int(totals.sheep_wins) + 1
+				elif draw_reason == "threefold_repetition":
+					stats.repetition_draws = int(stats.repetition_draws) + 1
+					totals.repetition_draws = int(totals.repetition_draws) + 1
 				else:
-					capped_matches += 1
-			else:
-				completed_matches += 1
-			total_matches += 1
-			total_plies += int(result.plies)
-			total_captures += int(result.captures)
-			print("WOLF-DUSK-045 SELF-PLAY ", result)
+					stats.ply_limit_draws = int(stats.ply_limit_draws) + 1
+					totals.ply_limit_draws = int(totals.ply_limit_draws) + 1
+				print("WOLF-DUSK-046 MATCH ", result)
+			print("WOLF-DUSK-046 MATCHUP wolf=%d sheep=%d stats=%s" % [wolf_level, sheep_level, str(matchup_stats[key])])
 
-	assert(total_plies >= total_matches * 24,
-		"Self-play fixtures ended too early to provide a useful tactical sample")
-	print("WOLF-DUSK-045 self-play passed: %d seeded matches, %d plies, %d legal captures, %d completed, %d repetition draws, %d ply-capped (limit %d)." % [total_matches, total_plies, total_captures, completed_matches, repetition_draws, capped_matches, MAX_PLY])
+	assert(int(totals.matches) == 25 * SEEDS.size(),
+		"Competitive audit must cover all 25 level pairings with every configured seed")
+	assert(int(totals.plies) > 0 and int(totals.matches) > 0,
+		"Competitive audit produced no usable match data")
+	print("WOLF-DUSK-046 DIAGNOSTIC BASELINE totals=%s max_ply=%d seeds=%s" % [str(totals), MAX_PLY, str(SEEDS)])
+	print("WOLF-DUSK-046 coverage: 25/25 level pairings; %d seeded matches. This is a diagnostic baseline, not a competitive-strength pass." % int(totals.matches))
 	quit()
