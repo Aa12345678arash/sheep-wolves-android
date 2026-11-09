@@ -512,3 +512,5 @@ static func _graph_distance(start_node: int, target_node: int) -> int:
 				return result
 			queue.append(neighbor)
 	return -1
+
+# WOLF-DUSK-047: diagnostic-only checkpoint; no gameplay scoring changed.
