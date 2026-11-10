@@ -34,6 +34,12 @@ static func choose_sheep_move(state, difficulty: int) -> Dictionary:
 			moves.append({"from": from, "to": to})
 	if moves.is_empty():
 		return {}
+	# Deterministic tiers must never overlook an immediate sheep victory.
+	if difficulty >= 1:
+		for move in moves:
+			var winning_child = _copy_state(state)
+			if winning_child.move_sheep(int(move.from), int(move.to)) and winning_child.winner == "sheep":
+				return move
 	if difficulty == 0:
 		return moves[randi() % moves.size()]
 	if difficulty >= 2:
