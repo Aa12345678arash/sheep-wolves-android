@@ -136,5 +136,23 @@ func _run() -> void:
 			assert(chain_result.move_wolf(14, 22) == "won",
 				"Follow-up capture must be accepted as the immediate winning move")
 
-	print("WOLF-DUSK-046 tactical checks passed: legal optional-chain decline and follow-up are exposed to all five tiers; tactical tiers take the immediate winning capture.")
+	# Fixture F: moving one sheep into the final open neighbor blocks all three
+	# wolves. Every deterministic tier must recognize and take this immediate win.
+	var sheep_winning = _empty_state()
+	sheep_winning.wolves[0] = true
+	sheep_winning.wolves[4] = true
+	sheep_winning.wolves[24] = true
+	for node in [1, 5, 6, 3, 9, 8, 19, 23, 17, 2, 10, 12, 14, 22]:
+		sheep_winning.sheep[node] = 1
+	sheep_winning.turn = GameState.Turn.SHEEP
+	assert(18 in sheep_winning.sheep_moves(17), "Sheep victory fixture must expose the final blocking move")
+	for difficulty in range(1, 5):
+		var sheep_winning_action: Dictionary = AI.choose_sheep_move(sheep_winning, difficulty)
+		assert(int(sheep_winning_action.get("from", -1)) == 17 and int(sheep_winning_action.get("to", -1)) == 18,
+			"Deterministic sheep tier %d must choose the immediate three-wolf block" % difficulty)
+		var sheep_win_simulation = AI._copy_state(sheep_winning)
+		assert(sheep_win_simulation.move_sheep(17, 18) and sheep_win_simulation.winner == "sheep",
+			"Final blocking move must be accepted as an immediate sheep victory")
+
+	print("WOLF-DUSK-047 tactical checks passed: immediate wolf capture wins, optional chain rules, and immediate sheep block wins are verified.")
 	quit()
