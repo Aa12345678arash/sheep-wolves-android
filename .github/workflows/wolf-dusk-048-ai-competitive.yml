@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import Godot project
+        shell: bash
         run: |
           set -euxo pipefail
           PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
@@ -35,6 +36,7 @@ jobs:
           timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2
 
       - name: Validate board and unchanged game rules
+        shell: bash
         run: |
           set -euxo pipefail
           PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
@@ -42,6 +44,7 @@ jobs:
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
 
       - name: Validate all five AI levels and tactical decisions
+        shell: bash
         run: |
           set -euxo pipefail
           PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
@@ -50,6 +53,7 @@ jobs:
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_quality.gd
 
       - name: Run expanded 100-match competitive matrix
+        shell: bash
         run: |
           set -euxo pipefail
           PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
