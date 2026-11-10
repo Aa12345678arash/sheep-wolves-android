@@ -3,11 +3,11 @@ extends SceneTree
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
 
-# Diagnostic baseline: bounded matches, full 5x5 level matrix, two reproducible seeds.
+# WOLF-DUSK-048: expanded competitive audit, full 5x5 level matrix, four reproducible seeds.
 # This run measures competitive outcomes; it does not yet claim the AI passes a
 # strength threshold. Acceptance thresholds will be set after this baseline.
 const MAX_PLY := 72
-const SEEDS: Array[int] = [460046, 460047]
+const SEEDS: Array[int] = [460046, 460047, 480048, 480049]
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -101,7 +101,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 				var cycle_moves: Array[String] = []
 				for trace_index in range(cycle_start_ply, mini(ply, move_trace.size())):
 					cycle_moves.append(move_trace[trace_index])
-				print("WOLF-DUSK-047 CYCLE wolf=%d sheep=%d seed=%d first_seen_ply=%d repeated_at_ply=%d cycle_length=%d moves=%s position=%s" % [wolf_level, sheep_level, match_seed, cycle_start_ply, ply, ply - cycle_start_ply, str(cycle_moves), key])
+				print("WOLF-DUSK-048 CYCLE wolf=%d sheep=%d seed=%d first_seen_ply=%d repeated_at_ply=%d cycle_length=%d moves=%s position=%s" % [wolf_level, sheep_level, match_seed, cycle_start_ply, ply, ply - cycle_start_ply, str(cycle_moves), key])
 				draw_reason = "threefold_repetition"
 
 	return {
@@ -174,13 +174,13 @@ func _run() -> void:
 				else:
 					stats.ply_limit_draws = int(stats.ply_limit_draws) + 1
 					totals.ply_limit_draws = int(totals.ply_limit_draws) + 1
-				print("WOLF-DUSK-046 MATCH ", result)
-			print("WOLF-DUSK-046 MATCHUP wolf=%d sheep=%d stats=%s" % [wolf_level, sheep_level, str(matchup_stats[key])])
+				print("WOLF-DUSK-048 MATCH ", result)
+			print("WOLF-DUSK-048 MATCHUP wolf=%d sheep=%d stats=%s" % [wolf_level, sheep_level, str(matchup_stats[key])])
 
 	assert(int(totals.matches) == 25 * SEEDS.size(),
 		"Competitive audit must cover all 25 level pairings with every configured seed")
 	assert(int(totals.plies) > 0 and int(totals.matches) > 0,
 		"Competitive audit produced no usable match data")
-	print("WOLF-DUSK-046 DIAGNOSTIC BASELINE totals=%s max_ply=%d seeds=%s" % [str(totals), MAX_PLY, str(SEEDS)])
-	print("WOLF-DUSK-046 coverage: 25/25 level pairings; %d seeded matches. This is a diagnostic baseline, not a competitive-strength pass." % int(totals.matches))
+	print("WOLF-DUSK-048 EXPANDED DIAGNOSTIC totals=%s max_ply=%d seeds=%s" % [str(totals), MAX_PLY, str(SEEDS)])
+	print("WOLF-DUSK-048 coverage: 25/25 level pairings; %d seeded matches. This is a diagnostic baseline, not a competitive-strength pass." % int(totals.matches))
 	quit()
