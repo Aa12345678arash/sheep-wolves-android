@@ -310,10 +310,13 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
+	# Keep the root in the current search path so a line that returns to this
+	# exact position is scored as a draw instead of repeating a futile cycle.
+	var path_positions: Dictionary = {_search_position_key(state): 1}
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
-		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context)
+		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
 		if score > best_score:
 			best_score = score
 			best_move = move
@@ -335,20 +338,32 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 static func _search_stopped(context: Dictionary) -> bool:
 	return int(context.nodes) >= int(context.node_limit) or Time.get_ticks_usec() - int(context.start) >= int(context.time_limit)
 
-static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary) -> float:
+static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary, path_positions: Dictionary) -> float:
 	context.nodes = int(context.nodes) + 1
-	if state.turn == GameState.Turn.FINISHED or depth <= 0 or _search_stopped(context):
+	if state.turn == GameState.Turn.FINISHED:
 		return _evaluate_position(state, ai_is_sheep)
+	var position_key := _search_position_key(state)
+	# A repeated position on this search line is a draw. This prevents minimax
+	# from treating a reversible four-ply loop as fresh positional progress.
+	if int(path_positions.get(position_key, 0)) > 0:
+		return 0.0
+	path_positions[position_key] = 1
+	if depth <= 0 or _search_stopped(context):
+		var leaf_score := _evaluate_position(state, ai_is_sheep)
+		path_positions.erase(position_key)
+		return leaf_score
 	var moves := _legal_search_moves(state, true)
 	if moves.is_empty():
-		return _evaluate_position(state, ai_is_sheep)
+		var no_move_score := _evaluate_position(state, ai_is_sheep)
+		path_positions.erase(position_key)
+		return no_move_score
 	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
 	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep, context)
 	var value := -INF if maximizing else INF
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
-		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context)
+		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
 		if maximizing:
 			value = maxf(value, score)
 			alpha = maxf(alpha, value)
@@ -357,6 +372,7 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 			beta = minf(beta, value)
 		if beta <= alpha or _search_stopped(context):
 			break
+	path_positions.erase(position_key)
 	return value
 
 static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}) -> Array[Dictionary]:
@@ -424,6 +440,12 @@ static func _apply_search_move(state, move: Dictionary) -> void:
 		state.move_sheep(int(move.from), int(move.to))
 	else:
 		state.move_wolf(int(move.from), int(move.to))
+
+static func _search_position_key(state) -> String:
+	return "%s|%s|%d|%d|%d|%s" % [
+		str(state.sheep), str(state.wolves), int(state.turn),
+		int(state.chain_wolf), int(state.chain_capture_count), str(state.winner)
+	]
 
 static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 	if state.winner == "wolves":
