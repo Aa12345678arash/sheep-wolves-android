@@ -10,6 +10,8 @@ var turn: Turn = Turn.PLACE_WOLVES
 var chain_wolf: int = -1
 var chain_capture_count: int = 0
 var winner: String = ""
+# Exact non-terminal positions reached in this match, used by AI repetition avoidance.
+var position_history: Array[String] = []
 
 func _init() -> void:
 	reset()
@@ -24,6 +26,20 @@ func reset() -> void:
 	chain_wolf = -1
 	chain_capture_count = 0
 	winner = ""
+	position_history.clear()
+
+func _position_key() -> String:
+	return "%s|%s|%d|%d|%d|%s" % [
+		str(sheep), str(wolves), int(turn), int(chain_wolf),
+		int(chain_capture_count), str(winner)
+	]
+
+func _record_position() -> void:
+	if turn == Turn.FINISHED:
+		return
+	var key := _position_key()
+	if position_history.is_empty() or position_history[position_history.size() - 1] != key:
+		position_history.append(key)
 
 func sheep_total() -> int:
 	var total := 0
@@ -48,6 +64,7 @@ func place_wolf(node: int) -> bool:
 	if wolf_total() == 3:
 		turn = Turn.SHEEP
 		_check_winner()
+		_record_position()
 	return true
 
 func sheep_moves(from: int) -> Array[int]:
@@ -99,6 +116,7 @@ func move_sheep(from: int, to: int) -> bool:
 	sheep[to] += 1
 	turn = Turn.WOLVES
 	_check_winner()
+	_record_position()
 	return true
 
 func move_wolf(from: int, to: int) -> String:
@@ -118,6 +136,7 @@ func move_wolf(from: int, to: int) -> String:
 				turn = Turn.FINISHED
 				return "won"
 			if chain_capture_count == 1 and not capture_options(to).is_empty():
+				_record_position()
 				return "captured_chain_available"
 			finish_wolf_turn()
 			return "captured"
@@ -136,6 +155,7 @@ func finish_wolf_turn() -> void:
 	chain_capture_count = 0
 	turn = Turn.SHEEP
 	_check_winner()
+	_record_position()
 
 func _check_winner() -> void:
 	if sheep_total() <= 8:
