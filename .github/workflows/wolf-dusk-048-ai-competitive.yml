@@ -1,0 +1,56 @@
+name: WOLF-DUSK-048 AI competitive audit
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-048-AI-COMPETITIVE-BALANCE
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
+      - 'rebuild/WOLF-DUSK-007/godot/tests/**'
+      - '.github/workflows/wolf-dusk-048-ai-competitive.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wolf-dusk-048-ai-competitive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-competitive-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout isolated AI branch
+        uses: actions/checkout@v4
+
+      - name: Import Godot project
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit
+          timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2
+
+      - name: Validate board and unchanged game rules
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
+
+      - name: Validate all five AI levels and tactical decisions
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_tactics.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_quality.gd
+
+      - name: Run expanded 100-match competitive matrix
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout --signal=TERM --kill-after=30s 1400s godot --headless --path "$PROJECT" --script res://tests/validate_ai_self_play.gd
