@@ -33,6 +33,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var search_stopped := 0
 	var repetition_count: Dictionary = {}
 	var repetition_first_seen: Dictionary = {}
+	var move_trace: Array[String] = []
 	var draw_reason := ""
 	var initial_key := _position_key(state)
 	repetition_count[initial_key] = 1
@@ -49,6 +50,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 			assert(not move.is_empty(), "Sheep AI returned no move in an active match")
 			var from_node := int(move.get("from", -1))
 			var to_node := int(move.get("to", -1))
+			move_trace.append("S:%d>%d" % [from_node, to_node])
 			assert(to_node in state.sheep_moves(from_node),
 				"Sheep level %d returned illegal move %d -> %d" % [sheep_level, from_node, to_node])
 			assert(state.move_sheep(from_node, to_node), "Rules rejected sheep action")
@@ -63,12 +65,14 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 					search_stopped += 1
 			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
 			if str(move.get("side", "")) == "decline_chain":
+				move_trace.append("W:decline_chain")
 				assert(state.chain_wolf != -1, "AI may decline only an active optional chain capture")
 				state.finish_wolf_turn()
 				wolf_actions += 1
 			else:
 				var from_node := int(move.get("from", -1))
 				var to_node := int(move.get("to", -1))
+				move_trace.append("W:%d>%d%s" % [from_node, to_node, "x" if bool(move.get("capture", false)) else ""])
 				assert(from_node >= 0 and from_node < 25 and state.wolves[from_node],
 					"Wolf AI selected a non-wolf origin")
 				var was_capture := false
@@ -94,7 +98,10 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 			repetition_count[key] = previous_count + 1
 			if int(repetition_count[key]) == 3:
 				var cycle_start_ply := int(repetition_first_seen[key])
-				print("WOLF-DUSK-047 CYCLE wolf=%d sheep=%d seed=%d first_seen_ply=%d repeated_at_ply=%d cycle_length=%d position=%s" % [wolf_level, sheep_level, match_seed, cycle_start_ply, ply, ply - cycle_start_ply, key])
+				var cycle_moves: Array[String] = []
+				for trace_index in range(cycle_start_ply, mini(ply, move_trace.size())):
+					cycle_moves.append(move_trace[trace_index])
+				print("WOLF-DUSK-047 CYCLE wolf=%d sheep=%d seed=%d first_seen_ply=%d repeated_at_ply=%d cycle_length=%d moves=%s position=%s" % [wolf_level, sheep_level, match_seed, cycle_start_ply, ply, ply - cycle_start_ply, str(cycle_moves), key])
 				draw_reason = "threefold_repetition"
 
 	return {
