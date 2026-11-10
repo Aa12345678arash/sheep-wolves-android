@@ -304,15 +304,16 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	# Start the deadline before move ordering: ordering itself evaluates children
 	# and must consume the same mobile time budget as the search.
 	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth)}
-	moves = _order_search_moves(state, moves, true, ai_is_sheep, context)
+	var path_positions: Dictionary = {}
+	for historical_key in state.position_history:
+		path_positions[str(historical_key)] = 1
+	path_positions[_search_position_key(state)] = 1
+	moves = _order_search_moves(state, moves, true, ai_is_sheep, context, path_positions)
 	var root_order_usec: int = Time.get_ticks_usec() - int(context.start)
 	var best_move: Dictionary = moves[0]
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
-	# Keep the root in the current search path so a line that returns to this
-	# exact position is scored as a draw instead of repeating a futile cycle.
-	var path_positions: Dictionary = {_search_position_key(state): 1}
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
@@ -358,7 +359,7 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 		path_positions.erase(position_key)
 		return no_move_score
 	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
-	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep, context)
+	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep, context, path_positions)
 	var value := -INF if maximizing else INF
 	for move in moves:
 		var child = _copy_state(state)
@@ -375,7 +376,7 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 	path_positions.erase(position_key)
 	return value
 
-static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}) -> Array[Dictionary]:
+static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}, path_positions: Dictionary = {}) -> Array[Dictionary]:
 	# Evaluate children before exploring them so alpha-beta sees forcing captures,
 	# immediate escapes and blocking moves first instead of wasting its mobile budget.
 	var scored: Array[Dictionary] = []
@@ -388,7 +389,11 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 		var move: Dictionary = moves[index]
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
-		scored.append({"move": move, "score": _evaluate_position(child, ai_is_sheep)})
+		var child_key := _search_position_key(child)
+		# Historical repeats are scored as draws before root ordering, so a
+		# time-limited search does not blindly choose the first cycling action.
+		var child_score := 0.0 if path_positions.has(child_key) else _evaluate_position(child, ai_is_sheep)
+		scored.append({"move": move, "score": child_score})
 	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if maximizing:
 			return float(a.score) > float(b.score)
@@ -431,6 +436,7 @@ static func _copy_state(source):
 	copy.chain_wolf = source.chain_wolf
 	copy.chain_capture_count = source.chain_capture_count
 	copy.winner = source.winner
+	copy.position_history = source.position_history.duplicate()
 	return copy
 
 static func _apply_search_move(state, move: Dictionary) -> void:
