@@ -1,4 +1,4 @@
-name: WOLF-DUSK-049 AI cycle horizon audit
+name: WOLF-DUSK-050 AI cycle history diagnostic
 
 on:
   push:
