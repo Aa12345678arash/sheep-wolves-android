@@ -67,10 +67,10 @@ func _run() -> void:
 		str(not state.position_history.is_empty() and state.position_history[0] == cycle_start),
 		str(not state.position_history.is_empty() and state.position_history[state.position_history.size() - 1] == cycle_start)
 	])
-	if repeated_count != 2:
-		push_error("Expected initial and repeated positions in history; got %d matches across %d records" % [repeated_count, state.position_history.size()])
+	if repeated_count != 3:
+		push_error("Expected initial position plus two cycle returns (3 total); got %d matches across %d records" % [repeated_count, state.position_history.size()])
 		quit(1)
 		return
 	assert(state.winner == "", "Cycle fixture must remain non-terminal")
-	print("WOLF-DUSK-050 exact cycle fixture passed: legal 12-ply loop reproduced; no game rule was changed.")
+	print("WOLF-DUSK-050 exact cycle fixture passed: legal loop returned after 8 and 12 plies; history contains 3 exact occurrences; no game rule was changed.")
 	quit()
