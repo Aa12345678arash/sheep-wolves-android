@@ -20,6 +20,7 @@ static func choose_wolf_placement(state, difficulty: int) -> int:
 		var score := _centrality(node)
 		if difficulty >= 2:
 			score += _future_mobility(state, node) * 0.35
+			score += _wolf_placement_strategy_score(state, node)
 		if score > best_score:
 			best_score = score
 			best_node = node
@@ -114,6 +115,31 @@ static func _future_mobility(state, node: int) -> float:
 		if not state.is_occupied(next_node):
 			count += 1.0
 	return count
+
+# WOLF-DUSK-052: distribute the opening wolves across useful hunting lanes.
+# A square one or two legal steps from the starting flock is more useful than
+# centrality alone; spacing prevents all three wolves clustering around node 12.
+static func _wolf_placement_strategy_score(state, node: int) -> float:
+	var closest_sheep_distance := 99
+	var reachable_flock_nodes := 0.0
+	for sheep_node in range(BoardGraph.NODE_COUNT):
+		if state.sheep[sheep_node] <= 0:
+			continue
+		var distance := _graph_distance(node, sheep_node)
+		closest_sheep_distance = mini(closest_sheep_distance, distance)
+		if distance >= 2 and distance <= 4:
+			reachable_flock_nodes += 1.0 / float(distance - 1)
+	var score := reachable_flock_nodes * 0.65 - absf(float(closest_sheep_distance - 2)) * 1.4
+	var nearest_wolf_distance := 99
+	for wolf_node in range(BoardGraph.NODE_COUNT):
+		if state.wolves[wolf_node]:
+			nearest_wolf_distance = mini(nearest_wolf_distance, _graph_distance(node, wolf_node))
+	if nearest_wolf_distance < 99:
+		if nearest_wolf_distance < 2:
+			score -= 2.5
+		else:
+			score += float(mini(nearest_wolf_distance, 4)) * 0.55
+	return score
 
 static func _sheep_position_score(state, from: int, to: int) -> float:
 	var from_row := int(from / 5)
