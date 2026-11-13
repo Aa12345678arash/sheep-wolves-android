@@ -337,6 +337,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 			"total_usec": Time.get_ticks_usec() - int(context.start),
 			"nodes": int(context.nodes),
 			"ordering_usec": int(context.ordering_usec),
+			"ordering_limit_usec": int(context.ordering_limit_usec),
 			"node_limit": int(context.node_limit),
 			"time_limit_usec": int(context.time_limit),
 			"stopped": _search_stopped(context)
