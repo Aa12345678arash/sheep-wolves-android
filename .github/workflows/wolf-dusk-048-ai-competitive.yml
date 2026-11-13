@@ -1,9 +1,10 @@
-name: WOLF-DUSK-048 AI competitive audit
+name: WOLF-DUSK-049 AI cycle horizon audit
 
 on:
   push:
     branches:
       - WOLF-DUSK-048-AI-COMPETITIVE-BALANCE
+      - WOLF-DUSK-049-AI-CYCLE-HORIZON
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
@@ -43,6 +44,12 @@ jobs:
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
 
+      - name: Reproduce exact 12-ply competitive cycle
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_cycle_fixture.gd
       - name: Validate all five AI levels and tactical decisions
         shell: bash
         run: |
