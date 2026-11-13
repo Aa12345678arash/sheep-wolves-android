@@ -6,6 +6,7 @@ on:
       - WOLF-DUSK-048-AI-COMPETITIVE-BALANCE
       - WOLF-DUSK-049-AI-CYCLE-HORIZON
       - WOLF-DUSK-050-AI-CYCLE-HISTORY-DIAGNOSTIC
+      - WOLF-DUSK-051-AI-SEARCH-BUDGET
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
@@ -59,6 +60,13 @@ jobs:
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai.gd
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_tactics.gd
           timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_quality.gd
+
+      - name: Validate bounded AI search budget
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_search_budget.gd
 
       - name: Run expanded 100-match competitive matrix
         shell: bash
