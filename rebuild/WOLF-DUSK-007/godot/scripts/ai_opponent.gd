@@ -309,7 +309,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		return {}
 	# Start the deadline before move ordering: ordering itself evaluates children
 	# and must consume the same mobile time budget as the search.
-	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth)}
+	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth), "ordering_usec": 0, "ordering_limit_usec": maxi(10000, int(_search_time_limit_usec(depth) * 0.25))}
 	var path_positions: Dictionary = {}
 	for historical_key in state.position_history:
 		path_positions[str(historical_key)] = 1
@@ -336,6 +336,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 			"root_order_usec": root_order_usec,
 			"total_usec": Time.get_ticks_usec() - int(context.start),
 			"nodes": int(context.nodes),
+			"ordering_usec": int(context.ordering_usec),
 			"node_limit": int(context.node_limit),
 			"time_limit_usec": int(context.time_limit),
 			"stopped": _search_stopped(context)
@@ -388,10 +389,14 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 	var scored: Array[Dictionary] = []
 	var remaining: Array[Dictionary] = []
 	for index in range(moves.size()):
-		if not context.is_empty() and _search_stopped(context):
+		if not context.is_empty() and (
+			_search_stopped(context)
+			or int(context.get("ordering_usec", 0)) >= int(context.get("ordering_limit_usec", 0))
+		):
 			for rest in range(index, moves.size()):
 				remaining.append(moves[rest])
 			break
+		var ordering_item_started := Time.get_ticks_usec()
 		var move: Dictionary = moves[index]
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
@@ -400,6 +405,8 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 		# time-limited search does not blindly choose the first cycling action.
 		var child_score := 0.0 if path_positions.has(child_key) else _evaluate_position(child, ai_is_sheep)
 		scored.append({"move": move, "score": child_score})
+		if not context.is_empty():
+			context.ordering_usec = int(context.get("ordering_usec", 0)) + Time.get_ticks_usec() - ordering_item_started
 	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if maximizing:
 			return float(a.score) > float(b.score)
