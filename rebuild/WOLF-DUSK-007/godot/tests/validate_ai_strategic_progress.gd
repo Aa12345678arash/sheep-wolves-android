@@ -30,5 +30,37 @@ func _run() -> void:
 	assert(nearest_flock_distance <= 2,
 		"At least one master wolf must begin within two legal steps of the starting flock")
 
-	print("WOLF-DUSK-052 strategic placement passed: placements=%s; wolves are distributed and retain access to the starting flock." % str(placements))
+	# WOLF-DUSK-053: a wolf-supported sheep with only one open exit must
+	# register as siege pressure and score better for the wolf side than an
+	# otherwise equivalent sheep with all four exits open.
+	var trapped = GameState.new()
+	for node in range(25):
+		trapped.sheep[node] = 0
+		trapped.wolves[node] = false
+	trapped.sheep[12] = 1
+	trapped.wolves[7] = true
+	trapped.wolves[11] = true
+	trapped.wolves[13] = true
+	trapped.turn = GameState.Turn.WOLVES
+	var open = GameState.new()
+	for node in range(25):
+		open.sheep[node] = 0
+		open.wolves[node] = false
+	open.sheep[12] = 1
+	open.wolves[0] = true
+	open.wolves[4] = true
+	open.wolves[20] = true
+	open.turn = GameState.Turn.WOLVES
+	assert(AI._sheep_escape_count(trapped, 12) == 1,
+		"Siege fixture must leave exactly one legal sheep exit")
+	assert(AI._sheep_escape_count(open, 12) == 4,
+		"Open fixture must retain all four legal sheep exits")
+	assert(AI._sheep_siege_pressure(trapped) > AI._sheep_siege_pressure(open),
+		"Coordinated adjacent wolves must create measurable siege pressure")
+	assert(AI._wolf_support_score(trapped) > 0.0,
+		"Wolves positioned around the same hunting zone must receive a support score")
+	assert(AI._evaluate_position(trapped, false) > AI._evaluate_position(open, false),
+		"Master evaluation must prefer the wolf-supported siege over the open flock")
+
+	print("WOLF-DUSK-053 siege and strategic placement passed: placements=%s; wolves are distributed and retain access to the starting flock." % str(placements))
 	quit()
