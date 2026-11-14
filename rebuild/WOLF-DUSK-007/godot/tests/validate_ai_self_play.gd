@@ -177,7 +177,12 @@ func _run() -> void:
 		"wolf_wins": 0,
 		"sheep_wins": 0,
 		"repetition_draws": 0,
-		"ply_limit_draws": 0
+		"ply_limit_draws": 0,
+		"sheep_advances": 0,
+		"sheep_retreats": 0,
+		"sheep_lateral_moves": 0,
+		"repeated_position_hits": 0,
+		"progress_delta": 0
 	}
 	var matchup_stats: Dictionary = {}
 	for wolf_level in range(5):
@@ -211,6 +216,11 @@ func _run() -> void:
 				totals.matches = int(totals.matches) + 1
 				totals.plies = int(totals.plies) + int(result.plies)
 				totals.captures = int(totals.captures) + int(result.captures)
+				totals.sheep_advances = int(totals.sheep_advances) + int(result.sheep_advances)
+				totals.sheep_retreats = int(totals.sheep_retreats) + int(result.sheep_retreats)
+				totals.sheep_lateral_moves = int(totals.sheep_lateral_moves) + int(result.sheep_lateral_moves)
+				totals.repeated_position_hits = int(totals.repeated_position_hits) + int(result.repeated_position_hits)
+				totals.progress_delta = int(totals.progress_delta) + int(result.progress_delta)
 				if winner == "wolves":
 					stats.wolf_wins = int(stats.wolf_wins) + 1
 					totals.wolf_wins = int(totals.wolf_wins) + 1
@@ -230,5 +240,6 @@ func _run() -> void:
 		"Competitive audit must cover all 25 level pairings with every configured seed")
 	assert(int(totals.plies) > 0 and int(totals.matches) > 0,
 		"Competitive audit produced no usable match data")
+	print("WOLF-DUSK-053 DIAGNOSTIC TOTALS=%s max_ply=%d seeds=%s" % [str(totals), MAX_PLY, str(SEEDS)])
 	print("WOLF-DUSK-053 coverage: 25/25 level pairings; %d seeded matches. Includes sheep advancement, retreats, lateral moves, repeat hits and last-24-ply traces for capped matches. Diagnostic only; no strength pass is implied." % int(totals.matches))
 	quit()
