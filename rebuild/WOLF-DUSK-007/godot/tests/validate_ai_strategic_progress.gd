@@ -37,23 +37,23 @@ func _run() -> void:
 	for node in range(25):
 		trapped.sheep[node] = 0
 		trapped.wolves[node] = false
-	trapped.sheep[12] = 1
-	trapped.wolves[7] = true
-	trapped.wolves[11] = true
-	trapped.wolves[13] = true
+	trapped.sheep[0] = 1
+	trapped.wolves[1] = true
+	trapped.wolves[5] = true
+	trapped.wolves[10] = true
 	trapped.turn = GameState.Turn.WOLVES
 	var open = GameState.new()
 	for node in range(25):
 		open.sheep[node] = 0
 		open.wolves[node] = false
-	open.sheep[12] = 1
-	open.wolves[0] = true
-	open.wolves[4] = true
-	open.wolves[20] = true
+	open.sheep[0] = 1
+	open.wolves[2] = true
+	open.wolves[8] = true
+	open.wolves[14] = true
 	open.turn = GameState.Turn.WOLVES
-	assert(AI._sheep_escape_count(trapped, 12) == 1,
+	assert(AI._sheep_escape_count(trapped, 0) == 1,
 		"Siege fixture must leave exactly one legal sheep exit")
-	assert(AI._sheep_escape_count(open, 12) == 4,
+	assert(AI._sheep_escape_count(open, 0) == 3,
 		"Open fixture must retain all four legal sheep exits")
 	assert(AI._sheep_siege_pressure(trapped) > AI._sheep_siege_pressure(open),
 		"Coordinated adjacent wolves must create measurable siege pressure")
