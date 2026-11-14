@@ -5,6 +5,7 @@ on:
     branches:
       - WOLF-DUSK-048-AI-COMPETITIVE-BALANCE
       - WOLF-DUSK-049-AI-CYCLE-HORIZON
+      - WOLF-DUSK-050-AI-SEARCH-DIAGNOSTIC
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
