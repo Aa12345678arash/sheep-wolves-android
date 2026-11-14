@@ -58,7 +58,9 @@ func _run() -> void:
 	assert(AI._sheep_siege_pressure(trapped) > AI._sheep_siege_pressure(open),
 		"Coordinated adjacent wolves must create measurable siege pressure")
 	assert(AI._wolf_support_score(trapped) > 0.0,
-		"Wolves positioned around the same hunting zone must receive a support score")
+		"Multiple wolves converging on the constrained sheep must receive a support score")
+	assert(AI._wolf_support_score(open) == 0.0,
+		"Generic wolf proximity must not earn support when the sheep retains three exits")
 	assert(AI._evaluate_position(trapped, false) > AI._evaluate_position(open, false),
 		"Master evaluation must prefer the wolf-supported siege over the open flock")
 
