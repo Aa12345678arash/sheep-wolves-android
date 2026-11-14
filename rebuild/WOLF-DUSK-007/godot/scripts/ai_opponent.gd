@@ -507,6 +507,8 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 	var blocked_wolves := 0.0
 	var wolf_centrality := 0.0
 	var nearest_wolf_distance := 0.0
+	var siege_pressure := 0.0
+	var wolf_support := 0.0
 	var sheep_nodes := 0
 	var wolf_nodes := 0
 	for node in range(BoardGraph.NODE_COUNT):
@@ -526,6 +528,9 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 			wolf_centrality += _centrality(node)
 			if wm == 0 and captures == 0:
 				blocked_wolves += 1.0
+	# WOLF-DUSK-053: reward coordinated pressure on sheep with few legal exits.
+	siege_pressure = _sheep_siege_pressure(state)
+	wolf_support = _wolf_support_score(state)
 	# Reward wolves for closing distance, but do not let proximity outweigh legal tactics.
 	if wolf_nodes > 0 and sheep_nodes > 0:
 		for wolf_node in range(BoardGraph.NODE_COUNT):
@@ -539,10 +544,51 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 				closest = minf(closest, distance)
 			nearest_wolf_distance += closest
 	var sheep_score := sheep_count * 9.0 + sheep_mobility * 1.7 + sheep_progress * 0.55 - blocked_sheep * 3.0 + blocked_wolves * 48.0
-	var wolf_score := (25.0 - sheep_count) * 17.0 + capture_threats * 22.0 + wolf_mobility * 1.1 + wolf_centrality * 1.4 - nearest_wolf_distance * 1.8
+	var wolf_score := (25.0 - sheep_count) * 17.0 + capture_threats * 22.0 + wolf_mobility * 1.1 + wolf_centrality * 1.4 - nearest_wolf_distance * 1.8 + siege_pressure * 7.0 + wolf_support * 1.25
 	var score := sheep_score - wolf_score
 	return score if ai_is_sheep else -score
 
+
+# WOLF-DUSK-053: count genuinely open exits around a sheep-occupied node.
+static func _sheep_escape_count(state, sheep_node: int) -> int:
+	var exits := 0
+	for neighbor in BoardGraph.adjacency()[sheep_node]:
+		if not state.is_occupied(neighbor):
+			exits += 1
+	return exits
+
+# Score pressure only when a nearby wolf is helping restrict a sheep's legal exits.
+# A sheep with zero exits is already heavily constrained; one or two exits are
+# increasingly vulnerable, while three or more exits are not counted as sieged.
+static func _sheep_siege_pressure(state) -> float:
+	var pressure := 0.0
+	var adjacency := BoardGraph.adjacency()
+	for sheep_node in range(BoardGraph.NODE_COUNT):
+		if state.sheep[sheep_node] <= 0:
+			continue
+		var adjacent_wolves := 0
+		for neighbor in adjacency[sheep_node]:
+			if state.wolves[neighbor]:
+				adjacent_wolves += 1
+		var exits := _sheep_escape_count(state, sheep_node)
+		if adjacent_wolves > 0 and exits <= 2:
+			pressure += float(3 - exits) * minf(float(adjacent_wolves), 2.0)
+	return pressure
+
+# Wolves gain a small coordination bonus when another wolf can support the
+# same local hunting zone without occupying an adjacent square.
+static func _wolf_support_score(state) -> float:
+	var support := 0.0
+	var wolf_nodes: Array[int] = []
+	for node in range(BoardGraph.NODE_COUNT):
+		if state.wolves[node]:
+			wolf_nodes.append(node)
+	for i in range(wolf_nodes.size()):
+		for j in range(i + 1, wolf_nodes.size()):
+			var distance := _graph_distance(wolf_nodes[i], wolf_nodes[j])
+			if distance >= 2 and distance <= 4:
+				support += 1.0 / float(distance - 1)
+	return support
 
 # WOLF-DUSK-045: use the actual 56-edge board graph for pursuit distance.
 # Euclidean proximity is misleading on this board because diagonal links and
