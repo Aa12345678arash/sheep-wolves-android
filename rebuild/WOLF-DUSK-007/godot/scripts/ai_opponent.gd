@@ -309,7 +309,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		return {}
 	# Start the deadline before move ordering: ordering itself evaluates children
 	# and must consume the same mobile time budget as the search.
-	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth)}
+	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth), "requested_depth": depth, "max_search_ply": 0, "root_moves_searched": 0}
 	var path_positions: Dictionary = {}
 	for historical_key in state.position_history:
 		path_positions[str(historical_key)] = 1
@@ -324,6 +324,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
 		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
+		context.root_moves_searched = int(context.root_moves_searched) + 1
 		if score > best_score:
 			best_score = score
 			best_move = move
@@ -333,6 +334,8 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	last_search_stats = {
 			"depth": depth,
 			"root_moves": moves.size(),
+			"root_moves_searched": int(context.root_moves_searched),
+			"max_search_ply": int(context.max_search_ply),
 			"root_order_usec": root_order_usec,
 			"total_usec": Time.get_ticks_usec() - int(context.start),
 			"nodes": int(context.nodes),
@@ -347,6 +350,7 @@ static func _search_stopped(context: Dictionary) -> bool:
 
 static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary, path_positions: Dictionary) -> float:
 	context.nodes = int(context.nodes) + 1
+	context.max_search_ply = maxi(int(context.max_search_ply), int(context.requested_depth) - depth)
 	if state.turn == GameState.Turn.FINISHED:
 		return _evaluate_position(state, ai_is_sheep)
 	var position_key := _search_position_key(state)
