@@ -387,8 +387,9 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 	return value
 
 static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}, path_positions: Dictionary = {}) -> Array[Dictionary]:
-	# Evaluate children before exploring them so alpha-beta sees forcing captures,
-	# immediate escapes and blocking moves first instead of wasting its mobile budget.
+	# Move ordering must be substantially cheaper than a full leaf evaluation.
+	# The previous full evaluator performed graph-distance searches for every
+	# candidate and consumed nearly the entire mobile budget before alpha-beta.
 	var scored: Array[Dictionary] = []
 	var remaining: Array[Dictionary] = []
 	for index in range(moves.size()):
@@ -400,9 +401,9 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
 		var child_key := _search_position_key(child)
-		# Historical repeats are scored as draws before root ordering, so a
-		# time-limited search does not blindly choose the first cycling action.
-		var child_score := 0.0 if path_positions.has(child_key) else _evaluate_position(child, ai_is_sheep)
+		var child_score := 0.0
+		if not path_positions.has(child_key):
+			child_score = _quick_order_score(child, ai_is_sheep)
 		scored.append({"move": move, "score": child_score})
 	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if maximizing:
@@ -412,10 +413,31 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 	var ordered: Array[Dictionary] = []
 	for entry in scored:
 		ordered.append(entry.move)
-	# If the deadline interrupts ordering, preserve every unscored legal action.
+	# Preserve all legal moves if the deadline interrupts ordering.
 	for move in remaining:
 		ordered.append(move)
 	return ordered
+
+static func _quick_order_score(state, ai_is_sheep: bool) -> float:
+	# Cheap ordering heuristic only; final leaf decisions still use the full evaluator.
+	if state.winner == "wolves":
+		return -100000.0 if ai_is_sheep else 100000.0
+	if state.winner == "sheep":
+		return 100000.0 if ai_is_sheep else -100000.0
+	var sheep_count := float(state.sheep_total())
+	var sheep_mobility := 0.0
+	var wolf_mobility := 0.0
+	var capture_options := 0.0
+	var wolf_centrality := 0.0
+	for node in range(BoardGraph.NODE_COUNT):
+		if state.sheep[node] > 0:
+			sheep_mobility += float(state.sheep_moves(node).size())
+		if state.wolves[node]:
+			wolf_mobility += float(state.wolf_moves(node).size())
+			capture_options += float(state.capture_options(node).size())
+			wolf_centrality += _centrality(node)
+	var quick_score := sheep_count * 9.0 + sheep_mobility * 1.5 - wolf_mobility * 0.8 - capture_options * 18.0 - wolf_centrality
+	return quick_score if ai_is_sheep else -quick_score
 
 static func _legal_search_moves(state, include_chain_decline: bool) -> Array[Dictionary]:
 	var moves: Array[Dictionary] = []
