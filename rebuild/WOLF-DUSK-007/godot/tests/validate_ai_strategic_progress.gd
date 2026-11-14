@@ -54,7 +54,7 @@ func _run() -> void:
 	assert(AI._sheep_escape_count(trapped, 0) == 1,
 		"Siege fixture must leave exactly one legal sheep exit")
 	assert(AI._sheep_escape_count(open, 0) == 3,
-		"Open fixture must retain all four legal sheep exits")
+		"Open corner fixture must retain all three legal sheep exits")
 	assert(AI._sheep_siege_pressure(trapped) > AI._sheep_siege_pressure(open),
 		"Coordinated adjacent wolves must create measurable siege pressure")
 	assert(AI._wolf_support_score(trapped) > 0.0,
