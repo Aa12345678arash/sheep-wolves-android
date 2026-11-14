@@ -10,6 +10,7 @@ on:
       - WOLF-DUSK-052-AI-STRATEGIC-PROGRESS
       - WOLF-DUSK-053-COORDINATED-HUNT-AND-SIEGE
       - WOLF-DUSK-054-LEGAL-HUNT-EVALUATION
+      - WOLF-DUSK-055-SEARCH-DEPTH-DIAGNOSTICS
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
