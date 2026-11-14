@@ -2,7 +2,8 @@ extends SceneTree
 
 const GameState = preload("res://scripts/game_state.gd")
 
-# WOLF-DUSK-049: exact legal 12-ply loop observed in the 048 competitive audit.
+# WOLF-DUSK-049: exact legal 12-ply cycle observed in the 048 competitive audit.
+# The first eight plies already return to the start; the final four repeat it again.
 # This is a reproduction fixture, not an assertion that the AI should prefer it.
 func _initialize() -> void:
 	call_deferred("_run")
@@ -63,7 +64,7 @@ func _run() -> void:
 		if str(history_key) == cycle_start:
 			history_matches += 1
 	print("WOLF-DUSK-049 cycle diagnostic: history_size=%d exact_key_matches=%d final_key=%s" % [state.position_history.size(), history_matches, state._position_key()])
-	if history_matches != 2:
+	if history_matches != 3:
 		print("WOLF-DUSK-049 history entries: ", state.position_history)
 		quit(1)
 		return
