@@ -575,19 +575,26 @@ static func _sheep_siege_pressure(state) -> float:
 			pressure += float(3 - exits) * minf(float(adjacent_wolves), 2.0)
 	return pressure
 
-# Wolves gain a small coordination bonus when another wolf can support the
-# same local hunting zone without occupying an adjacent square.
+# WOLF-DUSK-054: coordination is valuable only when multiple wolves can
+# pressure the same constrained sheep. Generic wolf-to-wolf proximity alone
+# is not evidence of a useful hunting formation.
 static func _wolf_support_score(state) -> float:
 	var support := 0.0
-	var wolf_nodes: Array[int] = []
-	for node in range(BoardGraph.NODE_COUNT):
-		if state.wolves[node]:
-			wolf_nodes.append(node)
-	for i in range(wolf_nodes.size()):
-		for j in range(i + 1, wolf_nodes.size()):
-			var distance := _graph_distance(wolf_nodes[i], wolf_nodes[j])
-			if distance >= 2 and distance <= 4:
-				support += 1.0 / float(distance - 1)
+	for sheep_node in range(BoardGraph.NODE_COUNT):
+		if state.sheep[sheep_node] <= 0:
+			continue
+		# Do not reward a loose flock with several safe escape routes.
+		if _sheep_escape_count(state, sheep_node) > 2:
+			continue
+		var supporting_wolves := 0
+		for wolf_node in range(BoardGraph.NODE_COUNT):
+			if not state.wolves[wolf_node]:
+				continue
+			var distance := _graph_distance(wolf_node, sheep_node)
+			if distance >= 0 and distance <= 2:
+				supporting_wolves += 1
+		if supporting_wolves >= 2:
+			support += float(supporting_wolves - 1)
 	return support
 
 # WOLF-DUSK-045: use the actual 56-edge board graph for pursuit distance.
