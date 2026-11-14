@@ -8,6 +8,7 @@ on:
       - WOLF-DUSK-050-AI-CYCLE-HISTORY-DIAGNOSTIC
       - WOLF-DUSK-051-AI-SEARCH-BUDGET
       - WOLF-DUSK-052-AI-STRATEGIC-PROGRESS
+      - WOLF-DUSK-053-COORDINATED-HUNT-AND-SIEGE
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
