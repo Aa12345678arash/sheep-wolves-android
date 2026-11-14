@@ -67,6 +67,9 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 				search_calls += 1
 				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
 				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
+				search_nodes += int(AI.last_search_stats.get("nodes", 0))
+				search_root_moves += int(AI.last_search_stats.get("root_moves_searched", 0))
+				search_max_ply = maxi(search_max_ply, int(AI.last_search_stats.get("max_search_ply", 0)))
 				if bool(AI.last_search_stats.get("stopped", false)):
 					search_stopped += 1
 			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
