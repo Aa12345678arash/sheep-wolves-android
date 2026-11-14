@@ -1,4 +1,4 @@
-name: WOLF-DUSK-049 AI cycle horizon audit
+name: WOLF-DUSK-053 stalemate reduction diagnostics
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
       - WOLF-DUSK-050-AI-SEARCH-DIAGNOSTIC
       - WOLF-DUSK-051-ANTI-CYCLE-STRATEGY
       - WOLF-DUSK-052-ROOT-BREADTH-BUDGET
+      - WOLF-DUSK-053-STALEMATE-REDUCTION
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
