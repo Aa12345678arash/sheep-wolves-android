@@ -309,7 +309,7 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		return {}
 	# Start the deadline before move ordering: ordering itself evaluates children
 	# and must consume the same mobile time budget as the search.
-	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth), "requested_depth": depth, "max_search_ply": 0, "root_moves_searched": 0}
+	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth), "requested_depth": depth, "max_search_ply": 0, "root_moves_searched": 0, "root_deadline_usec": 0}
 	var path_positions: Dictionary = {}
 	for historical_key in state.position_history:
 		path_positions[str(historical_key)] = 1
@@ -320,17 +320,28 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
-	for move in moves:
+	# Do not let the first root candidate consume the entire turn budget.
+	# Evaluate up to four distinct root actions, sharing the remaining time
+	# between them so every selected action gets a real search opportunity.
+	var root_target: int = mini(moves.size(), 4)
+	for root_index in range(root_target):
+		var elapsed_usec := Time.get_ticks_usec() - int(context.start)
+		var remaining_usec := int(context.time_limit) - elapsed_usec
+		if remaining_usec <= 0 or int(context.nodes) >= int(context.node_limit):
+			break
+		var candidates_left := root_target - root_index
+		var slice_usec := maxi(1000, int(remaining_usec / candidates_left))
+		context.root_deadline_usec = mini(int(context.start) + int(context.time_limit), Time.get_ticks_usec() + slice_usec)
+		var move: Dictionary = moves[root_index]
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
 		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
+		context.root_deadline_usec = 0
 		context.root_moves_searched = int(context.root_moves_searched) + 1
 		if score > best_score:
 			best_score = score
 			best_move = move
 		alpha = maxf(alpha, best_score)
-		if _search_stopped(context):
-			break
 	last_search_stats = {
 			"depth": depth,
 			"root_moves": moves.size(),
@@ -346,7 +357,10 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	return best_move
 
 static func _search_stopped(context: Dictionary) -> bool:
-	return int(context.nodes) >= int(context.node_limit) or Time.get_ticks_usec() - int(context.start) >= int(context.time_limit)
+	if int(context.nodes) >= int(context.node_limit) or Time.get_ticks_usec() - int(context.start) >= int(context.time_limit):
+		return true
+	var root_deadline := int(context.get("root_deadline_usec", 0))
+	return root_deadline > 0 and Time.get_ticks_usec() >= root_deadline
 
 static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary, path_positions: Dictionary) -> float:
 	context.nodes = int(context.nodes) + 1
