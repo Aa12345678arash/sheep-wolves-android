@@ -58,7 +58,15 @@ func _run() -> void:
 
 	assert(state.turn == GameState.Turn.SHEEP, "Twelve-ply cycle must return to the same side to move")
 	assert(state._position_key() == cycle_start, "Recorded 12-ply loop must return to the exact same position")
-	assert(state.position_history.count(cycle_start) == 2, "Match history must contain the repeated position twice")
+	var history_matches := 0
+	for history_key in state.position_history:
+		if str(history_key) == cycle_start:
+			history_matches += 1
+	print("WOLF-DUSK-049 cycle diagnostic: history_size=%d exact_key_matches=%d final_key=%s" % [state.position_history.size(), history_matches, state._position_key()])
+	if history_matches != 2:
+		print("WOLF-DUSK-049 history entries: ", state.position_history)
+		quit(1)
+		return
 	assert(state.winner == "", "Cycle fixture must remain non-terminal")
 	print("WOLF-DUSK-049 exact cycle fixture passed: legal 12-ply loop reproduced; no game rule was changed.")
 	quit()
