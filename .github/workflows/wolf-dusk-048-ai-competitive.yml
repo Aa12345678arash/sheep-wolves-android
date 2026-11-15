@@ -11,6 +11,7 @@ on:
       - WOLF-DUSK-053-COORDINATED-HUNT-AND-SIEGE
       - WOLF-DUSK-054-LEGAL-HUNT-EVALUATION
       - WOLF-DUSK-055-SEARCH-DEPTH-DIAGNOSTICS
+      - WOLF-DUSK-056-STOP-CAUSE-AND-LEVEL-DIAGNOSTICS
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
@@ -27,7 +28,7 @@ concurrency:
 jobs:
   ai-competitive-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     container:
       image: barichello/godot-ci:4.4.1
     steps:
