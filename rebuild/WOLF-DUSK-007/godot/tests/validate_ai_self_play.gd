@@ -6,7 +6,7 @@ const AI = preload("res://scripts/ai_opponent.gd")
 # WOLF-DUSK-048: expanded competitive audit, full 5x5 level matrix, four reproducible seeds.
 # This run measures competitive outcomes; it does not yet claim the AI passes a
 # strength threshold. Acceptance thresholds will be set after this baseline.
-const MAX_PLY := 72
+const MAX_PLY := 120
 const SEEDS: Array[int] = [460046, 460047, 480048, 480049]
 
 func _initialize() -> void:
@@ -37,6 +37,18 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var search_call_usec: Array[int] = []
 	var search_root_moves_per_call: Array[int] = []
 	var search_root_moves_available: Array[int] = []
+	var sheep_search_times: Array[int] = []
+	var sheep_root_searched: Array[int] = []
+	var sheep_root_available: Array[int] = []
+	var sheep_search_stopped := 0
+	var sheep_search_nodes := 0
+	var sheep_search_root_order_usec := 0
+	var wolf_search_times: Array[int] = []
+	var wolf_root_searched: Array[int] = []
+	var wolf_root_available: Array[int] = []
+	var wolf_search_stopped := 0
+	var wolf_search_nodes := 0
+	var wolf_search_root_order_usec := 0
 	var repetition_count: Dictionary = {}
 	var repetition_first_seen: Dictionary = {}
 	var move_trace: Array[String] = []
@@ -48,17 +60,26 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		if state.turn == GameState.Turn.SHEEP:
 			var move: Dictionary = AI.choose_sheep_move(state, sheep_level)
 			if sheep_level >= 2:
+				var call_usec := int(AI.last_search_stats.get("total_usec", 0))
+				var root_searched := int(AI.last_search_stats.get("root_moves_searched", 0))
+				var root_available := int(AI.last_search_stats.get("root_moves", 0))
 				search_calls += 1
 				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
-				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
+				search_total_usec += call_usec
 				search_nodes += int(AI.last_search_stats.get("nodes", 0))
-				search_root_moves += int(AI.last_search_stats.get("root_moves_searched", 0))
+				search_root_moves += root_searched
 				search_max_ply = maxi(search_max_ply, int(AI.last_search_stats.get("max_search_ply", 0)))
-				search_call_usec.append(int(AI.last_search_stats.get("total_usec", 0)))
-				search_root_moves_per_call.append(int(AI.last_search_stats.get("root_moves_searched", 0)))
-				search_root_moves_available.append(int(AI.last_search_stats.get("root_moves", 0)))
+				search_call_usec.append(call_usec)
+				search_root_moves_per_call.append(root_searched)
+				search_root_moves_available.append(root_available)
+				sheep_search_times.append(call_usec)
+				sheep_root_searched.append(root_searched)
+				sheep_root_available.append(root_available)
+				sheep_search_nodes += int(AI.last_search_stats.get("nodes", 0))
+				sheep_search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
 				if bool(AI.last_search_stats.get("stopped", false)):
 					search_stopped += 1
+					sheep_search_stopped += 1
 			assert(not move.is_empty(), "Sheep AI returned no move in an active match")
 			var from_node := int(move.get("from", -1))
 			var to_node := int(move.get("to", -1))
@@ -70,17 +91,26 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		elif state.turn == GameState.Turn.WOLVES:
 			var move: Dictionary = AI.choose_wolf_move(state, wolf_level)
 			if wolf_level >= 2:
+				var call_usec := int(AI.last_search_stats.get("total_usec", 0))
+				var root_searched := int(AI.last_search_stats.get("root_moves_searched", 0))
+				var root_available := int(AI.last_search_stats.get("root_moves", 0))
 				search_calls += 1
 				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
-				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
+				search_total_usec += call_usec
 				search_nodes += int(AI.last_search_stats.get("nodes", 0))
-				search_root_moves += int(AI.last_search_stats.get("root_moves_searched", 0))
+				search_root_moves += root_searched
 				search_max_ply = maxi(search_max_ply, int(AI.last_search_stats.get("max_search_ply", 0)))
-				search_call_usec.append(int(AI.last_search_stats.get("total_usec", 0)))
-				search_root_moves_per_call.append(int(AI.last_search_stats.get("root_moves_searched", 0)))
-				search_root_moves_available.append(int(AI.last_search_stats.get("root_moves", 0)))
+				search_call_usec.append(call_usec)
+				search_root_moves_per_call.append(root_searched)
+				search_root_moves_available.append(root_available)
+				wolf_search_times.append(call_usec)
+				wolf_root_searched.append(root_searched)
+				wolf_root_available.append(root_available)
+				wolf_search_nodes += int(AI.last_search_stats.get("nodes", 0))
+				wolf_search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
 				if bool(AI.last_search_stats.get("stopped", false)):
 					search_stopped += 1
+					wolf_search_stopped += 1
 			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
 			if str(move.get("side", "")) == "decline_chain":
 				move_trace.append("W:decline_chain")
@@ -156,6 +186,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"search_nodes": search_nodes,
 		"search_root_moves_searched": search_root_moves,
 		"search_max_ply": search_max_ply,
+		"sheep_search": _summarize_side_search(sheep_search_times, sheep_root_searched, sheep_root_available, sheep_search_stopped, sheep_search_nodes, sheep_search_root_order_usec),
+		"wolf_search": _summarize_side_search(wolf_search_times, wolf_root_searched, wolf_root_available, wolf_search_stopped, wolf_search_nodes, wolf_search_root_order_usec),
 		"max_search_call_usec": max_search_call_usec,
 		"p95_search_call_usec": p95_search_call_usec,
 		"min_root_moves_searched": min_root_moves_searched,
@@ -168,6 +200,51 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"wolves_remaining": state.wolf_total(),
 		"placements": placements
 	}
+
+func _summarize_side_search(times: Array[int], roots: Array[int], available: Array[int], stopped: int, nodes: int, root_order_usec: int) -> Dictionary:
+	var result := {
+		"calls": times.size(),
+		"total_usec": 0,
+		"average_usec": 0,
+		"p95_usec": 0,
+		"max_usec": 0,
+		"stopped": stopped,
+		"nodes": nodes,
+		"root_order_usec": root_order_usec,
+		"root_moves_searched": 0,
+		"average_root_moves": 0.0,
+		"minimum_root_moves": 0,
+		"multi_root_decisions": 0,
+		"multi_root_covered": 0
+	}
+	if times.is_empty():
+		return result
+	var sorted_times: Array[int] = times.duplicate()
+	sorted_times.sort()
+	var total_usec := 0
+	var root_total := 0
+	var min_roots := roots[0]
+	var multi_decisions := 0
+	var multi_covered := 0
+	for index in range(times.size()):
+		total_usec += times[index]
+		root_total += roots[index]
+		min_roots = mini(min_roots, roots[index])
+		if available[index] >= 2:
+			multi_decisions += 1
+			if roots[index] >= 2:
+				multi_covered += 1
+	var p95_index := maxi(0, int(ceil(float(sorted_times.size()) * 0.95)) - 1)
+	result.total_usec = total_usec
+	result.average_usec = int(total_usec / times.size())
+	result.p95_usec = sorted_times[p95_index]
+	result.max_usec = sorted_times[sorted_times.size() - 1]
+	result.root_moves_searched = root_total
+	result.average_root_moves = float(root_total) / float(times.size())
+	result.minimum_root_moves = min_roots
+	result.multi_root_decisions = multi_decisions
+	result.multi_root_covered = multi_covered
+	return result
 
 func _position_key(state) -> String:
 	return "%s|%s|%d|%d|%d" % [str(state.sheep), str(state.wolves), int(state.turn), int(state.chain_wolf), int(state.chain_capture_count)]
