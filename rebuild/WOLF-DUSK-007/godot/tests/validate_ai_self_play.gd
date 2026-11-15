@@ -12,6 +12,32 @@ const SEEDS: Array[int] = [460046, 460047, 480048, 480049]
 func _initialize() -> void:
 	call_deferred("_run")
 
+func _new_search_metrics() -> Dictionary:
+	return {"calls": 0, "total_usec": 0, "nodes": 0, "depth_total": 0,
+		"max_depth": 0, "ordering_usec": 0, "root_moves_total": 0,
+		"root_moves_min": 999, "multi_root_calls": 0, "stopped": 0,
+		"time_limit_stops": 0, "node_limit_stops": 0}
+
+func _accumulate_search_metrics(metrics: Dictionary, sample: Dictionary) -> void:
+	metrics.calls = int(metrics.calls) + 1
+	metrics.total_usec = int(metrics.total_usec) + int(sample.get("total_usec", 0))
+	metrics.nodes = int(metrics.nodes) + int(sample.get("nodes", 0))
+	metrics.depth_total = int(metrics.depth_total) + int(sample.get("depth", 0))
+	metrics.max_depth = maxi(int(metrics.max_depth), int(sample.get("depth", 0)))
+	metrics.ordering_usec = int(metrics.ordering_usec) + int(sample.get("ordering_usec", 0))
+	var root_moves := int(sample.get("root_moves", 0))
+	metrics.root_moves_total = int(metrics.root_moves_total) + root_moves
+	metrics.root_moves_min = mini(int(metrics.root_moves_min), root_moves)
+	if root_moves > 1:
+		metrics.multi_root_calls = int(metrics.multi_root_calls) + 1
+	var stop_reason := str(sample.get("stop_reason", "unknown"))
+	if stop_reason != "completed":
+		metrics.stopped = int(metrics.stopped) + 1
+	if stop_reason == "time_limit":
+		metrics.time_limit_stops = int(metrics.time_limit_stops) + 1
+	elif stop_reason == "node_limit":
+		metrics.node_limit_stops = int(metrics.node_limit_stops) + 1
+
 func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictionary:
 	seed(match_seed)
 	var state = GameState.new()
@@ -27,14 +53,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var sheep_actions := 0
 	var wolf_actions := 0
 	var captures := 0
-	var search_calls := 0
-	var search_root_order_usec := 0
-	var search_total_usec := 0
-	var search_stopped := 0
-	var search_nodes := 0
-	var search_depth_total := 0
-	var search_max_depth := 0
-	var search_ordering_usec := 0
+	var wolf_search := _new_search_metrics()
+	var sheep_search := _new_search_metrics()
 	var repetition_count: Dictionary = {}
 	var repetition_first_seen: Dictionary = {}
 	var move_trace: Array[String] = []
@@ -46,15 +66,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		if state.turn == GameState.Turn.SHEEP:
 			var move: Dictionary = AI.choose_sheep_move(state, sheep_level)
 			if sheep_level >= 2:
-				search_calls += 1
-				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
-				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
-				search_nodes += int(AI.last_search_stats.get("nodes", 0))
-				search_depth_total += int(AI.last_search_stats.get("depth", 0))
-				search_max_depth = maxi(search_max_depth, int(AI.last_search_stats.get("depth", 0)))
-				search_ordering_usec += int(AI.last_search_stats.get("ordering_usec", 0))
-				if bool(AI.last_search_stats.get("stopped", false)):
-					search_stopped += 1
+				_accumulate_search_metrics(sheep_search, AI.last_search_stats)
 			assert(not move.is_empty(), "Sheep AI returned no move in an active match")
 			var from_node := int(move.get("from", -1))
 			var to_node := int(move.get("to", -1))
@@ -66,15 +78,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		elif state.turn == GameState.Turn.WOLVES:
 			var move: Dictionary = AI.choose_wolf_move(state, wolf_level)
 			if wolf_level >= 2:
-				search_calls += 1
-				search_root_order_usec += int(AI.last_search_stats.get("root_order_usec", 0))
-				search_total_usec += int(AI.last_search_stats.get("total_usec", 0))
-				search_nodes += int(AI.last_search_stats.get("nodes", 0))
-				search_depth_total += int(AI.last_search_stats.get("depth", 0))
-				search_max_depth = maxi(search_max_depth, int(AI.last_search_stats.get("depth", 0)))
-				search_ordering_usec += int(AI.last_search_stats.get("ordering_usec", 0))
-				if bool(AI.last_search_stats.get("stopped", false)):
-					search_stopped += 1
+				_accumulate_search_metrics(wolf_search, AI.last_search_stats)
 			assert(not move.is_empty(), "Wolf AI returned no move in an active match")
 			if str(move.get("side", "")) == "decline_chain":
 				move_trace.append("W:decline_chain")
@@ -124,14 +128,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"sheep_actions": sheep_actions,
 		"wolf_actions": wolf_actions,
 		"captures": captures,
-		"search_calls": search_calls,
-		"search_root_order_usec": search_root_order_usec,
-		"search_total_usec": search_total_usec,
-		"search_stopped": search_stopped,
-		"search_nodes": search_nodes,
-		"search_depth_total": search_depth_total,
-		"search_max_depth": search_max_depth,
-		"search_ordering_usec": search_ordering_usec,
+		"wolf_search": wolf_search,
+		"sheep_search": sheep_search,
 		"winner": state.winner,
 		"draw_reason": draw_reason if draw_reason != "" else ("ply_limit" if state.turn != GameState.Turn.FINISHED else ""),
 		"repeated_positions": repetition_count.size(),
