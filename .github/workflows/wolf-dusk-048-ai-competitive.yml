@@ -9,6 +9,7 @@ on:
       - WOLF-DUSK-051-ANTI-CYCLE-STRATEGY
       - WOLF-DUSK-052-ROOT-BREADTH-BUDGET
       - WOLF-DUSK-053-SEARCH-METRICS
+      - WOLF-DUSK-054-EXTENDED-MATCH-DIAGNOSTICS
     paths:
       - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
       - 'rebuild/WOLF-DUSK-007/godot/tests/**'
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   ai-competitive-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     container:
       image: barichello/godot-ci:4.4.1
     steps:
