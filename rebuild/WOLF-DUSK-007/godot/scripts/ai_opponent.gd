@@ -356,17 +356,20 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		alpha = maxf(alpha, best_score)
 		if _search_stopped(context):
 			break
+	var total_usec: int = Time.get_ticks_usec() - int(context.start)
+	var stop_reason := "node_limit" if int(context.nodes) >= int(context.node_limit) else ("time_limit" if total_usec >= int(context.time_limit) else "completed")
 	last_search_stats = {
 			"depth": depth,
 			"root_moves": moves.size(),
 			"root_order_usec": root_order_usec,
-			"total_usec": Time.get_ticks_usec() - int(context.start),
+			"total_usec": total_usec,
 			"nodes": int(context.nodes),
 			"ordering_usec": int(context.ordering_usec),
 			"ordering_limit_usec": int(context.ordering_limit_usec),
 			"node_limit": int(context.node_limit),
 			"time_limit_usec": int(context.time_limit),
-			"stopped": _search_stopped(context)
+			"stop_reason": stop_reason,
+			"stopped": stop_reason != "completed"
 		}
 	return best_move
 
