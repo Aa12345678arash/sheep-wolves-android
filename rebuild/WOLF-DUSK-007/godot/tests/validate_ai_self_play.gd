@@ -2,6 +2,7 @@ extends SceneTree
 
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
+const BoardGraph = preload("res://scripts/board_graph.gd")
 
 # WOLF-DUSK-048: expanded competitive audit, full 5x5 level matrix, four reproducible seeds.
 # This run measures competitive outcomes; it does not yet claim the AI passes a
@@ -151,7 +152,7 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 
 func _count_sieged_sheep(state) -> int:
 	var count := 0
-	var adjacency := AI.BoardGraph.adjacency()
+	var adjacency := BoardGraph.adjacency()
 	for sheep_node in range(25):
 		if state.sheep[sheep_node] <= 0:
 			continue
