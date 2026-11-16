@@ -16,6 +16,8 @@ func _new_search_metrics() -> Dictionary:
 	return {"calls": 0, "total_usec": 0, "nodes": 0, "depth_total": 0,
 		"max_depth": 0, "ordering_usec": 0, "root_moves_total": 0,
 		"root_moves_min": 999, "multi_root_calls": 0, "stopped": 0,
+		"root_moves_searched_total": 0, "root_moves_unsearched_total": 0,
+		"root_repetition_candidates": 0,
 		"time_limit_stops": 0, "node_limit_stops": 0}
 
 func _accumulate_search_metrics(metrics: Dictionary, sample: Dictionary) -> void:
@@ -28,6 +30,9 @@ func _accumulate_search_metrics(metrics: Dictionary, sample: Dictionary) -> void
 	var root_moves := int(sample.get("root_moves", 0))
 	metrics.root_moves_total = int(metrics.root_moves_total) + root_moves
 	metrics.root_moves_min = mini(int(metrics.root_moves_min), root_moves)
+	metrics.root_moves_searched_total = int(metrics.root_moves_searched_total) + int(sample.get("root_moves_searched", 0))
+	metrics.root_moves_unsearched_total = int(metrics.root_moves_unsearched_total) + int(sample.get("root_moves_unsearched", 0))
+	metrics.root_repetition_candidates = int(metrics.root_repetition_candidates) + int(sample.get("root_repetition_candidates", 0))
 	if root_moves > 1:
 		metrics.multi_root_calls = int(metrics.multi_root_calls) + 1
 	var stop_reason := str(sample.get("stop_reason", "unknown"))
