@@ -58,6 +58,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 	var sheep_actions := 0
 	var wolf_actions := 0
 	var captures := 0
+	var peak_sieged_sheep := _count_sieged_sheep(state)
+	var peak_blocked_wolves := _count_blocked_wolves(state)
 	var wolf_search := _new_search_metrics()
 	var sheep_search := _new_search_metrics()
 	var repetition_count: Dictionary = {}
@@ -110,6 +112,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 				wolf_actions += 1
 		else:
 			assert(false, "Unexpected turn state")
+		peak_sieged_sheep = maxi(peak_sieged_sheep, _count_sieged_sheep(state))
+		peak_blocked_wolves = maxi(peak_blocked_wolves, _count_blocked_wolves(state))
 		ply += 1
 		if state.turn != GameState.Turn.FINISHED:
 			var key := _position_key(state)
@@ -133,6 +137,8 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"sheep_actions": sheep_actions,
 		"wolf_actions": wolf_actions,
 		"captures": captures,
+		"peak_sieged_sheep": peak_sieged_sheep,
+		"peak_blocked_wolves": peak_blocked_wolves,
 		"wolf_search": wolf_search,
 		"sheep_search": sheep_search,
 		"winner": state.winner,
@@ -142,6 +148,28 @@ func _play_match(wolf_level: int, sheep_level: int, match_seed: int) -> Dictiona
 		"wolves_remaining": state.wolf_total(),
 		"placements": placements
 	}
+
+func _count_sieged_sheep(state) -> int:
+	var count := 0
+	var adjacency := AI.BoardGraph.adjacency()
+	for sheep_node in range(25):
+		if state.sheep[sheep_node] <= 0:
+			continue
+		var adjacent_wolf := false
+		for neighbor in adjacency[sheep_node]:
+			if state.wolves[neighbor]:
+				adjacent_wolf = true
+				break
+		if adjacent_wolf and AI._sheep_escape_count(state, sheep_node) <= 2:
+			count += int(state.sheep[sheep_node])
+	return count
+
+func _count_blocked_wolves(state) -> int:
+	var count := 0
+	for wolf_node in range(25):
+		if state.wolves[wolf_node] and state.wolf_moves(wolf_node).is_empty() and state.capture_options(wolf_node).is_empty():
+			count += 1
+	return count
 
 func _position_key(state) -> String:
 	return "%s|%s|%d|%d|%d" % [str(state.sheep), str(state.wolves), int(state.turn), int(state.chain_wolf), int(state.chain_capture_count)]
