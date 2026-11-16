@@ -346,9 +346,14 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	var best_score := -INF
 	var alpha := -INF
 	var beta := INF
+	var root_moves_searched := 0
+	var root_repetition_candidates := 0
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
+		if path_positions.has(_search_position_key(child)):
+			root_repetition_candidates += 1
+		root_moves_searched += 1
 		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
 		if score > best_score:
 			best_score = score
@@ -361,6 +366,9 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 	last_search_stats = {
 			"depth": depth,
 			"root_moves": moves.size(),
+			"root_moves_searched": root_moves_searched,
+			"root_moves_unsearched": maxi(0, moves.size() - root_moves_searched),
+			"root_repetition_candidates": root_repetition_candidates,
 			"root_order_usec": root_order_usec,
 			"total_usec": total_usec,
 			"nodes": int(context.nodes),
