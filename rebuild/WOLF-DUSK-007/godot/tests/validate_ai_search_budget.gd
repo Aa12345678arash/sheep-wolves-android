@@ -20,6 +20,15 @@ func _assert_search_used(state, side: String) -> void:
 		"Move ordering must respect its reserved budget; stats=%s" % str(stats))
 	assert(int(stats.get("total_usec", 0)) > 0,
 		"Master %s search must report elapsed time" % side)
+	var root_total := int(stats.get("root_moves", 0))
+	var root_searched := int(stats.get("root_moves_searched", 0))
+	var root_unsearched := int(stats.get("root_moves_unsearched", -1))
+	assert(root_total > 0 and root_searched > 0 and root_searched <= root_total,
+		"Master %s search must report actually searched root moves; stats=%s" % [side, str(stats)])
+	assert(root_unsearched == root_total - root_searched,
+		"Master %s search must account for every unsearched root move; stats=%s" % [side, str(stats)])
+	assert(int(stats.get("root_repetition_candidates", -1)) >= 0,
+		"Master %s search must report root repetition candidates" % side)
 
 func _run() -> void:
 	var state = GameState.new()
