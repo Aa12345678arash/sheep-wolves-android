@@ -16,6 +16,7 @@ const SHEEP_SLOT_SPACING := 0.36
 const BoardGraph = preload("res://scripts/board_graph.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
+const ChainTimer = preload("res://scripts/chain_capture_timer.gd")
 
 var game = GameState.new()
 var _shared_resources: Dictionary = {}
@@ -142,8 +143,9 @@ func _process(delta: float) -> void:
 				camera_shake_strength = 0.0
 			camera.look_at(camera_target_look_at, Vector3.UP)
 	if chain_time_left > 0.0:
-		chain_time_left = maxf(0.0, chain_time_left - delta)
-		if chain_time_left <= 0.0:
+		var timer_state: Dictionary = ChainTimer.advance(chain_time_left, delta)
+		chain_time_left = float(timer_state.remaining_seconds)
+		if bool(timer_state.expired):
 			game.finish_wolf_turn()
 			pass_button.visible = false
 			selected_node = -1
