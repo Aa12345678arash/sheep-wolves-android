@@ -1,0 +1,58 @@
+name: WOLF-DUSK-058 edge-case and search-coverage audit
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-058-EDGE-CASE-AND-SEARCH-COVERAGE-AUDIT
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
+      - 'rebuild/WOLF-DUSK-007/godot/tests/**'
+      - '.github/workflows/wolf-dusk-058-edge-case-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wolf-dusk-058-edge-case-audit
+  cancel-in-progress: true
+
+jobs:
+  edge-case-and-search-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout isolated diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Import Godot project
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit
+          timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2
+
+      - name: Validate canonical board and unchanged rules
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
+
+      - name: Validate diagnostic edge cases
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_edge_cases.gd
+
+      - name: Validate all five levels and report search coverage
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_search_coverage.gd
