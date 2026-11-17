@@ -5,6 +5,10 @@ class_name BoardGraph
 # Row-major node IDs: A1..A5, B1..B5, ... E1..E5.
 const NODE_COUNT := 25
 const EXPECTED_EDGE_COUNT := 56
+
+# Adjacency is immutable after construction; cache it to avoid rebuilding
+# 25 arrays for every legal-move and evaluation query.
+static var _adjacency_cache: Array[Array] = []
 const NODE_LABELS := ["A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "B5", "C1", "C2", "C3", "C4", "C5", "D1", "D2", "D3", "D4", "D5", "E1", "E2", "E3", "E4", "E5"]
 const EDGES: Array[Array] = [
 	[0, 1],
@@ -66,6 +70,8 @@ const EDGES: Array[Array] = [
 ]
 
 static func adjacency() -> Array[Array]:
+	if not _adjacency_cache.is_empty():
+		return _adjacency_cache
 	var result: Array[Array] = []
 	for _i in range(NODE_COUNT):
 		result.append([])
@@ -74,7 +80,8 @@ static func adjacency() -> Array[Array]:
 		var b: int = edge[1]
 		result[a].append(b)
 		result[b].append(a)
-	return result
+	_adjacency_cache = result
+	return _adjacency_cache
 
 static func are_adjacent(a: int, b: int) -> bool:
 	if a < 0 or b < 0 or a >= NODE_COUNT or b >= NODE_COUNT:
