@@ -35,6 +35,13 @@ jobs:
           timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit
           timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2
 
+      - name: Validate complete canonical graph topology
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board_topology.gd
+
       - name: Validate canonical board and unchanged rules
         shell: bash
         run: |
