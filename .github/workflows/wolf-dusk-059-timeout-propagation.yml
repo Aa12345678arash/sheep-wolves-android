@@ -1,0 +1,72 @@
+name: WOLF-DUSK-059 timeout propagation and iterative deepening
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-059-TIMEOUT-PROPAGATION-AND-ITERATIVE-DEEPENING
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
+      - 'rebuild/WOLF-DUSK-007/godot/tests/**'
+      - '.github/workflows/wolf-dusk-059-timeout-propagation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wolf-dusk-059-timeout-propagation
+  cancel-in-progress: true
+
+jobs:
+  timeout-propagation-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout isolated diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Import Godot project
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit
+          timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2
+
+      - name: Validate canonical graph topology
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board_topology.gd
+
+      - name: Validate canonical board and unchanged rules
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
+
+      - name: Validate diagnostic edge cases
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_edge_cases.gd
+
+      - name: Validate timeout propagation and iterative-deepening contract
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_timeout_contract.gd
+
+      - name: Validate five AI levels and completed search coverage
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 180s godot --headless --path "$PROJECT" --script res://tests/validate_ai_search_coverage.gd
