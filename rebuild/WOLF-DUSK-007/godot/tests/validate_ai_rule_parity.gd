@@ -75,6 +75,7 @@ func _run() -> void:
 	chain.sheep[6] = 1
 	chain.sheep[18] = 1
 	chain.sheep[21] = 5
+	chain.sheep[22] = 5 # Keep the flock above the 8-sheep terminal threshold so the optional chain can exist.
 	chain.turn = GameState.Turn.WOLVES
 	assert(chain.move_wolf(0, 12) == "captured_chain_available")
 	var expected_chain := _expected_wolf_moves(chain, true)
