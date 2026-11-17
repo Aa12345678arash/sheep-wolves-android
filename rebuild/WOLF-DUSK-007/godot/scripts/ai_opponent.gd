@@ -538,6 +538,43 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 	path_positions.erase(position_key)
 	return {"score": value, "completed": true}
 
+static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}, path_positions: Dictionary = {}) -> Array[Dictionary]:
+	# Evaluate children before exploring them so alpha-beta sees forcing captures,
+	# immediate escapes and blocking moves first instead of wasting its mobile budget.
+	var scored: Array[Dictionary] = []
+	var remaining: Array[Dictionary] = []
+	for index in range(moves.size()):
+		if not context.is_empty() and (
+			_search_stopped(context)
+			or int(context.get("ordering_usec", 0)) >= int(context.get("ordering_limit_usec", 0))
+		):
+			for rest in range(index, moves.size()):
+				remaining.append(moves[rest])
+			break
+		var ordering_item_started := Time.get_ticks_usec()
+		var move: Dictionary = moves[index]
+		var child = _copy_state(state)
+		_apply_search_move(child, move)
+		var child_key := _search_position_key(child)
+		# Historical repeats are scored as draws before root ordering, so a
+		# time-limited search does not blindly choose the first cycling action.
+		var child_score := 0.0 if path_positions.has(child_key) else _evaluate_position(child, ai_is_sheep)
+		scored.append({"move": move, "score": child_score})
+		if not context.is_empty():
+			context.ordering_usec = int(context.get("ordering_usec", 0)) + Time.get_ticks_usec() - ordering_item_started
+	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if maximizing:
+			return float(a.score) > float(b.score)
+		return float(a.score) < float(b.score)
+	)
+	var ordered: Array[Dictionary] = []
+	for entry in scored:
+		ordered.append(entry.move)
+	# If the deadline interrupts ordering, preserve every unscored legal action.
+	for move in remaining:
+		ordered.append(move)
+	return ordered
+
 static func _legal_search_moves(state, include_chain_decline: bool) -> Array[Dictionary]:
 	var moves: Array[Dictionary] = []
 	if state.turn == GameState.Turn.SHEEP:
