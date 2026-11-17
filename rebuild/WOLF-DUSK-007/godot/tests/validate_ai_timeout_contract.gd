@@ -3,6 +3,9 @@ extends SceneTree
 const GameState = preload("res://scripts/game_state.gd")
 const AI = preload("res://scripts/ai_opponent.gd")
 
+func _initialize() -> void:
+	call_deferred("_run")
+
 func _new_playing_state():
 	var state = GameState.new()
 	assert(state.place_wolf(0))
