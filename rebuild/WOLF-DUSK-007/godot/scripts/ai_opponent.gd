@@ -335,12 +335,24 @@ static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionar
 		"start": Time.get_ticks_usec(),
 		"time_limit": _search_time_limit_usec(depth),
 		"ordering_usec": 0,
-		"ordering_limit_usec": maxi(10000, int(_search_time_limit_usec(depth) * 0.25))
+		"ordering_limit_usec": maxi(10000, int(_search_time_limit_usec(depth) * 0.25)),
+		"evaluation_cache": {},
+		"evaluation_calls": 0,
+		"evaluation_cache_hits": 0,
+		"evaluation_usec": 0
 	}
 	return _search_best_move_with_context(state, ai_is_sheep, depth, context)
 
 # Separate context injection keeps timeout behavior deterministic in headless tests.
 static func _search_best_move_with_context(state, ai_is_sheep: bool, depth: int, context: Dictionary) -> Dictionary:
+	if not context.has("evaluation_cache"):
+		context["evaluation_cache"] = {}
+	if not context.has("evaluation_calls"):
+		context["evaluation_calls"] = 0
+	if not context.has("evaluation_cache_hits"):
+		context["evaluation_cache_hits"] = 0
+	if not context.has("evaluation_usec"):
+		context["evaluation_usec"] = 0
 	var include_chain_decline: bool = state.turn == GameState.Turn.WOLVES and state.chain_wolf != -1
 	var moves := _legal_search_moves(state, include_chain_decline)
 	if moves.is_empty():
@@ -465,6 +477,9 @@ static func _search_best_move_with_context(state, ai_is_sheep: bool, depth: int,
 		"nodes": int(context.get("nodes", 0)),
 		"ordering_usec": int(context.get("ordering_usec", 0)),
 		"ordering_limit_usec": int(context.get("ordering_limit_usec", 0)),
+		"evaluation_calls": int(context.get("evaluation_calls", 0)),
+		"evaluation_cache_hits": int(context.get("evaluation_cache_hits", 0)),
+		"evaluation_usec": int(context.get("evaluation_usec", 0)),
 		"node_limit": int(context.get("node_limit", 0)),
 		"time_limit_usec": int(context.get("time_limit", 0)),
 		"stop_reason": stop_reason,
@@ -481,10 +496,32 @@ static func _search_stopped(context: Dictionary) -> bool:
 
 # Search values carry an explicit completion bit. A score from a cut-off subtree
 # must never be compared with fully evaluated root candidates.
+static func _evaluate_position_cached(state, ai_is_sheep: bool, context: Dictionary) -> float:
+	var cache: Dictionary = context.get("evaluation_cache", {})
+	var cache_key := ("sheep|" if ai_is_sheep else "wolves|") + _search_position_key(state)
+	if cache.has(cache_key):
+		context["evaluation_cache_hits"] = int(context.get("evaluation_cache_hits", 0)) + 1
+		return float(cache[cache_key])
+	var started_usec := Time.get_ticks_usec()
+	var score := _evaluate_position(state, ai_is_sheep)
+	context["evaluation_calls"] = int(context.get("evaluation_calls", 0)) + 1
+	context["evaluation_usec"] = int(context.get("evaluation_usec", 0)) + Time.get_ticks_usec() - started_usec
+	# Bound memory growth for long searches; the cache is local to one move decision.
+	if cache.size() < 4096:
+		cache[cache_key] = score
+		context["evaluation_cache"] = cache
+	return score
+
 static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary, path_positions: Dictionary) -> Dictionary:
 	context.nodes = int(context.get("nodes", 0)) + 1
+	# Check the deadline before terminal/leaf evaluation as well as between branches.
+	if _search_stopped(context):
+		return {"score": 0.0, "completed": false}
 	if state.turn == GameState.Turn.FINISHED:
-		return {"score": _evaluate_position(state, ai_is_sheep), "completed": true}
+		var terminal_score := _evaluate_position_cached(state, ai_is_sheep, context)
+		if _search_stopped(context):
+			return {"score": 0.0, "completed": false}
+		return {"score": terminal_score, "completed": true}
 
 	var position_key := _search_position_key(state)
 	if int(path_positions.get(position_key, 0)) > 0:
@@ -492,8 +529,10 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 	path_positions[position_key] = 1
 
 	if depth <= 0:
-		var leaf_score := _evaluate_position(state, ai_is_sheep)
+		var leaf_score := _evaluate_position_cached(state, ai_is_sheep, context)
 		path_positions.erase(position_key)
+		if _search_stopped(context):
+			return {"score": 0.0, "completed": false}
 		return {"score": leaf_score, "completed": true}
 	if _search_stopped(context):
 		path_positions.erase(position_key)
@@ -501,8 +540,10 @@ static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_she
 
 	var moves := _legal_search_moves(state, true)
 	if moves.is_empty():
-		var no_move_score := _evaluate_position(state, ai_is_sheep)
+		var no_move_score := _evaluate_position_cached(state, ai_is_sheep, context)
 		path_positions.erase(position_key)
+		if _search_stopped(context):
+			return {"score": 0.0, "completed": false}
 		return {"score": no_move_score, "completed": true}
 
 	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
@@ -558,7 +599,10 @@ static func _order_search_moves(state, moves: Array[Dictionary], maximizing: boo
 		var child_key := _search_position_key(child)
 		# Historical repeats are scored as draws before root ordering, so a
 		# time-limited search does not blindly choose the first cycling action.
-		var child_score := 0.0 if path_positions.has(child_key) else _evaluate_position(child, ai_is_sheep)
+		var child_score := 0.0 if path_positions.has(child_key) else (
+			_evaluate_position_cached(child, ai_is_sheep, context) if not context.is_empty()
+			else _evaluate_position(child, ai_is_sheep)
+		)
 		scored.append({"move": move, "score": child_score})
 		if not context.is_empty():
 			context.ordering_usec = int(context.get("ordering_usec", 0)) + Time.get_ticks_usec() - ordering_item_started
@@ -621,6 +665,25 @@ static func _search_position_key(state) -> String:
 		int(state.chain_wolf), int(state.chain_capture_count), str(state.winner)
 	]
 
+static func _count_capture_options_fast(state, wolf_node: int, adjacency: Array[Array]) -> int:
+	if wolf_node < 0 or wolf_node >= BoardGraph.NODE_COUNT or not state.wolves[wolf_node]:
+		return 0
+	var total := 0
+	var wolf_row := int(wolf_node / 5)
+	var wolf_col := wolf_node % 5
+	for middle in adjacency[wolf_node]:
+		# Preserve the authoritative rule: exactly one sheep may be jumped.
+		if state.sheep[middle] != 1:
+			continue
+		var dr: int = int(middle / 5) - wolf_row
+		var dc: int = int(middle % 5) - wolf_col
+		for landing in adjacency[middle]:
+			if landing == wolf_node or state.is_occupied(landing):
+				continue
+			if int(landing / 5) - int(middle / 5) == dr and int(landing % 5) - int(middle % 5) == dc:
+				total += 1
+	return total
+
 static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 	if state.winner == "wolves":
 		return -100000.0 if ai_is_sheep else 100000.0
@@ -639,22 +702,29 @@ static func _evaluate_position(state, ai_is_sheep: bool) -> float:
 	var wolf_support := 0.0
 	var sheep_nodes := 0
 	var wolf_nodes := 0
+	var adjacency := BoardGraph.adjacency()
 	for node in range(BoardGraph.NODE_COUNT):
 		if state.sheep[node] > 0:
 			sheep_nodes += 1
-			var legal_sheep_moves: Array[int] = state.sheep_moves(node)
-			sheep_mobility += float(legal_sheep_moves.size())
+			var legal_sheep_move_count := 0
+			for neighbor in adjacency[node]:
+				if not state.is_occupied(neighbor):
+					legal_sheep_move_count += 1
+			sheep_mobility += float(legal_sheep_move_count)
 			sheep_progress += float(4 - int(node / 5)) * float(state.sheep[node])
-			if legal_sheep_moves.is_empty():
+			if legal_sheep_move_count == 0:
 				blocked_sheep += float(state.sheep[node])
 		if state.wolves[node]:
 			wolf_nodes += 1
-			var wm: int = state.wolf_moves(node).size()
-			var captures: int = state.capture_options(node).size()
-			wolf_mobility += float(wm)
+			var wolf_move_count := 0
+			for neighbor in adjacency[node]:
+				if not state.is_occupied(neighbor):
+					wolf_move_count += 1
+			var captures := _count_capture_options_fast(state, node, adjacency)
+			wolf_mobility += float(wolf_move_count)
 			capture_threats += float(captures)
 			wolf_centrality += _centrality(node)
-			if wm == 0 and captures == 0:
+			if wolf_move_count == 0 and captures == 0:
 				blocked_wolves += 1.0
 	# WOLF-DUSK-053: reward coordinated pressure on sheep with few legal exits.
 	siege_pressure = _sheep_siege_pressure(state)
@@ -729,37 +799,38 @@ static func _wolf_support_score(state) -> float:
 # Euclidean proximity is misleading on this board because diagonal links and
 # missing edges make geometric distance differ from legal movement distance.
 static var _graph_distance_cache: Dictionary = {}
+static var _graph_distance_cache_ready: bool = false
 # WOLF-DUSK-047 diagnostics: last bounded-search execution, exposed to headless tests.
 static var last_search_stats: Dictionary = {}
+
+static func _ensure_graph_distance_cache() -> void:
+	if _graph_distance_cache_ready:
+		return
+	var adjacency := BoardGraph.adjacency()
+	# The board graph never changes, so precompute all 25 x 25 shortest paths once.
+	for start_node in range(BoardGraph.NODE_COUNT):
+		var distances: Array[int] = []
+		for _node in range(BoardGraph.NODE_COUNT):
+			distances.append(-1)
+		var queue: Array[int] = [start_node]
+		var head := 0
+		distances[start_node] = 0
+		while head < queue.size():
+			var current: int = queue[head]
+			head += 1
+			for neighbor in adjacency[current]:
+				if distances[neighbor] != -1:
+					continue
+				distances[neighbor] = distances[current] + 1
+				queue.append(neighbor)
+		for target_node in range(BoardGraph.NODE_COUNT):
+			_graph_distance_cache[start_node * BoardGraph.NODE_COUNT + target_node] = distances[target_node]
+	_graph_distance_cache_ready = true
 
 static func _graph_distance(start_node: int, target_node: int) -> int:
 	if start_node < 0 or start_node >= BoardGraph.NODE_COUNT or target_node < 0 or target_node >= BoardGraph.NODE_COUNT:
 		return -1
-	if start_node == target_node:
-		return 0
-	var cache_key: int = start_node * BoardGraph.NODE_COUNT + target_node
-	if _graph_distance_cache.has(cache_key):
-		return int(_graph_distance_cache[cache_key])
-	var distances: Array[int] = []
-	for _node in range(BoardGraph.NODE_COUNT):
-		distances.append(-1)
-	var queue: Array[int] = [start_node]
-	var head := 0
-	distances[start_node] = 0
-	var adjacency := BoardGraph.adjacency()
-	while head < queue.size():
-		var current: int = queue[head]
-		head += 1
-		for neighbor in adjacency[current]:
-			if distances[neighbor] != -1:
-				continue
-			distances[neighbor] = distances[current] + 1
-			if neighbor == target_node:
-				var result: int = distances[neighbor]
-				_graph_distance_cache[cache_key] = result
-				_graph_distance_cache[target_node * BoardGraph.NODE_COUNT + start_node] = result
-				return result
-			queue.append(neighbor)
-	return -1
+	_ensure_graph_distance_cache()
+	return int(_graph_distance_cache.get(start_node * BoardGraph.NODE_COUNT + target_node, -1))
 
 # WOLF-DUSK-047: diagnostic-only checkpoint; no gameplay scoring changed.
