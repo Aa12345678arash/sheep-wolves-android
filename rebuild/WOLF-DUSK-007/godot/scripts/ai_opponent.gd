@@ -328,135 +328,215 @@ static func _search_time_limit_usec(depth: int) -> int:
 	return 70000 if depth <= 4 else (150000 if depth <= 6 else 240000)
 
 static func _search_best_move(state, ai_is_sheep: bool, depth: int) -> Dictionary:
-	# At the real decision root, include declining an optional second capture.
+	# One shared deadline covers ordering and every iterative-deepening pass.
+	var context := {
+		"nodes": 0,
+		"node_limit": _search_node_limit(depth),
+		"start": Time.get_ticks_usec(),
+		"time_limit": _search_time_limit_usec(depth),
+		"ordering_usec": 0,
+		"ordering_limit_usec": maxi(10000, int(_search_time_limit_usec(depth) * 0.25))
+	}
+	return _search_best_move_with_context(state, ai_is_sheep, depth, context)
+
+# Separate context injection keeps timeout behavior deterministic in headless tests.
+static func _search_best_move_with_context(state, ai_is_sheep: bool, depth: int, context: Dictionary) -> Dictionary:
 	var include_chain_decline: bool = state.turn == GameState.Turn.WOLVES and state.chain_wolf != -1
 	var moves := _legal_search_moves(state, include_chain_decline)
 	if moves.is_empty():
+		last_search_stats = {"depth": depth, "target_depth": depth, "completed_depth": 0,
+			"root_moves": 0, "root_moves_searched": 0, "root_moves_unsearched": 0,
+			"root_moves_attempted": 0, "iterations_completed": 0, "stop_reason": "no_legal_moves",
+			"stopped": false, "search_aborted": false}
 		return {}
-	# Start the deadline before move ordering: ordering itself evaluates children
-	# and must consume the same mobile time budget as the search.
-	var context := {"nodes": 0, "node_limit": _search_node_limit(depth), "start": Time.get_ticks_usec(), "time_limit": _search_time_limit_usec(depth), "ordering_usec": 0, "ordering_limit_usec": maxi(10000, int(_search_time_limit_usec(depth) * 0.25))}
+
 	var path_positions: Dictionary = {}
 	for historical_key in state.position_history:
 		path_positions[str(historical_key)] = 1
 	path_positions[_search_position_key(state)] = 1
+
 	moves = _order_search_moves(state, moves, true, ai_is_sheep, context, path_positions)
-	var root_order_usec: int = Time.get_ticks_usec() - int(context.start)
+	var root_order_usec: int = Time.get_ticks_usec() - int(context.get("start", Time.get_ticks_usec()))
+	# This is always a legal emergency fallback, but it is not counted as a completed search.
 	var best_move: Dictionary = moves[0]
+	var previous_best_move: Dictionary = {}
 	var best_score := -INF
-	var alpha := -INF
-	var beta := INF
+	var completed_depth := 0
+	var attempted_depth := 0
+	var iterations_completed := 0
 	var root_moves_searched := 0
+	var root_moves_attempted := 0
+	var root_moves_searched_total := 0
 	var root_repetition_candidates := 0
 	for move in moves:
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
 		if path_positions.has(_search_position_key(child)):
 			root_repetition_candidates += 1
-		root_moves_searched += 1
-		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
-		if score > best_score:
-			best_score = score
-			best_move = move
-		alpha = maxf(alpha, best_score)
+
+	var depth_schedule: Array[int] = []
+	var next_depth := 2
+	while next_depth <= depth:
+		depth_schedule.append(next_depth)
+		next_depth += 2
+	if depth_schedule.is_empty() or depth_schedule[depth_schedule.size() - 1] != depth:
+		depth_schedule.append(depth)
+
+	var search_aborted := false
+	for iteration_depth in depth_schedule:
 		if _search_stopped(context):
+			search_aborted = true
 			break
-	var total_usec: int = Time.get_ticks_usec() - int(context.start)
-	var stop_reason := "node_limit" if int(context.nodes) >= int(context.node_limit) else ("time_limit" if total_usec >= int(context.time_limit) else "completed")
+		attempted_depth = iteration_depth
+		var iteration_moves: Array[Dictionary] = []
+		for move in moves:
+			iteration_moves.append(move)
+		# The last fully completed principal move is searched first in the next pass.
+		if not previous_best_move.is_empty():
+			for index in range(iteration_moves.size()):
+				if iteration_moves[index] == previous_best_move:
+					var pv_move: Dictionary = iteration_moves[index]
+					iteration_moves.remove_at(index)
+					iteration_moves.insert(0, pv_move)
+					break
+
+		var iteration_best_move: Dictionary = {}
+		var iteration_best_score := -INF
+		var alpha := -INF
+		var iteration_root_attempted := 0
+		var iteration_root_searched := 0
+		var iteration_complete := true
+		for move in iteration_moves:
+			if _search_stopped(context):
+				iteration_complete = false
+				break
+			iteration_root_attempted += 1
+			var child = _copy_state(state)
+			_apply_search_move(child, move)
+			var child_result: Dictionary = _search_node(
+				child, iteration_depth - 1, alpha, INF, ai_is_sheep, context, path_positions
+			)
+			if not bool(child_result.get("completed", false)):
+				iteration_complete = false
+				break
+			var score := float(child_result.get("score", 0.0))
+			iteration_root_searched += 1
+			root_moves_searched_total += 1
+			if score > iteration_best_score:
+				iteration_best_score = score
+				iteration_best_move = move
+			alpha = maxf(alpha, iteration_best_score)
+
+		root_moves_attempted = iteration_root_attempted
+		if iteration_complete and iteration_root_searched == iteration_moves.size():
+			# Commit a root choice only after every legal root move completed this depth.
+			best_move = iteration_best_move
+			best_score = iteration_best_score
+			previous_best_move = iteration_best_move
+			completed_depth = iteration_depth
+			iterations_completed += 1
+			root_moves_searched = iteration_root_searched
+		else:
+			# Discard all scores from this incomplete pass; retain the previous complete pass.
+			search_aborted = true
+			break
+
+	var total_usec: int = Time.get_ticks_usec() - int(context.get("start", Time.get_ticks_usec()))
+	var reached_target_depth: bool = completed_depth == depth
+	var stop_reason := "completed" if reached_target_depth else (
+		"node_limit" if int(context.get("nodes", 0)) >= int(context.get("node_limit", 0)) else (
+			"time_limit" if total_usec >= int(context.get("time_limit", 0)) else "incomplete"
+		)
+	)
 	last_search_stats = {
-			"depth": depth,
-			"root_moves": moves.size(),
-			"root_moves_searched": root_moves_searched,
-			"root_moves_unsearched": maxi(0, moves.size() - root_moves_searched),
-			"root_repetition_candidates": root_repetition_candidates,
-			"root_order_usec": root_order_usec,
-			"total_usec": total_usec,
-			"nodes": int(context.nodes),
-			"ordering_usec": int(context.ordering_usec),
-			"ordering_limit_usec": int(context.ordering_limit_usec),
-			"node_limit": int(context.node_limit),
-			"time_limit_usec": int(context.time_limit),
-			"stop_reason": stop_reason,
-			"stopped": stop_reason != "completed"
-		}
+		"depth": depth,
+		"target_depth": depth,
+		"attempted_depth": attempted_depth,
+		"completed_depth": completed_depth,
+		"iterations_completed": iterations_completed,
+		"root_moves": moves.size(),
+		"root_moves_searched": root_moves_searched,
+		"root_moves_unsearched": maxi(0, moves.size() - root_moves_searched),
+		"root_moves_attempted": root_moves_attempted,
+		"root_moves_searched_total": root_moves_searched_total,
+		"root_repetition_candidates": root_repetition_candidates,
+		"root_order_usec": root_order_usec,
+		"total_usec": total_usec,
+		"nodes": int(context.get("nodes", 0)),
+		"ordering_usec": int(context.get("ordering_usec", 0)),
+		"ordering_limit_usec": int(context.get("ordering_limit_usec", 0)),
+		"node_limit": int(context.get("node_limit", 0)),
+		"time_limit_usec": int(context.get("time_limit", 0)),
+		"stop_reason": stop_reason,
+		"stopped": stop_reason != "completed",
+		"search_aborted": search_aborted or not reached_target_depth,
+		"best_score": best_score if completed_depth > 0 else 0.0
+	}
 	return best_move
 
 static func _search_stopped(context: Dictionary) -> bool:
-	return int(context.nodes) >= int(context.node_limit) or Time.get_ticks_usec() - int(context.start) >= int(context.time_limit)
+	return int(context.get("nodes", 0)) >= int(context.get("node_limit", 0)) or (
+		Time.get_ticks_usec() - int(context.get("start", Time.get_ticks_usec())) >= int(context.get("time_limit", 0))
+	)
 
-static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary, path_positions: Dictionary) -> float:
-	context.nodes = int(context.nodes) + 1
+# Search values carry an explicit completion bit. A score from a cut-off subtree
+# must never be compared with fully evaluated root candidates.
+static func _search_node(state, depth: int, alpha: float, beta: float, ai_is_sheep: bool, context: Dictionary, path_positions: Dictionary) -> Dictionary:
+	context.nodes = int(context.get("nodes", 0)) + 1
 	if state.turn == GameState.Turn.FINISHED:
-		return _evaluate_position(state, ai_is_sheep)
+		return {"score": _evaluate_position(state, ai_is_sheep), "completed": true}
+
 	var position_key := _search_position_key(state)
-	# A repeated position on this search line is a draw. This prevents minimax
-	# from treating a reversible four-ply loop as fresh positional progress.
 	if int(path_positions.get(position_key, 0)) > 0:
-		return 0.0
+		return {"score": 0.0, "completed": true}
 	path_positions[position_key] = 1
-	if depth <= 0 or _search_stopped(context):
+
+	if depth <= 0:
 		var leaf_score := _evaluate_position(state, ai_is_sheep)
 		path_positions.erase(position_key)
-		return leaf_score
+		return {"score": leaf_score, "completed": true}
+	if _search_stopped(context):
+		path_positions.erase(position_key)
+		return {"score": 0.0, "completed": false}
+
 	var moves := _legal_search_moves(state, true)
 	if moves.is_empty():
 		var no_move_score := _evaluate_position(state, ai_is_sheep)
 		path_positions.erase(position_key)
-		return no_move_score
+		return {"score": no_move_score, "completed": true}
+
 	var maximizing: bool = (state.turn == GameState.Turn.SHEEP) == ai_is_sheep
 	moves = _order_search_moves(state, moves, maximizing, ai_is_sheep, context, path_positions)
+	if _search_stopped(context):
+		path_positions.erase(position_key)
+		return {"score": 0.0, "completed": false}
+
 	var value := -INF if maximizing else INF
 	for move in moves:
+		if _search_stopped(context):
+			path_positions.erase(position_key)
+			return {"score": 0.0, "completed": false}
 		var child = _copy_state(state)
 		_apply_search_move(child, move)
-		var score := _search_node(child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions)
+		var child_result: Dictionary = _search_node(
+			child, depth - 1, alpha, beta, ai_is_sheep, context, path_positions
+		)
+		if not bool(child_result.get("completed", false)):
+			path_positions.erase(position_key)
+			return {"score": 0.0, "completed": false}
+		var score := float(child_result.get("score", 0.0))
 		if maximizing:
 			value = maxf(value, score)
 			alpha = maxf(alpha, value)
 		else:
 			value = minf(value, score)
 			beta = minf(beta, value)
-		if beta <= alpha or _search_stopped(context):
+		# Alpha-beta cutoffs are complete proofs for the current bound, not timeouts.
+		if beta <= alpha:
 			break
-	path_positions.erase(position_key)
-	return value
 
-static func _order_search_moves(state, moves: Array[Dictionary], maximizing: bool, ai_is_sheep: bool, context: Dictionary = {}, path_positions: Dictionary = {}) -> Array[Dictionary]:
-	# Evaluate children before exploring them so alpha-beta sees forcing captures,
-	# immediate escapes and blocking moves first instead of wasting its mobile budget.
-	var scored: Array[Dictionary] = []
-	var remaining: Array[Dictionary] = []
-	for index in range(moves.size()):
-		if not context.is_empty() and (
-			_search_stopped(context)
-			or int(context.get("ordering_usec", 0)) >= int(context.get("ordering_limit_usec", 0))
-		):
-			for rest in range(index, moves.size()):
-				remaining.append(moves[rest])
-			break
-		var ordering_item_started := Time.get_ticks_usec()
-		var move: Dictionary = moves[index]
-		var child = _copy_state(state)
-		_apply_search_move(child, move)
-		var child_key := _search_position_key(child)
-		# Historical repeats are scored as draws before root ordering, so a
-		# time-limited search does not blindly choose the first cycling action.
-		var child_score := 0.0 if path_positions.has(child_key) else _evaluate_position(child, ai_is_sheep)
-		scored.append({"move": move, "score": child_score})
-		if not context.is_empty():
-			context.ordering_usec = int(context.get("ordering_usec", 0)) + Time.get_ticks_usec() - ordering_item_started
-	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		if maximizing:
-			return float(a.score) > float(b.score)
-		return float(a.score) < float(b.score)
-	)
-	var ordered: Array[Dictionary] = []
-	for entry in scored:
-		ordered.append(entry.move)
-	# If the deadline interrupts ordering, preserve every unscored legal action.
-	for move in remaining:
-		ordered.append(move)
-	return ordered
+	path_positions.erase(position_key)
+	return {"score": value, "completed": true}
 
 static func _legal_search_moves(state, include_chain_decline: bool) -> Array[Dictionary]:
 	var moves: Array[Dictionary] = []
