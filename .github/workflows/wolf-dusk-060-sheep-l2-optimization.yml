@@ -1,0 +1,69 @@
+name: WOLF-DUSK-060 sheep level-2 search optimization
+
+on:
+  push:
+    branches:
+      - WOLF-DUSK-060-SHEEP-L2-SEARCH-OPTIMIZATION
+    paths:
+      - 'rebuild/WOLF-DUSK-007/godot/scripts/**'
+      - 'rebuild/WOLF-DUSK-007/godot/tests/**'
+      - '.github/workflows/wolf-dusk-060-sheep-l2-optimization.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wolf-dusk-060-sheep-l2-optimization
+  cancel-in-progress: true
+
+jobs:
+  sheep-l2-optimization-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout isolated optimization branch
+        uses: actions/checkout@v4
+
+      - name: Import Godot project
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout --signal=TERM --kill-after=15s 300s godot --headless --editor --path "$PROJECT" --quit
+          timeout --signal=TERM --kill-after=15s 90s godot --headless --path "$PROJECT" --quit-after 2
+
+      - name: Validate canonical graph topology and unchanged rules
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board_topology.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_board.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_rules.gd
+
+      - name: Validate edge cases and timeout propagation
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_edge_cases.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_timeout_contract.gd
+
+      - name: Validate exact rule parity and 3-second chain timer
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_ai_rule_parity.gd
+          timeout 120s godot --headless --path "$PROJECT" --script res://tests/validate_chain_capture_timer.gd
+
+      - name: Validate optimized 70ms sheep level-2 search
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROJECT="$GITHUB_WORKSPACE/rebuild/WOLF-DUSK-007/godot"
+          timeout 180s godot --headless --path "$PROJECT" --script res://tests/validate_ai_search_optimization.gd
+          timeout 180s godot --headless --path "$PROJECT" --script res://tests/validate_ai_search_coverage.gd
