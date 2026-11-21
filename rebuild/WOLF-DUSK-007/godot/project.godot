@@ -23,6 +23,7 @@ window/stretch/aspect="expand"
 
 [autoload]
 UI_POLISH="*res://scripts/ui_polish.gd"
+ONLINE_ROOM_CLIENT="*res://scripts/online_room_client.gd"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
