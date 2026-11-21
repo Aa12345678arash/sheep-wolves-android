@@ -99,6 +99,8 @@ export class RoomDurableObject {
       ws.serializeAttachment({playerId:authenticated.id});
       authenticated.disconnectedAt = null;
       await this.save(room);
+      await this.scheduleNextAlarm(room);
+      this.broadcast({type:"presence",playerId:authenticated.id,connected:true});
       ws.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,nextActionSeq:authenticated.lastSeq+1,events:room.events.slice(-64)}));
       return;
     }
@@ -129,8 +131,7 @@ export class RoomDurableObject {
     if (room.events.length > 256) room.events.splice(0,room.events.length-256);
     if (room.game.turn === "finished") { room.status = "finished"; room.result = room.game.winner; }
     await this.save(room);
-    if (room.game.chainDeadline) await this.ctx.storage.setAlarm(room.game.chainDeadline);
-    else if (room.expiresAt) await this.ctx.storage.setAlarm(room.expiresAt);
+    await this.scheduleNextAlarm(room);
     this.broadcast({type:"state",game:room.game,seq:room.seq,lastAction:{playerId:player.id,action},status:room.status,result:room.result});
   }
   async webSocketClose(ws: WebSocket): Promise<void> { await this.markDisconnected(ws); }
@@ -138,10 +139,21 @@ export class RoomDurableObject {
   private async markDisconnected(ws: WebSocket): Promise<void> {
     const a = ws.deserializeAttachment() as {playerId:"host"|"guest"} | null; if (!a) return;
     const room = await this.load(); if (!room) return;
-    const p = room.players.find(x=>x.id===a.playerId); if (!p || this.ctx.getWebSockets(p.id).length > 0) return;
+    const p = room.players.find(x=>x.id===a.playerId); if (!p) return;
+    const anotherSocketIsOpen = this.ctx.getWebSockets().some(other => {
+      if (other === ws) return false;
+      const otherAttachment = other.deserializeAttachment() as {playerId?:string} | null;
+      return otherAttachment?.playerId === p.id;
+    });
+    if (anotherSocketIsOpen) return;
     p.disconnectedAt = Date.now(); await this.save(room);
-    if (room.status === "playing") await this.ctx.storage.setAlarm(p.disconnectedAt + 45000);
+    if (room.status === "playing") await this.scheduleNextAlarm(room);
     this.broadcast({type:"presence",playerId:p.id,connected:false,reconnectGraceMs:45000});
+  }
+  private async scheduleNextAlarm(room: Room): Promise<void> {
+    const now = Date.now();
+    const deadlines = [room.expiresAt,room.game.chainDeadline ?? Infinity,...room.players.map(p=>p.disconnectedAt === null ? Infinity : p.disconnectedAt+45000)].filter(x=>x>now);
+    if (deadlines.length) await this.ctx.storage.setAlarm(Math.min(...deadlines));
   }
   async alarm(): Promise<void> {
     const room = await this.load(); if (!room) return;
