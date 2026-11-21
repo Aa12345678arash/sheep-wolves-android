@@ -114,3 +114,12 @@ Latest branch head: `22e38e905005863f6f67ece6870fb5a08bbb6af9`.
 - This does **not** prove a deployed Cloudflare Worker, real HTTPS/WSS traffic, simultaneous two-device play, reconnect over mobile networks, Android export/runtime behavior, or a production-ready invite/deep-link journey.
 - Cloudflare deployment remains intentionally unperformed. The service URL remains blank, and the public invite flow must remain disabled until the owner authorizes deployment and live device tests pass.
 - The stable branch and `main` have not been modified by this continuation.
+
+
+## Reconnect rejection handling — 2026-11-21
+
+- Client now distinguishes terminal room/session rejection from transient transport loss.
+- Close codes/reasons for superseded sessions (`4001`), missing rooms (`4004`), and invalid/authentication-rejected sessions (`4003` with explicit rejection reasons) disable automatic reconnect and emit a visible client error.
+- Abnormal/transient disconnects remain eligible for reconnect. The `authentication_timeout` reason is intentionally retryable, since a valid token may succeed on a fresh handshake.
+- Regression assertions cover fatal invalid-token, missing-room and superseded-session cases versus retryable abnormal disconnect and handshake timeout.
+- Godot 4.4.1 CI run [44911116967](https://github.com/Aa12345678arash/sheep-wolves-android/actions/runs/44911116967): PASS for commit `ee3fe48dd58241e6febaf63aea9bc0eed347e6f5` — project import/parse, client regression smoke test and headless active-scene launch all succeeded.
