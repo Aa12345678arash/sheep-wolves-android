@@ -9,6 +9,7 @@ boot_splash/show_image=false
 boot_splash/fullsize=true
 boot_splash/bg_color=Color(0.20, 0.31, 0.22, 1)
 config/description="بازی گرگ و میش؛ راز دشت سبز"
+config/wolf_dusk_online_service_url=""
 run/main_scene="res://scenes/main.tscn"
 
 [display]
