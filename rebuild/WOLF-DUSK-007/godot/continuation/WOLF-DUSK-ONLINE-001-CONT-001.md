@@ -36,3 +36,30 @@ The existing `docs/multiplayer_and_orientation.md` is the authority:
 
 ## Deployment dependency / link status
 No production host, domain, server credentials or deployment target is currently configured in this repository. The source code alone cannot create a working public invite link. A real invite URL must not be fabricated. The app can create a valid share link only after the room service is deployed behind an approved HTTPS domain.
+
+
+## Implementation update — 2026-11-21
+
+An isolated Cloudflare Workers + SQLite Durable Object backend foundation has been added under `rebuild/WOLF-DUSK-007/online/worker/`. It is not deployed and is not yet connected to the Godot UI.
+
+Implemented in source:
+- room creation with 96-bit random room code and 256-bit per-player bearer token (only token hashes are persisted);
+- one host / one guest, opposite roles (wolves / sheep), 24-hour room expiry and readiness handshake;
+- WebSocket snapshots and authoritative move intents (clients do not submit board snapshots);
+- server-side topology/rule engine for 25 nodes and 56 edges, three wolf placements, sheep-first turn, one-sheep straight-line captures, win thresholds and 3-second follow-up capture window;
+- sequence checks, message rate cap, event history, 45-second reconnect grace and forfeit handling;
+- deployment config using SQLite-backed Durable Objects and the default workers.dev hostname; no custom domain is required.
+
+Validation status at this record:
+- GitHub Actions workflow `.github/workflows/wolf-dusk-online-worker.yml` added.
+- Early runs failed before typecheck because the initially selected Cloudflare type package version was not published. The dependency was removed in favor of local runtime declarations; the current CI run must pass install, TypeScript checks, engine tests and Wrangler dry-run before this milestone is accepted.
+- The engine currently mirrors the Godot runtime's one-follow-up-capture / 3-second behavior. The recovered legacy source notes a potential discrepancy (unlimited chained captures versus the current Godot runtime's one extra capture). This must be reconciled against the accepted in-game rules and regression tests before public release; do not silently change the shipped rules.
+
+Remaining blockers before real online play:
+1. CI green and adversarial tests for invalid turns, placements, stale/duplicate sequences, simultaneous joins, room-full, token expiry, reconnect and disconnect.
+2. Godot Android client integration: create/join room, secure WebSocket connection, readiness, authoritative state rendering, reconnect sequence recovery and invite share action.
+3. Resolve the documented chain-capture compatibility discrepancy and compute a cryptographic ruleset hash from the exact accepted rules/graph.
+4. Deploy only after the owner connects an account. A free Cloudflare account can use a workers.dev subdomain and SQLite Durable Objects; this requires the owner's interactive account authorization. No credentials or paid services are assumed.
+5. Android device-to-device test before describing the feature as operational.
+
+No changes were made to `main`, stable 044 or the release branch.
