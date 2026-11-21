@@ -216,3 +216,31 @@ test("unauthenticated WebSocket is closed after the handshake timeout", async ()
   await room.alarm();
   assert.deepEqual(pending.closed, { code: 4003, reason: "authentication_timeout" });
 });
+
+test("connect schedules the authentication timeout as the next Durable Object alarm", async () => {
+  const acceptedAt = Date.now();
+  const pending = socket({ playerId: "", acceptedAt });
+  let scheduledAlarm = 0;
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: acceptedAt,
+    expiresAt: acceptedAt + 24 * 60 * 60 * 1000,
+    status: "waiting",
+    players: [],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [pending],
+    storage: {
+      get: async () => roomData,
+      put: async () => undefined,
+      setAlarm: async (timestamp: number) => { scheduledAlarm = timestamp; },
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  await (room as unknown as { scheduleNextAlarm(value: typeof roomData): Promise<void> }).scheduleNextAlarm(roomData);
+  assert.equal(scheduledAlarm, acceptedAt + 15_000);
+});
