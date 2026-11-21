@@ -108,7 +108,7 @@ export class RoomDurableObject {
     if (room.status !== "playing") { ws.send(JSON.stringify({type:"error",code:"match_not_ready"})); return; }
     if (!Number.isInteger(msg.seq) || msg.seq !== player.lastSeq + 1) { ws.send(JSON.stringify({type:"error",code:"stale_or_out_of_order_sequence",expected:player.lastSeq+1})); return; }
     const action = msg.action as GameAction;
-    if (!action || !["place_wolf","move_sheep","move_wolf"].includes(action.type)) { ws.send(JSON.stringify({type:"error",code:"unknown_action"})); return; }
+    if (!action || !["place_wolf","move_sheep","move_wolf","finish_chain"].includes(action.type)) { ws.send(JSON.stringify({type:"error",code:"unknown_action"})); return; }
     const applied = applyAction(room.game,player.side,action,now);
     if (!applied.ok) {
       if (applied.code === "chain_window_expired") { room.game = applied.state; room.seq++; await this.save(room); this.broadcast({type:"state",game:room.game,seq:room.seq}); }
