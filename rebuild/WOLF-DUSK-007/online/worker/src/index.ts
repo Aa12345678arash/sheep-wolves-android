@@ -175,7 +175,12 @@ export class RoomDurableObject {
   }
   private async scheduleNextAlarm(room: Room): Promise<void> {
     const now = Date.now();
-    const deadlines = [room.expiresAt,room.game.chainDeadline ?? Infinity,...room.players.map(p=>p.disconnectedAt === null ? Infinity : p.disconnectedAt+45000)].filter(x=>x>now);
+    const pendingAuthDeadlines = this.ctx.getWebSockets().map(socket => {
+      const attachment = socket.deserializeAttachment() as {playerId?:string;acceptedAt?:number} | null;
+      return attachment && !attachment.playerId && typeof attachment.acceptedAt === "number"
+        ? attachment.acceptedAt + UNAUTHENTICATED_SOCKET_TTL_MS : Infinity;
+    });
+    const deadlines = [room.expiresAt,room.game.chainDeadline ?? Infinity,...room.players.map(p=>p.disconnectedAt === null ? Infinity : p.disconnectedAt+45000),...pendingAuthDeadlines].filter(x=>x>now);
     if (deadlines.length) await this.ctx.storage.setAlarm(Math.min(...deadlines));
   }
   async alarm(): Promise<void> { await this.exclusive(() => this.handleAlarm()); }
