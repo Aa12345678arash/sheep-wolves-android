@@ -90,3 +90,27 @@ Create a free Cloudflare account, then connect the existing GitHub repository th
 ## Separate AI audit note
 
 The independent WOLF-DUSK-061 AI workflow passed board/rule and tactical checks but its seeded self-play stage ended with exit 124. The visible matches were drawn at the 72-ply cap (for example, 4/4 draws in the hardest wolf-vs-sheep level pair), so no competitive superiority claim is justified yet. This remains a separate AI-branch blocker and does not affect the online branch CI.
+
+
+## Client/server integration hardening — 2026-11-21 (continuation)
+
+Latest branch head: `22e38e905005863f6f67ece6870fb5a08bbb6af9`.
+
+### Confirmed defects corrected
+- The Godot client previously treated a successful local WebSocket auth-message send as if the server had authenticated it. It now distinguishes `_auth_sent` from `_authenticated`; ready and game actions are rejected locally until an authoritative server snapshot confirms authentication.
+- A repeated-snapshot handshake defect was found: every `snapshot` caused `room_connected` to fire, and the meadow callback sent `ready` again. Because the server broadcasts another snapshot for ready, this could create a repeated ready/snapshot loop and inflate room sequence events. The client now emits `room_connected` only for the first snapshot of the room session; subsequent snapshots still flow through `room_message` to refresh the board.
+- On reconnect, the auth-send flag resets for the new socket, while the initial-room signal remains one-shot. The reconnect snapshot re-authenticates the client and refreshes the board without re-triggering the initial ready callback.
+- Worker now schedules Durable Object alarms at the earliest pending unauthenticated socket expiry (15 seconds), not only at room/game deadlines.
+- Rejected `match_not_ready`, `rate_limited` and `unknown_action` responses include the unchanged expected action sequence, allowing the client to recover its optimistic sequence counter.
+
+### Regression coverage and actual CI evidence
+- Worker CI run [44910671925](https://github.com/Aa12345678arash/sheep-wolves-android/actions/runs/44910671925): PASS — dependency install, TypeScript typecheck, test suite and Wrangler dry-run all completed successfully for worker/test commit `141162c61d97bfb25ea3e1ef87eafe666c0b4801`.
+- Godot CI run [44910940636](https://github.com/Aa12345678arash/sheep-wolves-android/actions/runs/44910940636): PASS — Godot 4.4.1 project import/parse, offline client regression test and headless active-scene launch completed successfully for head `22e38e905005863f6f67ece6870fb5a08bbb6af9`.
+- The Godot regression test now checks that ready/actions are blocked before authentication, initial snapshot emits the room-connected signal once, repeated snapshots do not emit it again, and the authoritative next action sequence is loaded.
+- An intermediate Godot CI run failed due to a test assertion comparing an array with an integer. The assertion was corrected, and the later run above passed.
+
+### Current acceptance boundary
+- Worker source validation and Godot headless validation are green.
+- This does **not** prove a deployed Cloudflare Worker, real HTTPS/WSS traffic, simultaneous two-device play, reconnect over mobile networks, Android export/runtime behavior, or a production-ready invite/deep-link journey.
+- Cloudflare deployment remains intentionally unperformed. The service URL remains blank, and the public invite flow must remain disabled until the owner authorizes deployment and live device tests pass.
+- The stable branch and `main` have not been modified by this continuation.
