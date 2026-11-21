@@ -27,3 +27,5 @@ jobs:
         run: timeout 60s godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
       - name: Smoke-test online client in offline mode
         run: timeout 30s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_online_client.gd
+      - name: Launch the active meadow scene headlessly
+        run: timeout 30s godot --headless --path rebuild/WOLF-DUSK-007/godot --quit-after 2
