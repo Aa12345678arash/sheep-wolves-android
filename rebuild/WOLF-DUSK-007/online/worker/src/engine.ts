@@ -23,6 +23,7 @@ for (const [a, b] of [
 ] as [string, string][]) edgePairs.push([a,b]);
 const key = (a: number, b: number) => a < b ? a + ":" + b : b + ":" + a;
 const edges = new Set(edgePairs.map(([a,b]) => key(nodeIndex(a), nodeIndex(b))));
+export const EDGE_KEYS = Array.from(edges).sort();
 const adjacency: number[][] = Array.from({length:25}, () => []);
 for (const pair of edges) {
   const [a,b] = pair.split(":").map(Number);
