@@ -7,12 +7,17 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
 const randomToken = (bytes = 32) => { const a = crypto.getRandomValues(new Uint8Array(bytes)); return btoa(String.fromCharCode(...a)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
 const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,"0")).join("");
 const cleanName = (v: unknown) => typeof v === "string" ? v.trim().replace(/[<>\u0000-\u001f]/g,"").slice(0,24) : "";
-const cors = { "access-control-allow-origin":"*", "access-control-allow-methods":"GET,POST,OPTIONS", "access-control-allow-headers":"content-type", "cache-control":"no-store" };
+const cors = { "access-control-allow-methods":"GET,POST,OPTIONS", "access-control-allow-headers":"content-type", "cache-control":"no-store", "vary":"Origin" };
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method === "OPTIONS") return new Response(null,{status:204,headers:cors});
+    const requestOrigin = request.headers.get("Origin");
+    // Browser callers must be same-origin. Native Android clients normally omit
+    // Origin; requests that do provide it cannot use a third-party site to claim
+    // a guest seat or open a room on the player's behalf.
+    if (requestOrigin && requestOrigin !== url.origin) return json({error:"origin_not_allowed"},403);
+    if (request.method === "OPTIONS") return new Response(null,{status:204,headers:{...cors,"access-control-allow-origin":requestOrigin ?? url.origin}});
     if (url.pathname === "/health") return json({ok:true,service:"wolf-dusk-rooms",protocol:PROTOCOL_VERSION,ruleset:RULESET_ID});
     if (url.pathname === "/api/rooms" && request.method === "POST") {
       const body = await request.json().catch(()=>null) as any;
