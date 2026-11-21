@@ -244,3 +244,68 @@ test("connect schedules the authentication timeout as the next Durable Object al
   await (room as unknown as { scheduleNextAlarm(value: typeof roomData): Promise<void> }).scheduleNextAlarm(roomData);
   assert.equal(scheduledAlarm, acceptedAt + 15_000);
 });
+
+test("match-not-ready rejection returns the unchanged expected action sequence", async () => {
+  const host = socket({ playerId: "host" });
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60_000,
+    status: "waiting",
+    players: [{
+      id: "host", side: "wolves", name: "Host", tokenHash: "hash",
+      ready: true, disconnectedAt: null, lastSeq: 0, rate: [],
+    }],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [host],
+    storage: {
+      get: async () => roomData,
+      put: async (_key: string, value: unknown) => Object.assign(roomData, value),
+      setAlarm: async () => undefined,
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  await (room as unknown as { handleWebSocketMessage(ws: FakeSocket, message: string): Promise<void> })
+    .handleWebSocketMessage(host, JSON.stringify({ seq: 1, action: { type: "place_wolf", node: 0 } }));
+  const error = JSON.parse(host.sent[0]);
+  assert.equal(error.code, "match_not_ready");
+  assert.equal(error.expected, 1);
+});
+
+test("rate-limit rejection returns the unchanged expected action sequence", async () => {
+  const now = Date.now();
+  const host = socket({ playerId: "host" });
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: now,
+    expiresAt: now + 60_000,
+    status: "playing",
+    players: [{
+      id: "host", side: "wolves", name: "Host", tokenHash: "hash",
+      ready: true, disconnectedAt: null, lastSeq: 0, rate: Array(30).fill(now - 1),
+    }],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [host],
+    storage: {
+      get: async () => roomData,
+      put: async (_key: string, value: unknown) => Object.assign(roomData, value),
+      setAlarm: async () => undefined,
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  await (room as unknown as { handleWebSocketMessage(ws: FakeSocket, message: string): Promise<void> })
+    .handleWebSocketMessage(host, JSON.stringify({ seq: 1, action: { type: "place_wolf", node: 0 } }));
+  const error = JSON.parse(host.sent[0]);
+  assert.equal(error.code, "rate_limited");
+  assert.equal(error.expected, 1);
+});
