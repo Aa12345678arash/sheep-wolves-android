@@ -49,10 +49,19 @@ export default {
 };
 
 export class RoomDurableObject {
+  private lock: Promise<void> = Promise.resolve();
   constructor(private ctx: DurableObjectState, private env: Env) {}
+  private async exclusive<T>(work: () => Promise<T>): Promise<T> {
+    const previous = this.lock;
+    let release!: () => void;
+    this.lock = new Promise<void>(resolve => { release = resolve; });
+    await previous;
+    try { return await work(); } finally { release(); }
+  }
   private async load(): Promise<Room | null> { return await this.ctx.storage.get<Room>("room") ?? null; }
   private async save(room: Room): Promise<void> { await this.ctx.storage.put("room",room); }
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request): Promise<Response> { return this.exclusive(() => this.handleFetch(request)); }
+  private async handleFetch(request: Request): Promise<Response> {
     const path = new URL(request.url).pathname;
     if (path === "/create" && request.method === "POST") {
       if (await this.load()) return json({error:"room_already_exists"},409);
@@ -81,7 +90,10 @@ export class RoomDurableObject {
     return new Response(null,{status:101,webSocket:client});
   }
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
-    const attachment = ws.deserializeAttachment() as {playerId:"host"|"guest"} | null;
+    await this.exclusive(() => this.handleWebSocketMessage(ws,message));
+  }
+  private async handleWebSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    const attachment = ws.deserializeAttachment() as {playerId:"host"|"guest"|""} | null;
     if (!attachment) { ws.close(4003,"invalid_session"); return; }
     const room = await this.load(); if (!room) { ws.close(4004,"room_missing"); return; }
     let msg: any; try { msg = JSON.parse(typeof message === "string" ? message : new TextDecoder().decode(message)); } catch { ws.send(JSON.stringify({type:"error",code:"invalid_json"})); return; }
@@ -134,8 +146,8 @@ export class RoomDurableObject {
     await this.scheduleNextAlarm(room);
     this.broadcast({type:"state",game:room.game,seq:room.seq,lastAction:{playerId:player.id,action},status:room.status,result:room.result});
   }
-  async webSocketClose(ws: WebSocket): Promise<void> { await this.markDisconnected(ws); }
-  async webSocketError(ws: WebSocket): Promise<void> { await this.markDisconnected(ws); }
+  async webSocketClose(ws: WebSocket): Promise<void> { await this.exclusive(() => this.markDisconnected(ws)); }
+  async webSocketError(ws: WebSocket): Promise<void> { await this.exclusive(() => this.markDisconnected(ws)); }
   private async markDisconnected(ws: WebSocket): Promise<void> {
     const a = ws.deserializeAttachment() as {playerId:"host"|"guest"} | null; if (!a) return;
     const room = await this.load(); if (!room) return;
@@ -155,7 +167,8 @@ export class RoomDurableObject {
     const deadlines = [room.expiresAt,room.game.chainDeadline ?? Infinity,...room.players.map(p=>p.disconnectedAt === null ? Infinity : p.disconnectedAt+45000)].filter(x=>x>now);
     if (deadlines.length) await this.ctx.storage.setAlarm(Math.min(...deadlines));
   }
-  async alarm(): Promise<void> {
+  async alarm(): Promise<void> { await this.exclusive(() => this.handleAlarm()); }
+  private async handleAlarm(): Promise<void> {
     const room = await this.load(); if (!room) return;
     const now = Date.now();
     if (room.game.chainDeadline && expireChain(room.game,now)) {
