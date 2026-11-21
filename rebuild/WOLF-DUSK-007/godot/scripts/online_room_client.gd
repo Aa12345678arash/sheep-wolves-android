@@ -26,6 +26,7 @@ var _reconnect_enabled := false
 var _reconnect_elapsed := 0.0
 var _heartbeat_elapsed := 0.0
 var _was_open := false
+var _authenticated := false
 
 func _ready() -> void:
 	service_base_url = str(ProjectSettings.get_setting("application/config/wolf_dusk_online_service_url", "")).trim_suffix("/")
@@ -100,7 +101,7 @@ func connect_room() -> Error:
 		return ERR_UNCONFIGURED
 	_socket = WebSocketPeer.new()
 	var ws_base := service_base_url.replace("https://", "wss://").replace("http://", "ws://")
-	var url := "%s/api/rooms/%s/ws?token=%s" % [ws_base, room_code, player_token.uri_encode()]
+	var url := "%s/api/rooms/%s/ws" % [ws_base, room_code]
 	var error := _socket.connect_to_url(url)
 	if error != OK:
 		client_error.emit("websocket_connect_start_failed")
@@ -109,6 +110,7 @@ func connect_room() -> Error:
 	_reconnect_elapsed = 0.0
 	_heartbeat_elapsed = 0.0
 	_was_open = false
+	_authenticated = false
 	return OK
 
 func set_ready() -> Error:
@@ -147,6 +149,10 @@ func _process(delta: float) -> void:
 		_reconnect_elapsed = 0.0
 		if not _was_open:
 			_was_open = true
+		if not _authenticated:
+			var auth_error := _socket.send_text(JSON.stringify({"type":"auth","token":player_token}))
+			if auth_error == OK:
+				_authenticated = true
 		_heartbeat_elapsed += delta
 		if _heartbeat_elapsed >= HEARTBEAT_INTERVAL:
 			_heartbeat_elapsed = 0.0
@@ -163,7 +169,8 @@ func _process(delta: float) -> void:
 				_reconnect_elapsed = 0.0
 				_socket = WebSocketPeer.new()
 				var ws_base := service_base_url.replace("https://","wss://").replace("http://","ws://")
-				var url := "%s/api/rooms/%s/ws?token=%s" % [ws_base,room_code,player_token.uri_encode()]
+				var url := "%s/api/rooms/%s/ws" % [ws_base,room_code]
+				_authenticated = false
 				var error := _socket.connect_to_url(url)
 				if error != OK:
 					client_error.emit("websocket_reconnect_start_failed")
