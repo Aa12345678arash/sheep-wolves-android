@@ -34,3 +34,10 @@ test("a chained capture is locked to the same wolf and expires at three seconds"
   r=applyAction(r.state,"wolves",{type:"move_wolf",from:12,to:24},4000);
   assert.equal(r.ok,false); assert.equal(r.code,"chain_window_expired"); assert.equal(r.state.turn,"sheep");
 });
+
+test("a player may explicitly decline the optional second capture before its deadline", () => {
+  const s:GameState={sheep:Array(25).fill(0),wolves:[0,4,20],turn:"wolves",chainWolf:12,chainDeadline:4000,winner:null};
+  s.sheep[18]=1; s.sheep[7]=10;
+  const r=applyAction(s,"wolves",{type:"finish_chain"},3999);
+  assert.equal(r.ok,true); assert.equal(r.state.turn,"sheep"); assert.equal(r.state.chainWolf,null);
+});
