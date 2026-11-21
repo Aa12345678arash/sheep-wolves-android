@@ -14,6 +14,11 @@ func _run() -> void:
 	assert(client.create_room("CI Test") == ERR_UNCONFIGURED, "Room creation must fail safely without a configured service.")
 	assert(client.set_ready() == ERR_UNAVAILABLE, "Ready must not be sent before the server authenticates the socket.")
 	assert(client.send_action({"type":"place_wolf","node":0}) == ERR_UNAVAILABLE, "Game actions must not be sent before authentication.")
+	assert(client.call("_is_fatal_close", 4003, "unauthorized"), "Invalid player tokens must stop automatic reconnect.")
+	assert(client.call("_is_fatal_close", 4004, "room_missing"), "Missing rooms must stop automatic reconnect.")
+	assert(client.call("_is_fatal_close", 4001, "reconnected"), "Superseded sessions must stop automatic reconnect.")
+	assert(not client.call("_is_fatal_close", 1006, "abnormal_disconnect"), "Transient network disconnects must remain eligible for reconnect.")
+	assert(not client.call("_is_fatal_close", 4003, "authentication_timeout"), "A handshake timeout may be retried with the same valid token.")
 	var connected_count := [0]
 	var message_count := [0]
 	client.room_connected.connect(func(_snapshot: Dictionary): connected_count[0] += 1)
