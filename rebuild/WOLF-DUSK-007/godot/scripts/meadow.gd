@@ -68,6 +68,11 @@ var camera_orbit_pitch: float = 1.249
 var camera_orbit_distance: float = 28.46
 var touch_points: Dictionary = {}
 var last_pinch_distance: float = 0.0
+var online_dialog_layer: CanvasLayer
+var online_name_edit: LineEdit
+var online_code_edit: LineEdit
+var online_result_label: Label
+var online_display_name: String = ""
 
 func _ready() -> void:
 	# WOLF-DUSK-044-CONT-003: startup is menu-only. Do not construct the 3D
@@ -77,6 +82,11 @@ func _ready() -> void:
 	_build_hud()
 	_update_hud()
 	_show_setup_menu()
+	ONLINE_ROOM_CLIENT.request_finished.connect(_on_online_request_finished)
+	ONLINE_ROOM_CLIENT.room_connected.connect(_on_online_room_connected)
+	ONLINE_ROOM_CLIENT.room_message.connect(_on_online_room_message)
+	ONLINE_ROOM_CLIENT.client_error.connect(_on_online_client_error)
+	ONLINE_ROOM_CLIENT.room_disconnected.connect(_on_online_room_disconnected)
 	print("WOLF_STARTUP_UI_READY_MS=", float(Time.get_ticks_usec() - startup_started_usec) / 1000.0)
 
 func _ensure_game_world() -> void:
@@ -146,14 +156,18 @@ func _process(delta: float) -> void:
 		var timer_state: Dictionary = ChainTimer.advance(chain_time_left, delta)
 		chain_time_left = float(timer_state.remaining_seconds)
 		if bool(timer_state.expired):
-			game.finish_wolf_turn()
 			pass_button.visible = false
 			selected_node = -1
-			feedback_message = "مهلت شکار دوم تمام شد؛ نوبت گوسفندهاست."
-			_refresh_board()
-			_update_hud()
-			# Expiry completes the wolf turn; trigger the computer sheep immediately.
-			_schedule_ai_turn()
+			if match_mode == "online":
+				# The authoritative room server expires the chain and broadcasts the next state.
+				feedback_message = "مهلت شکار دوم تمام شد؛ منتظر تأیید سرور هستیم."
+				_update_hud()
+			else:
+				game.finish_wolf_turn()
+				feedback_message = "مهلت شکار دوم تمام شد؛ نوبت گوسفندهاست."
+				_refresh_board()
+				_update_hud()
+				_schedule_ai_turn()
 		else:
 			_update_chain_countdown()
 
@@ -988,9 +1002,12 @@ func _show_setup_menu() -> void:
 	)
 	column.add_child(start_button)
 	var private_online := Button.new()
-	private_online.text = "بازی آنلاین با کد اتاق — در دست توسعه"
-	private_online.disabled = true
-	private_online.visible = false
+	private_online.text = "بازی آنلاین خصوصی" if ONLINE_ROOM_CLIENT.is_configured() else "بازی آنلاین خصوصی — پس از استقرار سرور"
+	private_online.disabled = not ONLINE_ROOM_CLIENT.is_configured()
+	private_online.visible = true
+	private_online.custom_minimum_size = Vector2(0, 66)
+	private_online.add_theme_font_size_override("font_size", 24)
+	private_online.pressed.connect(_show_online_room_dialog)
 	column.add_child(private_online)
 	var random_online := Button.new()
 	random_online.text = "حریف تصادفی آنلاین — در دست توسعه"
@@ -1010,6 +1027,202 @@ func _show_setup_menu() -> void:
 	bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bottom_spacer.custom_minimum_size.y = 1.0
 	column.add_child(bottom_spacer)
+
+func _show_online_room_dialog() -> void:
+	if not ONLINE_ROOM_CLIENT.is_configured():
+		feedback_message = "سرویس آنلاین هنوز روی اینترنت مستقر نشده است."
+		_update_hud()
+		return
+	if is_instance_valid(online_dialog_layer):
+		online_dialog_layer.queue_free()
+	online_dialog_layer = CanvasLayer.new()
+	online_dialog_layer.layer = 60
+	add_child(online_dialog_layer)
+	var shade := ColorRect.new()
+	shade.color = Color(0.01, 0.025, 0.02, 0.72)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	online_dialog_layer.add_child(shade)
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.07
+	panel.anchor_right = 0.93
+	panel.anchor_top = 0.24
+	panel.anchor_bottom = 0.78
+	online_dialog_layer.add_child(panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 12)
+	panel.add_child(column)
+	var heading := Label.new()
+	heading.text = "اتاق خصوصی آنلاین"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 30)
+	column.add_child(heading)
+	online_name_edit = LineEdit.new()
+	online_name_edit.placeholder_text = "نام نمایشی شما"
+	online_name_edit.text = player_two_name if player_two_name != "بازیکن گرگ‌ها" else player_one_name
+	online_name_edit.custom_minimum_size.y = 62
+	online_name_edit.add_theme_font_size_override("font_size", 24)
+	column.add_child(online_name_edit)
+	var name_note := Label.new()
+	name_note.text = "ساخت اتاق: شما گرگ‌ها هستید؛ پیوستن با کد: شما گوسفندها هستید."
+	name_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_note.add_theme_font_size_override("font_size", 19)
+	column.add_child(name_note)
+	online_code_edit = LineEdit.new()
+	online_code_edit.placeholder_text = "کد اتاق برای پیوستن (۱۶ نویسه)"
+	online_code_edit.custom_minimum_size.y = 62
+	online_code_edit.add_theme_font_size_override("font_size", 23)
+	column.add_child(online_code_edit)
+	var create_button := Button.new()
+	create_button.text = "ساخت اتاق و دریافت لینک دعوت"
+	create_button.custom_minimum_size.y = 68
+	create_button.add_theme_font_size_override("font_size", 23)
+	create_button.pressed.connect(func():
+		online_display_name = online_name_edit.text.strip_edges()
+		if online_display_name.is_empty():
+			online_display_name = "بازیکن گرگ‌ها"
+			ONLINE_ROOM_CLIENT.create_room(online_display_name)
+	)
+	column.add_child(create_button)
+	var join_button := Button.new()
+	join_button.text = "پیوستن به اتاق با کد"
+	join_button.custom_minimum_size.y = 68
+	join_button.add_theme_font_size_override("font_size", 23)
+	join_button.pressed.connect(func():
+		online_display_name = online_name_edit.text.strip_edges()
+		if online_display_name.is_empty():
+			online_display_name = "بازیکن گوسفندها"
+			ONLINE_ROOM_CLIENT.join_room(online_code_edit.text, online_display_name)
+	)
+	column.add_child(join_button)
+	online_result_label = Label.new()
+	online_result_label.text = "برای ساخت اتاق یا واردکردن کد دعوت اقدام کنید."
+	online_result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	online_result_label.add_theme_font_size_override("font_size", 18)
+	column.add_child(online_result_label)
+	var copy_button := Button.new()
+	copy_button.text = "کپی لینک دعوت"
+	copy_button.custom_minimum_size.y = 60
+	copy_button.add_theme_font_size_override("font_size", 22)
+	copy_button.pressed.connect(func():
+		if not ONLINE_ROOM_CLIENT.invite_url.is_empty():
+			DisplayServer.clipboard_set(ONLINE_ROOM_CLIENT.invite_url)
+			if is_instance_valid(online_result_label):
+				online_result_label.text = "لینک دعوت کپی شد؛ برای حریف بفرستید."
+		elif not ONLINE_ROOM_CLIENT.room_code.is_empty():
+			DisplayServer.clipboard_set(ONLINE_ROOM_CLIENT.room_code)
+			if is_instance_valid(online_result_label):
+				online_result_label.text = "کد اتاق کپی شد."
+	)
+	column.add_child(copy_button)
+	var close_button := Button.new()
+	close_button.text = "بستن"
+	close_button.custom_minimum_size.y = 56
+	close_button.add_theme_font_size_override("font_size", 21)
+	close_button.pressed.connect(func(): online_dialog_layer.queue_free())
+	column.add_child(close_button)
+
+func _on_online_request_finished(kind: String, success: bool, payload: Dictionary) -> void:
+	if not is_instance_valid(online_result_label):
+		return
+	if not success:
+		online_result_label.text = "خطا: %s" % str(payload.get("error", "ارتباط برقرار نشد"))
+		return
+	match kind:
+		"create":
+			match_mode = "online"
+			human_side = "wolves"
+			player_two_name = online_display_name
+			online_result_label.text = "اتاق ساخته شد. کد: %s\nلینک دعوت: %s\nاکنون لینک را کپی و برای حریف ارسال کنید." % [str(payload.get("roomCode","")), str(payload.get("inviteUrl",""))]
+		"join":
+			match_mode = "online"
+			human_side = "sheep"
+			player_one_name = online_display_name
+			online_result_label.text = "به اتاق پیوستید؛ در حال اتصال به میزبان..."
+	var connect_error: Error = ONLINE_ROOM_CLIENT.connect_room()
+	if connect_error != OK:
+		online_result_label.text += "\nشروع اتصال ناموفق بود: %s" % str(connect_error)
+
+func _on_online_room_connected(_snapshot: Dictionary) -> void:
+	if match_mode != "online":
+		return
+	await _ensure_game_world()
+	if not is_inside_tree():
+		return
+	ONLINE_ROOM_CLIENT.set_ready()
+	if is_instance_valid(online_result_label):
+		online_result_label.text += "\nاتصال برقرار شد؛ منتظر آماده‌شدن هر دو بازیکن هستیم."
+
+func _on_online_room_message(payload: Dictionary) -> void:
+	if match_mode != "online":
+		return
+	if payload.has("game"):
+		await _ensure_game_world()
+		if not is_inside_tree():
+			return
+		_apply_online_game_state(payload.game)
+		if str(payload.get("status","")) == "playing":
+			if is_instance_valid(setup_layer):
+				setup_layer.queue_free()
+				setup_layer = null
+			if is_instance_valid(online_dialog_layer):
+				online_dialog_layer.queue_free()
+				online_dialog_layer = null
+			feedback_message = "مسابقه آنلاین آغاز شد؛ حرکت‌ها توسط سرور بررسی می‌شوند."
+		elif str(payload.get("status","")) == "waiting":
+			feedback_message = "اتاق آماده است؛ منتظر ورود و اعلام آمادگی حریف هستیم."
+		_update_hud()
+	elif str(payload.get("type","")) == "error":
+		feedback_message = "سرور حرکت را نپذیرفت: %s" % str(payload.get("code","خطای نامشخص"))
+		_update_hud()
+	elif str(payload.get("type","")) == "match_end":
+		feedback_message = "مسابقه آنلاین پایان یافت؛ برنده: %s" % str(payload.get("winner",""))
+		_update_hud()
+
+func _apply_online_game_state(server_state: Dictionary) -> void:
+	var sheep_data: Array = server_state.get("sheep", [])
+	var wolf_data: Array = server_state.get("wolves", [])
+	if sheep_data.size() != 25:
+		return
+	game.sheep.clear()
+	for count in sheep_data:
+		game.sheep.append(int(count))
+	game.wolves.clear()
+	for _i in range(25):
+		game.wolves.append(false)
+	for node in wolf_data:
+		var node_index := int(node)
+		if node_index >= 0 and node_index < 25:
+			game.wolves[node_index] = true
+	match str(server_state.get("turn","place_wolves")):
+		"place_wolves": game.turn = GameState.Turn.PLACE_WOLVES
+		"sheep": game.turn = GameState.Turn.SHEEP
+		"wolves": game.turn = GameState.Turn.WOLVES
+		_: game.turn = GameState.Turn.FINISHED
+	var chain_value: Variant = server_state.get("chainWolf", null)
+	game.chain_wolf = int(chain_value) if chain_value != null else -1
+	game.chain_capture_count = 1 if game.chain_wolf != -1 else 0
+	var deadline: Variant = server_state.get("chainDeadline", null)
+	chain_time_left = maxf(0.0, (float(deadline) - Time.get_unix_time_from_system() * 1000.0) / 1000.0) if deadline != null else 0.0
+	game.winner = str(server_state.get("winner",""))
+	if game.winner == "null":
+		game.winner = ""
+	selected_node = -1
+	if is_instance_valid(pass_button):
+		pass_button.visible = game.chain_wolf != -1 and chain_time_left > 0.0
+	_refresh_board()
+	_update_hud()
+	if game.turn == GameState.Turn.FINISHED and not game.winner.is_empty() and announced_winner != game.winner:
+		announced_winner = game.winner
+		_show_victory_celebration()
+
+func _on_online_client_error(code: String) -> void:
+	feedback_message = "ارتباط آنلاین: %s" % code
+	_update_hud()
+
+func _on_online_room_disconnected(_code: int, _reason: String) -> void:
+	if match_mode == "online":
+		feedback_message = "ارتباط قطع شد؛ تلاش برای اتصال مجدد ادامه دارد."
+		_update_hud()
 
 func _is_ai_turn() -> bool:
 	if match_mode != "ai" or game.turn == GameState.Turn.FINISHED:
@@ -1200,8 +1413,19 @@ func _select_node(index: int) -> void:
 		feedback_message = "بازی تمام شده است؛ برای بازی تازه «شروع دوبارهٔ بازی» را بزنید."
 		_update_hud()
 		return
+	if match_mode == "online":
+		var required_side := "wolves" if game.turn in [GameState.Turn.PLACE_WOLVES, GameState.Turn.WOLVES] else "sheep"
+		if required_side != human_side:
+			feedback_message = "اکنون نوبت حریف است؛ منتظر حرکت او بمانید."
+			_update_hud()
+			return
 
 	if game.turn == GameState.Turn.PLACE_WOLVES:
+		if match_mode == "online":
+			var placement_error: Error = ONLINE_ROOM_CLIENT.send_action({"type":"place_wolf","node":index})
+			feedback_message = "در حال ثبت جای گرگ روی سرور..." if placement_error == OK else "ارسال حرکت ناموفق بود."
+			_update_hud()
+			return
 		if game.place_wolf(index):
 			selected_node = -1
 			_set_tactical_view(index)
@@ -1258,6 +1482,15 @@ func _select_node(index: int) -> void:
 		return
 
 	if game.turn == GameState.Turn.SHEEP:
+		if match_mode == "online":
+			var sheep_error: Error = ONLINE_ROOM_CLIENT.send_action({"type":"move_sheep","from":selected_node,"to":index})
+			if sheep_error == OK:
+				selected_node = -1
+				feedback_message = "حرکت گوسفند برای بررسی به سرور فرستاده شد..."
+			else:
+				feedback_message = "اتصال آماده نیست؛ حرکت ارسال نشد."
+			_update_hud()
+			return
 		if game.move_sheep(selected_node, index):
 			_play_move_sound()
 			animated_from = selected_node
@@ -1268,6 +1501,15 @@ func _select_node(index: int) -> void:
 		else:
 			feedback_message = "حرکت نامعتبر است؛ فقط به نقطهٔ خالیِ متصل حرکت کنید."
 	else:
+		if match_mode == "online":
+			var wolf_error: Error = ONLINE_ROOM_CLIENT.send_action({"type":"move_wolf","from":selected_node,"to":index})
+			if wolf_error == OK:
+				selected_node = -1
+				feedback_message = "حرکت گرگ برای بررسی به سرور فرستاده شد..."
+			else:
+				feedback_message = "اتصال آماده نیست؛ حرکت ارسال نشد."
+			_update_hud()
+			return
 		var captured_node := -1
 		for capture_option in game.capture_options(selected_node):
 			if int(capture_option["to"]) == index:
@@ -2040,6 +2282,12 @@ func _capture_targets() -> Array[int]:
 	return targets
 
 func _decline_chain_capture() -> void:
+	if match_mode == "online":
+		if game.chain_wolf != -1 and chain_time_left > 0.0:
+			var finish_error: Error = ONLINE_ROOM_CLIENT.send_action({"type":"finish_chain"})
+			feedback_message = "درخواست پایان شکار به سرور فرستاده شد..." if finish_error == OK else "اتصال آماده نیست؛ درخواست ارسال نشد."
+			_update_hud()
+		return
 	if game.chain_wolf != -1 and chain_time_left > 0.0:
 		game.finish_wolf_turn()
 		feedback_message = "شکار دوم رد شد؛ نوبت گوسفندهاست."
