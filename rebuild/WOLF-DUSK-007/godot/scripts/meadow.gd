@@ -1080,7 +1080,7 @@ func _show_online_room_dialog() -> void:
 		online_display_name = online_name_edit.text.strip_edges()
 		if online_display_name.is_empty():
 			online_display_name = "بازیکن گرگ‌ها"
-			ONLINE_ROOM_CLIENT.create_room(online_display_name)
+		ONLINE_ROOM_CLIENT.create_room(online_display_name)
 	)
 	column.add_child(create_button)
 	var join_button := Button.new()
@@ -1091,7 +1091,7 @@ func _show_online_room_dialog() -> void:
 		online_display_name = online_name_edit.text.strip_edges()
 		if online_display_name.is_empty():
 			online_display_name = "بازیکن گوسفندها"
-			ONLINE_ROOM_CLIENT.join_room(online_code_edit.text, online_display_name)
+		ONLINE_ROOM_CLIENT.join_room(online_code_edit.text, online_display_name)
 	)
 	column.add_child(join_button)
 	online_result_label = Label.new()
