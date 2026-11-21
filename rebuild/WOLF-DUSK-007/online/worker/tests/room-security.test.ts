@@ -1,12 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { RoomDurableObject, type Env } from "../src/index";
+import { initialGame } from "../src/engine";
 
 type FakeSocket = {
   attachment: unknown;
   sent: string[];
   deserializeAttachment(): unknown;
   send(payload: string): void;
+  serializeAttachment(value: unknown): void;
+  close(code?: number, reason?: string): void;
+  closed?: { code?: number; reason?: string };
 };
 
 function socket(attachment: unknown): FakeSocket {
@@ -15,6 +20,8 @@ function socket(attachment: unknown): FakeSocket {
     sent: [],
     deserializeAttachment() { return this.attachment; },
     send(payload: string) { this.sent.push(payload); },
+    serializeAttachment(value: unknown) { this.attachment = value; },
+    close(code?: number, reason?: string) { this.closed = { code, reason }; },
   };
 }
 
@@ -67,4 +74,72 @@ test("concurrent Durable Object operations are serialized", async () => {
 
   assert.equal(completed, 12);
   assert.equal(maximumActive, 1);
+});
+
+test("an unauthenticated socket is closed unless its first message is valid auth", async () => {
+  const pending = socket({ playerId: "" });
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60_000,
+    status: "waiting",
+    players: [],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [pending],
+    storage: {
+      get: async () => roomData,
+      put: async () => undefined,
+      setAlarm: async () => undefined,
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  await (room as unknown as {
+    handleWebSocketMessage(ws: FakeSocket, message: string): Promise<void>;
+  }).handleWebSocketMessage(pending, JSON.stringify({ type: "state" }));
+  assert.deepEqual(pending.closed, { code: 4003, reason: "authentication_required" });
+  assert.equal(pending.sent.length, 0);
+});
+
+test("reconnecting player replaces the old socket without a false disconnect", async () => {
+  const token = "test-player-token-with-more-than-32-characters";
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const oldSocket = socket({ playerId: "host" });
+  const newSocket = socket({ playerId: "" });
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60_000,
+    status: "waiting",
+    players: [{
+      id: "host", side: "wolves", name: "Host", tokenHash, ready: false,
+      disconnectedAt: Date.now() - 1000, lastSeq: 0, rate: [],
+    }],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [oldSocket, newSocket],
+    storage: {
+      get: async () => roomData,
+      put: async (_key: string, value: unknown) => Object.assign(roomData, value),
+      setAlarm: async () => undefined,
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  await (room as unknown as {
+    handleWebSocketMessage(ws: FakeSocket, message: string): Promise<void>;
+  }).handleWebSocketMessage(newSocket, JSON.stringify({ type: "auth", token }));
+
+  assert.deepEqual(oldSocket.closed, { code: 4001, reason: "reconnected" });
+  assert.deepEqual(newSocket.attachment, { playerId: "host" });
+  await (room as unknown as { markDisconnected(ws: FakeSocket): Promise<void> }).markDisconnected(oldSocket);
+  assert.equal(roomData.players[0].disconnectedAt, null);
+  assert.ok(newSocket.sent.some(payload => JSON.parse(payload).type === "snapshot"));
 });
