@@ -130,7 +130,7 @@ export class RoomDurableObject {
     const player = room.players.find(p=>p.id===attachment.playerId);
     if (!player) { ws.close(4003,"invalid_player"); return; }
     player.rate = player.rate.filter(t=>now-t<10000);
-    if (player.rate.length >= 30) { ws.send(JSON.stringify({type:"error",code:"rate_limited"})); return; }
+    if (player.rate.length >= 30) { ws.send(JSON.stringify({type:"error",code:"rate_limited",expected:player.lastSeq+1})); return; }
     player.rate.push(now);
     if (msg.type === "ping") { ws.send(JSON.stringify({type:"pong",at:now})); return; }
     if (msg.type === "ready") {
@@ -140,10 +140,10 @@ export class RoomDurableObject {
       await this.save(room); this.broadcast({type:"snapshot",status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready})),game:room.game,seq:room.seq});
       return;
     }
-    if (room.status !== "playing") { ws.send(JSON.stringify({type:"error",code:"match_not_ready"})); return; }
+    if (room.status !== "playing") { ws.send(JSON.stringify({type:"error",code:"match_not_ready",expected:player.lastSeq+1})); return; }
     if (!Number.isInteger(msg.seq) || msg.seq !== player.lastSeq + 1) { ws.send(JSON.stringify({type:"error",code:"stale_or_out_of_order_sequence",expected:player.lastSeq+1})); return; }
     const action = msg.action as GameAction;
-    if (!action || !["place_wolf","move_sheep","move_wolf","finish_chain"].includes(action.type)) { ws.send(JSON.stringify({type:"error",code:"unknown_action"})); return; }
+    if (!action || !["place_wolf","move_sheep","move_wolf","finish_chain"].includes(action.type)) { ws.send(JSON.stringify({type:"error",code:"unknown_action",expected:player.lastSeq+1})); return; }
     const applied = applyAction(room.game,player.side,action,now);
     if (!applied.ok) {
       if (applied.code === "chain_window_expired") { room.game = applied.state; room.seq++; await this.save(room); this.broadcast({type:"state",game:room.game,seq:room.seq}); }
