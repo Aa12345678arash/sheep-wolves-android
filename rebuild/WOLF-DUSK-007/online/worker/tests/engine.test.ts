@@ -1,9 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EDGE_COUNT, NODE_COUNT, applyAction, captureOptions, initialGame, legalSheepMoves, verifyTopology, type GameState } from "../src/engine";
+import { readFileSync } from "node:fs";
+import { EDGE_COUNT, EDGE_KEYS, NODE_COUNT, applyAction, captureOptions, initialGame, legalSheepMoves, verifyTopology, type GameState } from "../src/engine";
 
 test("canonical board has 25 nodes and 56 unique edges", () => {
   assert.equal(NODE_COUNT,25); assert.equal(EDGE_COUNT,56); assert.equal(verifyTopology(),true);
+});
+test("server graph matches every edge in the canonical Godot board file", () => {
+  const canonical = JSON.parse(readFileSync(new URL("../../../godot/data/canonical_board.json", import.meta.url), "utf8"));
+  const index = (id: string) => (id.charCodeAt(0) - 65) * 5 + Number(id[1]) - 1;
+  const expected = canonical.edges.map((edge: {from:string;to:string}) => {
+    const a=index(edge.from), b=index(edge.to);
+    return a < b ? a + ":" + b : b + ":" + a;
+  }).sort();
+  assert.deepEqual(EDGE_KEYS,expected);
 });
 test("wolf placement accepts three distinct empty nodes and then sheep move first", () => {
   let s=initialGame();
