@@ -189,3 +189,30 @@ test("two simultaneous join requests cannot both occupy the guest seat", async (
   const playerIds: string[] = roomData.players.map(player => String(player.id));
   assert.equal(playerIds.filter(id => id === "guest").length, 1);
 });
+
+test("unauthenticated WebSocket is closed after the handshake timeout", async () => {
+  const pending = socket({ playerId: "", acceptedAt: Date.now() - 20_000 });
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: Date.now() - 20_000,
+    expiresAt: Date.now() + 60_000,
+    status: "waiting",
+    players: [],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [pending],
+    storage: {
+      get: async () => roomData,
+      put: async () => undefined,
+      setAlarm: async () => undefined,
+      deleteAll: async () => undefined,
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  await room.alarm();
+  assert.deepEqual(pending.closed, { code: 4003, reason: "authentication_timeout" });
+});
