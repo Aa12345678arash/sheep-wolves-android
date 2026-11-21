@@ -33,7 +33,7 @@ npx wrangler dev
 1. در Cloudflare یک حساب بسازید و وارد Dashboard شوید.
 2. Workers & Pages → Create application → Connect to Git را انتخاب کنید.
 3. مخزن `Aa12345678arash/sheep-wolves-android` را متصل کنید.
-4. شاخه `WOLF-DUSK-ONLINE-001-INVITE-ROOMS` و مسیر ریشه `rebuild/WOLF-DUSK-007/online/worker` را انتخاب کنید.
+4. شاخه `WOLF-DUSK-ONLINE-001-INVITE-ROOMS` و مسیر ریشه `rebuild/WOLF-DUSK-007/online/worker` را انتخاب کنید؛ نام Worker را دقیقاً `wolf-dusk-rooms` بگذارید تا با `wrangler.jsonc` یکسان باشد.
 5. Build command را `npm install && npm run typecheck && npm test` و Deploy command را `npx wrangler deploy` بگذارید.
 6. پس از استقرار، آدرس `workers.dev` ساخته‌شده را ثبت کنید؛ لینک دعوت از مسیر `/join/{roomCode}` ساخته خواهد شد.
 
