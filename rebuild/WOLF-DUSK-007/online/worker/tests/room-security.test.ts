@@ -153,3 +153,38 @@ test("cross-origin browser requests cannot claim or create a private room", asyn
   assert.equal(response.status, 403);
   assert.deepEqual(await response.json(), { error: "origin_not_allowed" });
 });
+
+test("two simultaneous join requests cannot both occupy the guest seat", async () => {
+  const roomData = {
+    code: "abcdefghijklmnop",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60_000,
+    status: "waiting",
+    players: [{
+      id: "host", side: "wolves", name: "Host", tokenHash: "stored-hash",
+      ready: false, disconnectedAt: null, lastSeq: 0, rate: [],
+    }],
+    game: initialGame(),
+    seq: 0,
+    events: [],
+    result: null,
+  };
+  const ctx = {
+    getWebSockets: () => [],
+    storage: {
+      get: async () => roomData,
+      put: async (_key: string, value: unknown) => Object.assign(roomData, value),
+      setAlarm: async () => undefined,
+    },
+  } as unknown as DurableObjectState;
+  const room = new RoomDurableObject(ctx, {} as Env);
+  const makeJoin = (name: string) => room.fetch(new Request("https://room.internal/join", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  }));
+  const responses = await Promise.all([makeJoin("Guest A"), makeJoin("Guest B")]);
+  assert.deepEqual(responses.map(response => response.status).sort(), [201, 409]);
+  assert.equal(roomData.players.length, 2);
+  assert.equal(roomData.players.filter(player => player.id === "guest").length, 1);
+});
