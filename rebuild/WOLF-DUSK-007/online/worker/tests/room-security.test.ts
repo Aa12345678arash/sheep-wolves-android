@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { RoomDurableObject, type Env } from "../src/index";
+import worker, { RoomDurableObject, type Env } from "../src/index";
 import { initialGame } from "../src/engine";
 
 type FakeSocket = {
@@ -142,4 +142,14 @@ test("reconnecting player replaces the old socket without a false disconnect", a
   await (room as unknown as { markDisconnected(ws: FakeSocket): Promise<void> }).markDisconnected(oldSocket);
   assert.equal(roomData.players[0].disconnectedAt, null);
   assert.ok(newSocket.sent.some(payload => JSON.parse(payload).type === "snapshot"));
+});
+
+test("cross-origin browser requests cannot claim or create a private room", async () => {
+  const response = await worker.fetch(new Request("https://wolf-dusk-rooms.example.workers.dev/api/rooms", {
+    method: "POST",
+    headers: { Origin: "https://attacker.example", "Content-Type": "application/json" },
+    body: JSON.stringify({ displayName: "intruder" }),
+  }), {} as Env);
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: "origin_not_allowed" });
 });
