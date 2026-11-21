@@ -170,7 +170,13 @@ func _process(delta: float) -> void:
 	elif state == WebSocketPeer.STATE_CLOSED:
 		if _was_open:
 			_was_open = false
-			room_disconnected.emit(_socket.get_close_code(),_socket.get_close_reason())
+			var close_code := _socket.get_close_code()
+			var close_reason := _socket.get_close_reason()
+			room_disconnected.emit(close_code,close_reason)
+			if _is_fatal_close(close_code,close_reason):
+				_reconnect_enabled = false
+				_authenticated = false
+				client_error.emit("websocket_session_rejected:%s" % close_reason)
 		if _reconnect_enabled and not room_code.is_empty() and not player_token.is_empty():
 			_reconnect_elapsed += delta
 			if _reconnect_elapsed >= RECONNECT_DELAY:
@@ -183,6 +189,13 @@ func _process(delta: float) -> void:
 				var error := _socket.connect_to_url(url)
 				if error != OK:
 					client_error.emit("websocket_reconnect_start_failed")
+
+func _is_fatal_close(code: int, reason: String) -> bool:
+	if code == 4001 or code == 4004:
+		return true
+	if code == 4003 and reason in ["invalid_session","authentication_required","unauthorized","invalid_player","already_authenticated"]:
+		return true
+	return false
 
 func _handle_packet(raw: String) -> void:
 	var parsed: Variant = JSON.parse_string(raw)
