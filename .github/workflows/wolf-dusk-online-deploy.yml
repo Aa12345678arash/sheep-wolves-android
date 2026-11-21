@@ -1,0 +1,56 @@
+name: WOLF-DUSK online Worker deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - WOLF-DUSK-ONLINE-001-INVITE-ROOMS
+    paths:
+      - "rebuild/WOLF-DUSK-007/online/worker/**"
+      - ".github/workflows/wolf-dusk-online-deploy.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wolf-dusk-rooms-cloudflare-deploy
+  cancel-in-progress: false
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: rebuild/WOLF-DUSK-007/online/worker
+    steps:
+      - name: Checkout deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: WOLF-DUSK-ONLINE-001-INVITE-ROOMS
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript validation
+        run: npm run typecheck
+
+      - name: Worker security and protocol tests
+        run: npm test
+
+      - name: Wrangler deployment dry-run
+        run: npm run dry-run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy wolf-dusk-rooms to Cloudflare
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
