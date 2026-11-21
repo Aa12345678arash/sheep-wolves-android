@@ -83,7 +83,7 @@ export class RoomDurableObject {
     for (const old of this.ctx.getWebSockets(player.id)) old.close(4001,"reconnected");
     this.ctx.acceptWebSocket(server,[player.id]); server.serializeAttachment({playerId:player.id});
     player.disconnectedAt = null; await this.save(room);
-    server.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,events:room.events.slice(-64)}));
+    server.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,nextActionSeq:player.lastSeq+1,events:room.events.slice(-64)}));
     return new Response(null,{status:101,webSocket:client});
   }
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
