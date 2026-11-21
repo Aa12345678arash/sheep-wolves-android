@@ -27,6 +27,18 @@ test("sheep moves one animal and cannot move to occupied node", () => {
   const r=applyAction(s,"sheep",{type:"move_sheep",from:20,to},1000);
   assert.equal(r.ok,true); assert.equal(r.state.sheep[20],4); assert.equal(r.state.sheep[to],1); assert.equal(r.state.turn,"wolves");
 });
+test("wolves win when the sheep count reaches eight", () => {
+  const s:GameState={sheep:Array(25).fill(0),wolves:[0,4,20],turn:"wolves",chainWolf:null,chainDeadline:null,winner:null};
+  s.sheep[7]=8;
+  const r=applyAction(s,"wolves",{type:"move_wolf",from:4,to:3},1000);
+  assert.equal(r.ok,true); assert.equal(r.state.winner,"wolves"); assert.equal(r.state.turn,"finished");
+});
+test("sheep win when all three wolves have no move or capture", () => {
+  const s:GameState={sheep:Array(25).fill(0),wolves:[0,1,5],turn:"sheep",chainWolf:null,chainDeadline:null,winner:null};
+  for (let n=0;n<25;n++) if (![0,1,5,24].includes(n)) s.sheep[n]=1;
+  const r=applyAction(s,"sheep",{type:"move_sheep",from:23,to:24},1000);
+  assert.equal(r.ok,true); assert.equal(r.state.winner,"sheep"); assert.equal(r.state.turn,"finished");
+});
 test("capture requires exactly one sheep, straight-line two-edge landing", () => {
   const s:GameState={sheep:Array(25).fill(0),wolves:[0,4,24],turn:"wolves",chainWolf:null,chainDeadline:null,winner:null};
   s.sheep[6]=1;
