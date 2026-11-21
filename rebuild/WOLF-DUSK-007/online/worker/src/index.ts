@@ -121,7 +121,7 @@ export class RoomDurableObject {
       await this.save(room);
       await this.scheduleNextAlarm(room);
       this.broadcast({type:"presence",playerId:authenticated.id,connected:true});
-      ws.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,nextActionSeq:authenticated.lastSeq+1,events:room.events.slice(-64)}));
+      ws.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:this.ctx.getWebSockets().some(socket=>{const a=socket.deserializeAttachment() as {playerId?:string}|null;return a?.playerId===p.id;})})),game:room.game,seq:room.seq,nextActionSeq:authenticated.lastSeq+1,events:room.events.slice(-64)}));
       return;
     }
     if (msg.type === "auth") { ws.close(4003,"already_authenticated"); return; }
