@@ -27,6 +27,8 @@ var _reconnect_elapsed := 0.0
 var _heartbeat_elapsed := 0.0
 var _was_open := false
 var _authenticated := false
+var _auth_sent := false
+var _initial_snapshot_received := false
 
 func _ready() -> void:
 	service_base_url = str(ProjectSettings.get_setting("application/config/wolf_dusk_online_service_url", "")).trim_suffix("/")
@@ -111,12 +113,18 @@ func connect_room() -> Error:
 	_heartbeat_elapsed = 0.0
 	_was_open = false
 	_authenticated = false
+	_auth_sent = false
+	_initial_snapshot_received = false
 	return OK
 
 func set_ready() -> Error:
+	if not _authenticated:
+		return ERR_UNAVAILABLE
 	return _send({"type":"ready"})
 
 func send_action(action: Dictionary) -> Error:
+	if not _authenticated:
+		return ERR_UNAVAILABLE
 	if action.is_empty():
 		return ERR_INVALID_PARAMETER
 	var packet := {"seq":next_action_sequence,"action":action}
@@ -126,7 +134,7 @@ func send_action(action: Dictionary) -> Error:
 	return error
 
 func _send(packet: Dictionary) -> Error:
-	if _socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
+	if _socket.get_ready_state() != WebSocketPeer.STATE_OPEN or not _authenticated:
 		return ERR_UNAVAILABLE
 	return _socket.send_text(JSON.stringify(packet))
 
@@ -149,10 +157,10 @@ func _process(delta: float) -> void:
 		_reconnect_elapsed = 0.0
 		if not _was_open:
 			_was_open = true
-		if not _authenticated:
+		if not _auth_sent:
 			var auth_error := _socket.send_text(JSON.stringify({"type":"auth","token":player_token}))
 			if auth_error == OK:
-				_authenticated = true
+				_auth_sent = true
 		_heartbeat_elapsed += delta
 		if _heartbeat_elapsed >= HEARTBEAT_INTERVAL:
 			_heartbeat_elapsed = 0.0
@@ -171,6 +179,7 @@ func _process(delta: float) -> void:
 				var ws_base := service_base_url.replace("https://","wss://").replace("http://","ws://")
 				var url := "%s/api/rooms/%s/ws" % [ws_base,room_code]
 				_authenticated = false
+				_auth_sent = false
 				var error := _socket.connect_to_url(url)
 				if error != OK:
 					client_error.emit("websocket_reconnect_start_failed")
@@ -182,8 +191,11 @@ func _handle_packet(raw: String) -> void:
 		return
 	var payload: Dictionary = parsed
 	if payload.get("type","") == "snapshot":
+		_authenticated = true
 		next_action_sequence = maxi(1,int(payload.get("nextActionSeq",next_action_sequence)))
-		room_connected.emit(payload)
+		if not _initial_snapshot_received:
+			_initial_snapshot_received = true
+			room_connected.emit(payload)
 	elif payload.get("type","") == "error" and payload.has("expected"):
 		next_action_sequence = maxi(1,int(payload.expected))
 	room_message.emit(payload)
