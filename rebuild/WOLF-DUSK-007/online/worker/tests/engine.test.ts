@@ -25,8 +25,8 @@ test("capture requires exactly one sheep, straight-line two-edge landing", () =>
   assert.deepEqual(captureOptions(s,0),[]);
 });
 test("a chained capture is locked to the same wolf and expires at three seconds", () => {
-  const s:GameState={sheep:Array(25).fill(0),wolves:[0,4,24],turn:"wolves",chainWolf:null,chainDeadline:null,winner:null};
-  s.sheep[6]=1; s.sheep[18]=1;
+  const s:GameState={sheep:Array(25).fill(0),wolves:[0,4,20],turn:"wolves",chainWolf:null,chainDeadline:null,winner:null};
+  s.sheep[6]=1; s.sheep[18]=1; s.sheep[7]=10;
   let r=applyAction(s,"wolves",{type:"move_wolf",from:0,to:12},1000);
   assert.equal(r.ok,true); assert.equal(r.state.chainWolf,12); assert.equal(r.state.chainDeadline,4000);
   r=applyAction(r.state,"wolves",{type:"move_wolf",from:4,to:3},2000);
