@@ -75,25 +75,35 @@ export class RoomDurableObject {
   }
   private async connect(request: Request): Promise<Response> {
     const room = await this.load(); if (!room || room.expiresAt < Date.now()) return json({error:"room_expired"},410);
-    const token = new URL(request.url).searchParams.get("token") ?? "";
-    const tokenHash = await digest(token);
-    const player = room.players.find(p=>p.tokenHash === tokenHash);
-    if (!player) return json({error:"unauthorized"},401);
     const pair = new WebSocketPair(); const client = pair[0], server = pair[1];
-    for (const old of this.ctx.getWebSockets(player.id)) old.close(4001,"reconnected");
-    this.ctx.acceptWebSocket(server,[player.id]); server.serializeAttachment({playerId:player.id});
-    player.disconnectedAt = null; await this.save(room);
-    server.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,nextActionSeq:player.lastSeq+1,events:room.events.slice(-64)}));
+    this.ctx.acceptWebSocket(server);
+    server.serializeAttachment({playerId:""});
     return new Response(null,{status:101,webSocket:client});
   }
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     const attachment = ws.deserializeAttachment() as {playerId:"host"|"guest"} | null;
     if (!attachment) { ws.close(4003,"invalid_session"); return; }
     const room = await this.load(); if (!room) { ws.close(4004,"room_missing"); return; }
-    const player = room.players.find(p=>p.id===attachment.playerId);
-    if (!player) { ws.close(4003,"invalid_player"); return; }
     let msg: any; try { msg = JSON.parse(typeof message === "string" ? message : new TextDecoder().decode(message)); } catch { ws.send(JSON.stringify({type:"error",code:"invalid_json"})); return; }
     const now = Date.now();
+    if (!attachment.playerId) {
+      if (msg.type !== "auth" || typeof msg.token !== "string" || msg.token.length < 32) { ws.close(4003,"authentication_required"); return; }
+      const tokenHash = await digest(msg.token);
+      const authenticated = room.players.find(p=>p.tokenHash === tokenHash);
+      if (!authenticated) { ws.close(4003,"unauthorized"); return; }
+      for (const old of this.ctx.getWebSockets()) {
+        if (old === ws) continue;
+        const oldAttachment = old.deserializeAttachment() as {playerId?:string} | null;
+        if (oldAttachment?.playerId === authenticated.id) old.close(4001,"reconnected");
+      }
+      ws.serializeAttachment({playerId:authenticated.id});
+      authenticated.disconnectedAt = null;
+      await this.save(room);
+      ws.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,nextActionSeq:authenticated.lastSeq+1,events:room.events.slice(-64)}));
+      return;
+    }
+    const player = room.players.find(p=>p.id===attachment.playerId);
+    if (!player) { ws.close(4003,"invalid_player"); return; }
     player.rate = player.rate.filter(t=>now-t<10000);
     if (player.rate.length >= 30) { ws.send(JSON.stringify({type:"error",code:"rate_limited"})); return; }
     player.rate.push(now);
