@@ -2,7 +2,7 @@ import { applyAction, expireChain, initialGame, PROTOCOL_VERSION, RULESET_ID, ty
 
 export interface Env { ROOMS: DurableObjectNamespace; }
 type Player = { id: "host" | "guest"; side: Side; name: string; tokenHash: string; ready: boolean; disconnectedAt: number | null; lastSeq: number; rate: number[] };
-type Room = { code: string; createdAt: number; expiresAt: number; status: "waiting" | "ready" | "playing" | "finished"; players: Player[]; game: GameState; seq: number; events: unknown[]; result: string | null };
+type Room = { code: string; createdAt: number; expiresAt: number; status: "waiting" | "ready" | "playing" | "finished"; players: Player[]; game: GameState; seq: number; events: unknown[]; result: Side | null };
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "content-type":"application/json; charset=utf-8", "cache-control":"no-store" } });
 const randomToken = (bytes = 32) => { const a = crypto.getRandomValues(new Uint8Array(bytes)); return btoa(String.fromCharCode(...a)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
 const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,"0")).join("");
