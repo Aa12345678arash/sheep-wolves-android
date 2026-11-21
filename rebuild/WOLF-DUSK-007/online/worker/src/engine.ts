@@ -7,7 +7,8 @@ export type Turn = "place_wolves" | "sheep" | "wolves" | "finished";
 export type GameAction =
   | { type: "place_wolf"; node: number }
   | { type: "move_sheep"; from: number; to: number }
-  | { type: "move_wolf"; from: number; to: number };
+  | { type: "move_wolf"; from: number; to: number }
+  | { type: "finish_chain" };
 
 const nodeId = (n: number) => String.fromCharCode(65 + Math.floor(n / 5)) + String(n % 5 + 1);
 const nodeIndex = (id: string) => /^[A-E][1-5]$/.test(id) ? (id.charCodeAt(0) - 65) * 5 + Number(id[1]) - 1 : -1;
@@ -84,6 +85,11 @@ export function applyAction(current: GameState, side: Side, action: GameAction, 
   const s: GameState = structuredClone(current);
   if (s.turn === "finished") return {ok:false,code:"match_finished",state:s};
   if (expireChain(s,now)) return {ok:false,code:"chain_window_expired",state:s};
+  if (action.type === "finish_chain") {
+    if (side !== "wolves" || s.turn !== "wolves" || s.chainWolf === null) return {ok:false,code:"no_chain_to_finish",state:s};
+    s.chainWolf = null; s.chainDeadline = null; s.turn = "sheep"; checkWinner(s);
+    return {ok:true,state:s};
+  }
   if (action.type === "place_wolf") {
     if (side !== "wolves" || s.turn !== "place_wolves") return {ok:false,code:"not_wolf_placement_turn",state:s};
     if (!Number.isInteger(action.node) || action.node < 0 || action.node >= 25 || occupied(s,action.node)) return {ok:false,code:"invalid_placement",state:s};
