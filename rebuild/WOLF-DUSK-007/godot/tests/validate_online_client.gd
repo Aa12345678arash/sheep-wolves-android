@@ -24,7 +24,7 @@ func _run() -> void:
 	assert(message_count[0] == 1, "Every snapshot must still be forwarded to room_message.")
 	assert(client.set_ready() == ERR_UNAVAILABLE, "The client must not send without an open WebSocket even after authentication.")
 	client.call("_handle_packet", JSON.stringify(snapshot))
-	assert(connected_count == 1, "Repeated snapshots must not emit room_connected again or trigger duplicate ready messages.")
+	assert(connected_count[0] == 1, "Repeated snapshots must not emit room_connected again or trigger duplicate ready messages.")
 	assert(message_count[0] == 2, "Subsequent snapshots must continue to update the game state.")
 	assert(client.next_action_sequence == 4, "The expected action sequence must be loaded from the authoritative snapshot.")
 	client.queue_free()
