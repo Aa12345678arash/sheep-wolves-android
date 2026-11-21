@@ -8,6 +8,7 @@ const randomToken = (bytes = 32) => { const a = crypto.getRandomValues(new Uint8
 const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,"0")).join("");
 const cleanName = (v: unknown) => typeof v === "string" ? v.trim().replace(/[<>\u0000-\u001f]/g,"").slice(0,24) : "";
 const cors = { "access-control-allow-methods":"GET,POST,OPTIONS", "access-control-allow-headers":"content-type", "cache-control":"no-store", "vary":"Origin" };
+const UNAUTHENTICATED_SOCKET_TTL_MS = 15_000;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -91,7 +92,8 @@ export class RoomDurableObject {
     const room = await this.load(); if (!room || room.expiresAt < Date.now()) return json({error:"room_expired"},410);
     const pair = new WebSocketPair(); const client = pair[0], server = pair[1];
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({playerId:""});
+    server.serializeAttachment({playerId:"",acceptedAt:Date.now()});
+    await this.scheduleNextAlarm(room);
     return new Response(null,{status:101,webSocket:client});
   }
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
@@ -180,6 +182,13 @@ export class RoomDurableObject {
   private async handleAlarm(): Promise<void> {
     const room = await this.load(); if (!room) return;
     const now = Date.now();
+    // Do not let clients hold unauthenticated room sockets open indefinitely.
+    for (const socket of this.ctx.getWebSockets()) {
+      const attachment = socket.deserializeAttachment() as {playerId?:string;acceptedAt?:number} | null;
+      if (attachment && !attachment.playerId && typeof attachment.acceptedAt === "number" && now - attachment.acceptedAt >= UNAUTHENTICATED_SOCKET_TTL_MS) {
+        socket.close(4003,"authentication_timeout");
+      }
+    }
     if (room.game.chainDeadline && expireChain(room.game,now)) {
       room.seq++; room.events.push({seq:room.seq,type:"chain_timeout",at:now});
       await this.save(room); this.broadcast({type:"state",game:room.game,seq:room.seq,status:room.status});
@@ -194,7 +203,12 @@ export class RoomDurableObject {
         await this.save(room); this.broadcast({type:"match_end",reason:"disconnect_forfeit",winner:room.result,seq:room.seq});
       }
     }
-    const deadlines = [room.expiresAt,room.game.chainDeadline ?? Infinity,...room.players.map(p=>p.disconnectedAt === null ? Infinity : p.disconnectedAt+45000)].filter(x=>x>now);
+    const pendingAuthDeadlines = this.ctx.getWebSockets().map(socket => {
+      const attachment = socket.deserializeAttachment() as {playerId?:string;acceptedAt?:number} | null;
+      return attachment && !attachment.playerId && typeof attachment.acceptedAt === "number"
+        ? attachment.acceptedAt + UNAUTHENTICATED_SOCKET_TTL_MS : Infinity;
+    });
+    const deadlines = [room.expiresAt,room.game.chainDeadline ?? Infinity,...room.players.map(p=>p.disconnectedAt === null ? Infinity : p.disconnectedAt+45000),...pendingAuthDeadlines].filter(x=>x>now);
     if (deadlines.length) await this.ctx.storage.setAlarm(Math.min(...deadlines));
   }
   private broadcast(data: unknown): void {
