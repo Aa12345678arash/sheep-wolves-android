@@ -72,3 +72,21 @@ No changes were made to `main`, stable 044 or the release branch.
 - The shared alarm scheduler preserves the earliest of room expiry, 3-second chain deadline and 45-second reconnect deadline.
 - Godot now has an autoloaded HTTP/WebSocket client bridge and the active meadow UI has private-room create/join controls, authoritative snapshot application, ready handshake, move submission, chain-decline request and invite-link clipboard copy. The UI stays disabled until the owner-configured HTTPS service URL is deployed.
 - CI has separately validated the Worker TypeScript/tests/Wrangler dry-run and Godot 4.4.1 import/client smoke test. This is not a live two-device test.
+
+
+## CI acceptance snapshot — 2026-11-21
+
+- Worker validation: PASS, run [44900524474](https://github.com/Aa12345678arash/sheep-wolves-android/actions/runs/44900524474). This includes TypeScript typecheck, unit tests, exact edge-by-edge parity against `godot/data/canonical_board.json`, both win-condition tests, chain-decline/expiry tests and `wrangler deploy --dry-run`.
+- Godot validation: PASS, run [44900552188](https://github.com/Aa12345678arash/sheep-wolves-android/actions/runs/44900552188). This includes Godot 4.4.1 import, offline-safe client smoke test and headless launch of the active meadow scene.
+- Android export preset now requests `INTERNET` permission for HTTPS/WSS.
+- The active Godot setup screen has create-private-room and join-by-code UI. The create flow displays a 16-character room code and shareable HTTPS invite URL; the invite landing page displays/copies the code for the guest to paste into the app.
+- The app's service URL remains intentionally blank in `project.godot`; the online menu stays disabled until the owner deploys the Worker and its real `workers.dev` URL is configured. No placeholder or fabricated invite URL is published.
+- Neither live Cloudflare deployment nor two-device Android networking has been tested. CI dry-run is not a live deployment.
+
+## Owner action required for deployment
+
+Create a free Cloudflare account, then connect the existing GitHub repository through Workers & Pages → Create application → GitHub. Select branch `WOLF-DUSK-ONLINE-001-INVITE-ROOMS`, root directory `rebuild/WOLF-DUSK-007/online/worker`, Worker name `wolf-dusk-rooms`, build command `npm install && npm run typecheck && npm test`, deploy command `npx wrangler deploy`. Enable the account's free `workers.dev` subdomain. Do not upgrade to a paid plan or share passwords/API tokens in chat. Once the Worker URL is visible, configure the Godot project setting and run live tests.
+
+## Separate AI audit note
+
+The independent WOLF-DUSK-061 AI workflow passed board/rule and tactical checks but its seeded self-play stage ended with exit 124. The visible matches were drawn at the 72-ply cap (for example, 4/4 draws in the hardest wolf-vs-sheep level pair), so no competitive superiority claim is justified yet. This remains a separate AI-branch blocker and does not affect the online branch CI.
