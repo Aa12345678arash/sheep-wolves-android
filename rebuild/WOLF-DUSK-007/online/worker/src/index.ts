@@ -103,12 +103,15 @@ export class RoomDurableObject {
       const tokenHash = await digest(msg.token);
       const authenticated = room.players.find(p=>p.tokenHash === tokenHash);
       if (!authenticated) { ws.close(4003,"unauthorized"); return; }
+      // Attach the new authenticated socket before closing an older session.
+      // The old socket's close callback can then see this replacement and must
+      // not mark the player disconnected.
+      ws.serializeAttachment({playerId:authenticated.id});
       for (const old of this.ctx.getWebSockets()) {
         if (old === ws) continue;
         const oldAttachment = old.deserializeAttachment() as {playerId?:string} | null;
         if (oldAttachment?.playerId === authenticated.id) old.close(4001,"reconnected");
       }
-      ws.serializeAttachment({playerId:authenticated.id});
       authenticated.disconnectedAt = null;
       await this.save(room);
       await this.scheduleNextAlarm(room);
@@ -116,6 +119,7 @@ export class RoomDurableObject {
       ws.send(JSON.stringify({type:"snapshot",roomCode:room.code,status:room.status,players:room.players.map(p=>({id:p.id,side:p.side,name:p.name,ready:p.ready,connected:true})),game:room.game,seq:room.seq,nextActionSeq:authenticated.lastSeq+1,events:room.events.slice(-64)}));
       return;
     }
+    if (msg.type === "auth") { ws.close(4003,"already_authenticated"); return; }
     const player = room.players.find(p=>p.id===attachment.playerId);
     if (!player) { ws.close(4003,"invalid_player"); return; }
     player.rate = player.rate.filter(t=>now-t<10000);
@@ -190,6 +194,13 @@ export class RoomDurableObject {
   }
   private broadcast(data: unknown): void {
     const payload = JSON.stringify(data);
-    for (const socket of this.ctx.getWebSockets()) { try { socket.send(payload); } catch { /* stale socket is removed by runtime */ } }
+    for (const socket of this.ctx.getWebSockets()) {
+      // A WebSocket is accepted before its first auth message. Never disclose
+      // room state or presence events to that unauthenticated connection.
+      let attachment: { playerId?: string } | null = null;
+      try { attachment = socket.deserializeAttachment() as { playerId?: string } | null; } catch { /* invalid attachment */ }
+      if (attachment?.playerId !== "host" && attachment?.playerId !== "guest") continue;
+      try { socket.send(payload); } catch { /* stale socket is removed by runtime */ }
+    }
   }
 }
