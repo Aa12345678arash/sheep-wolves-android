@@ -1,0 +1,29 @@
+name: WOLF-DUSK online Godot client validation
+on:
+  push:
+    branches:
+      - WOLF-DUSK-ONLINE-001-INVITE-ROOMS
+    paths:
+      - "rebuild/WOLF-DUSK-007/godot/**"
+      - ".github/workflows/wolf-dusk-online-godot.yml"
+  pull_request:
+    paths:
+      - "rebuild/WOLF-DUSK-007/godot/**"
+      - ".github/workflows/wolf-dusk-online-godot.yml"
+permissions:
+  contents: read
+jobs:
+  validate-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.4.1
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+      - name: Import and parse Godot project
+        run: timeout 60s godot --headless --editor --path rebuild/WOLF-DUSK-007/godot --quit
+      - name: Smoke-test online client in offline mode
+        run: timeout 30s godot --headless --path rebuild/WOLF-DUSK-007/godot --script res://tests/validate_online_client.gd
