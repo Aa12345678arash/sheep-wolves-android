@@ -63,3 +63,12 @@ Remaining blockers before real online play:
 5. Android device-to-device test before describing the feature as operational.
 
 No changes were made to `main`, stable 044 or the release branch.
+
+
+## Security and concurrency refinement — 2026-11-21
+
+- Player bearer tokens are no longer placed in the WebSocket URL. The client sends the token as the first message over the TLS-protected WSS connection; the room stores only SHA-256 token digests.
+- Durable Object state transitions (create/join, authentication, actions, disconnect callbacks and alarms) are serialized through a per-room promise lock to prevent concurrent join/action races.
+- The shared alarm scheduler preserves the earliest of room expiry, 3-second chain deadline and 45-second reconnect deadline.
+- Godot now has an autoloaded HTTP/WebSocket client bridge and the active meadow UI has private-room create/join controls, authoritative snapshot application, ready handshake, move submission, chain-decline request and invite-link clipboard copy. The UI stays disabled until the owner-configured HTTPS service URL is deployed.
+- CI has separately validated the Worker TypeScript/tests/Wrangler dry-run and Godot 4.4.1 import/client smoke test. This is not a live two-device test.
