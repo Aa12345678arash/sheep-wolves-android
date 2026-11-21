@@ -9,12 +9,13 @@
 - `src/index.ts`: Worker HTTP، اتاق Durable Object، WebSocket، احراز هویت بازیکن و بازیابی اتصال
 - `wrangler.jsonc`: اتصال SQLite-backed Durable Object و دامنه workers.dev
 - `tests/engine.test.ts`: آزمون‌های توپولوژی، چیدمان مهره‌ها، حرکت، گرفتن و پایان مهلت زنجیره
+- `tests/room-security.test.ts`: آزمون عدم ارسال broadcast به سوکت‌های احرازنشده و سریالی‌بودن عملیات Durable Object
 
 ## API اولیه
 - `GET /health`
 - `POST /api/rooms` با `displayName`، `protocolVersion` و `rulesetId`
 - `POST /api/rooms/{roomCode}/join` با همان نسخه پروتکل/قواعد و نام بازیکن
-- `GET /api/rooms/{roomCode}/ws?token={playerToken}` برای WebSocket
+- `GET /api/rooms/{roomCode}/ws` برای ارتقای اتصال به WebSocket؛ توکن در query string یا URL قرار نمی‌گیرد.
 - `GET /join/{roomCode}` صفحه وب ساده کد دعوت
 
 توکن بازیکن فقط یک بار به کلاینت برگردانده و در Durable Object به شکل SHA-256 ذخیره می‌شود. کد اتاق ۹۶ بیت تصادفی و توکن بازیکن ۲۵۶ بیت تصادفی است. توکن در نخستین پیام WebSocket روی اتصال TLS ارسال می‌شود، نه در نشانی URL؛ لینک دعوت فقط کد اتاق را حمل می‌کند. تغییرات اتاق، اتصال هم‌زمان و حرکت‌ها در صف سریالی Durable Object پردازش می‌شوند تا دو درخواست هم‌زمان وضعیت یکسان را به‌طور متناقض تغییر ندهند.
