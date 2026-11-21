@@ -186,5 +186,6 @@ test("two simultaneous join requests cannot both occupy the guest seat", async (
   const responses = await Promise.all([makeJoin("Guest A"), makeJoin("Guest B")]);
   assert.deepEqual(responses.map(response => response.status).sort(), [201, 409]);
   assert.equal(roomData.players.length, 2);
-  assert.equal(roomData.players.filter(player => player.id === "guest").length, 1);
+  const playerIds: string[] = roomData.players.map(player => String(player.id));
+  assert.equal(playerIds.filter(id => id === "guest").length, 1);
 });
